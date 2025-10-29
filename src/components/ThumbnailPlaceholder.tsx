@@ -33,6 +33,7 @@ export const ThumbnailPlaceholder: React.FC<ThumbnailPlaceholderProps> = ({
       shield: 'shield',
       bed: 'bed',
       alarm: 'alarm',
+      'partly-sunny': 'partly-sunny',
     };
     return iconMap[icon] || 'star';
   };

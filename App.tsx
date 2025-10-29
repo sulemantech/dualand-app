@@ -1,11 +1,18 @@
+// App.tsx - CORRECTED VERSION
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
-import AppNavigator from './src/navigation/AppNavigator';
 import { useDuaStore } from './src/stores/duaStore';
 import SplashScreenComponent from './src/screens/SplashScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+import CategoryDetailScreen from './src/screens/CategoryDetailScreen';
+import DuaAudioScreen from './src/screens/DuaAudioScreen';
+import { RootStackParamList } from './src/navigation/NavigationTypes';
+
+const Stack = createStackNavigator<RootStackParamList>();
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -42,7 +49,17 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <StatusBar style="auto" />
-        <AppNavigator />
+        <Stack.Navigator
+          initialRouteName="Dashboard"
+          screenOptions={{
+            headerShown: false,
+            cardStyle: { backgroundColor: '#FFFFFF' },
+          }}
+        >
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
+          <Stack.Screen name="DuaAudio" component={DuaAudioScreen} />
+        </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
   );

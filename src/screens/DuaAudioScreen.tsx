@@ -5,13 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
+  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useDuaStore } from '../stores/duaStore';
 import { RootStackParamList } from '../navigation/NavigationTypes';
+import AudioSection from '../components/audio/AudioSection'; // Import the new AudioSection
 
 type DuaAudioRouteProp = RouteProp<RootStackParamList, 'DuaAudio'>;
 type DuaAudioNavigationProp = StackNavigationProp<RootStackParamList, 'DuaAudio'>;
@@ -31,8 +32,6 @@ export default function DuaAudioScreen() {
   } = useDuaStore();
 
   const [currentDua, setCurrentDua] = useState(getDua(duaId));
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [activeAudio, setActiveAudio] = useState<'full' | 'word-by-word' | null>(null);
 
   useEffect(() => {
     const dua = getDua(duaId);
@@ -74,40 +73,25 @@ export default function DuaAudioScreen() {
     }
   };
 
-  const handleAudioPlay = (type: 'full' | 'word-by-word') => {
-    setActiveAudio(type);
-    setIsPlaying(true);
-    // TODO: Implement actual audio playback with expo-audio
-    Alert.alert('Audio Playback', `${type === 'full' ? 'Complete Dua' : 'Word by Word'} audio would play here`);
-  };
-
-  const handleAudioPause = () => {
-    setIsPlaying(false);
-    // TODO: Implement actual audio pause
-  };
-
   const getMemorizationStatusColor = (status: string) => {
     switch (status) {
-      case 'memorized': return '#2D7D46';
-      case 'learning': return '#3182CE';
-      default: return '#A0AEC0';
+      case 'memorized': return '#059669';
+      case 'learning': return '#3B82F6';
+      default: return '#CBD5E1';
     }
-  };
-
-  const getProgressWidth = (type: 'full' | 'word-by-word') => {
-    // Mock progress - in real app, calculate from actual playback
-    return type === 'full' ? '30%' : '50%';
   };
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#2D3748" />
+          <Ionicons name="arrow-back" size={24} color="#1E293B" />
         </TouchableOpacity>
         
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -118,7 +102,7 @@ export default function DuaAudioScreen() {
           <Ionicons 
             name={currentDua.is_favorited ? 'heart' : 'heart-outline'} 
             size={24} 
-            color={currentDua.is_favorited ? '#E53E3E' : '#2D3748'} 
+            color={currentDua.is_favorited ? '#EF4444' : '#1E293B'} 
           />
         </TouchableOpacity>
       </View>
@@ -149,79 +133,8 @@ export default function DuaAudioScreen() {
           </Text>
         </View>
 
-        {/* Audio Players */}
-        <View style={styles.audioSection}>
-          {/* Complete Dua Player */}
-          <View style={styles.audioPlayer}>
-            <Text style={styles.audioPlayerTitle}>Complete Dua</Text>
-            
-            <View style={styles.audioControls}>
-              <TouchableOpacity 
-                style={[
-                  styles.playButton,
-                  activeAudio === 'full' && styles.playButtonActive
-                ]}
-                onPress={() => isPlaying && activeAudio === 'full' ? 
-                  handleAudioPause() : handleAudioPlay('full')}
-              >
-                <Ionicons 
-                  name={isPlaying && activeAudio === 'full' ? 'pause' : 'play'} 
-                  size={20} 
-                  color="#FFFFFF" 
-                />
-              </TouchableOpacity>
-              
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <View style={[
-                    styles.progressFill, 
-                    { width: getProgressWidth('full') }
-                  ]} />
-                </View>
-                <View style={styles.timeContainer}>
-                  <Text style={styles.timeText}>1:24</Text>
-                  <Text style={styles.timeText}>4:32</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity style={styles.speedButton}>
-                <Text style={styles.speedButtonText}>1x</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Word by Word Player */}
-          <View style={styles.audioPlayer}>
-            <Text style={styles.audioPlayerTitle}>WORD BY WORD</Text>
-            
-            <View style={styles.audioControls}>
-              <TouchableOpacity 
-                style={[
-                  styles.playButton,
-                  { backgroundColor: '#718096' },
-                  activeAudio === 'word-by-word' && { backgroundColor: '#2D7D46' }
-                ]}
-                onPress={() => isPlaying && activeAudio === 'word-by-word' ? 
-                  handleAudioPause() : handleAudioPlay('word-by-word')}
-              >
-                <Ionicons 
-                  name={isPlaying && activeAudio === 'word-by-word' ? 'pause' : 'play'} 
-                  size={16} 
-                  color="#FFFFFF" 
-                />
-              </TouchableOpacity>
-              
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <View style={[
-                    styles.progressFill, 
-                    { width: getProgressWidth('word-by-word'), backgroundColor: '#718096' }
-                  ]} />
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
+        {/* Audio Section - REPLACED WITH REAL IMPLEMENTATION */}
+        <AudioSection duaId={currentDua.id} />
 
         {/* Memorization Status */}
         <View style={styles.memorizationSection}>
@@ -249,36 +162,55 @@ export default function DuaAudioScreen() {
             ))}
           </View>
         </View>
+
+        {/* Dua Information */}
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionLabel}>About This Dua</Text>
+          <View style={styles.infoItem}>
+            <Ionicons name="book" size={16} color="#64748B" />
+            <Text style={styles.infoText}>Practice this Dua daily for better memorization</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Ionicons name="repeat" size={16} color="#64748B" />
+            <Text style={styles.infoText}>Repeat after the audio to improve pronunciation</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Ionicons name="heart" size={16} color="#64748B" />
+            <Text style={styles.infoText}>Favorite important Duas for quick access</Text>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Swipe Navigation Hints */}
       <View style={styles.swipeNavigation}>
-        <Text style={[
-          styles.swipeHint,
-          !hasPrevious && styles.swipeHintDisabled
-        ]}>
-          {hasPrevious ? '← Swipe for Previous' : ''}
-        </Text>
+        <TouchableOpacity 
+          style={[styles.navButton, !hasPrevious && styles.navButtonDisabled]}
+          onPress={() => handleSwipeNavigation('previous')}
+          disabled={!hasPrevious}
+        >
+          <Ionicons name="chevron-back" size={20} color={hasPrevious ? '#D97706' : '#CBD5E1'} />
+          <Text style={[styles.navButtonText, !hasPrevious && styles.navButtonTextDisabled]}>
+            Previous
+          </Text>
+        </TouchableOpacity>
         
-        <Text style={[
-          styles.swipeHint,
-          !hasNext && styles.swipeHintDisabled
-        ]}>
-          {hasNext ? 'Swipe for Next →' : ''}
-        </Text>
+        <View style={styles.navInfo}>
+          <Text style={styles.navInfoText}>
+            {currentCategoryDuas.findIndex(d => d.id === currentDua.id) + 1} of {currentCategoryDuas.length}
+          </Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={[styles.navButton, !hasNext && styles.navButtonDisabled]}
+          onPress={() => handleSwipeNavigation('next')}
+          disabled={!hasNext}
+        >
+          <Text style={[styles.navButtonText, !hasNext && styles.navButtonTextDisabled]}>
+            Next
+          </Text>
+          <Ionicons name="chevron-forward" size={20} color={hasNext ? '#D97706' : '#CBD5E1'} />
+        </TouchableOpacity>
       </View>
-
-      {/* Swipe Gesture Areas */}
-      <TouchableOpacity 
-        style={[styles.swipeArea, styles.swipeAreaLeft]}
-        onPress={() => handleSwipeNavigation('previous')}
-        disabled={!hasPrevious}
-      />
-      <TouchableOpacity 
-        style={[styles.swipeArea, styles.swipeAreaRight]}
-        onPress={() => handleSwipeNavigation('next')}
-        disabled={!hasNext}
-      />
     </View>
   );
 }
@@ -286,7 +218,7 @@ export default function DuaAudioScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -297,7 +229,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#F1F5F9',
   },
   backButton: {
     padding: 4,
@@ -305,7 +237,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#2D3748',
+    color: '#1E293B',
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 12,
@@ -315,19 +247,19 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   arabicSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFC',
     padding: 20,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
   },
   arabicText: {
     fontSize: 24,
-    color: '#2D3748',
+    color: '#1E293B',
     textAlign: 'right',
     lineHeight: 36,
-    fontFamily: 'System', // Use a proper Arabic font in production
+    fontFamily: 'System',
   },
   translationSection: {
     backgroundColor: '#FFFFFF',
@@ -335,18 +267,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
   },
   sectionLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#718096',
+    color: '#64748B',
     marginBottom: 8,
     textTransform: 'uppercase',
   },
   translationText: {
     fontSize: 16,
-    color: '#2D3748',
+    color: '#1E293B',
     lineHeight: 24,
   },
   referenceSection: {
@@ -355,85 +287,16 @@ const styles = StyleSheet.create({
   },
   referenceText: {
     fontSize: 14,
-    color: '#718096',
+    color: '#64748B',
     fontStyle: 'italic',
-  },
-  audioSection: {
-    gap: 16,
-    marginBottom: 24,
-  },
-  audioPlayer: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  audioPlayerTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#718096',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  audioControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  playButton: {
-    backgroundColor: '#2D7D46',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playButtonActive: {
-    backgroundColor: '#1E5E2E',
-  },
-  progressContainer: {
-    flex: 1,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 2,
-    marginBottom: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#2D7D46',
-    borderRadius: 2,
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  timeText: {
-    fontSize: 12,
-    color: '#718096',
-  },
-  speedButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: '#F7FAFC',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  speedButtonText: {
-    fontSize: 12,
-    color: '#718096',
-    fontWeight: '500',
   },
   memorizationSection: {
     backgroundColor: '#FFFFFF',
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
+    marginBottom: 16,
   },
   statusButtons: {
     flexDirection: 'row',
@@ -441,9 +304,9 @@ const styles = StyleSheet.create({
   },
   statusButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
@@ -454,40 +317,71 @@ const styles = StyleSheet.create({
   statusButtonText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#718096',
+    color: '#64748B',
     textTransform: 'uppercase',
   },
   statusButtonTextActive: {
     color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  infoSection: {
+    backgroundColor: '#F8FAFC',
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 16,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    gap: 12,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#64748B',
+    flex: 1,
+    lineHeight: 20,
   },
   swipeNavigation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#F1F5F9',
   },
-  swipeHint: {
+  navButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
+    minWidth: 100,
+    justifyContent: 'center',
+  },
+  navButtonDisabled: {
+    backgroundColor: '#F1F5F9',
+  },
+  navButtonText: {
     fontSize: 14,
-    color: '#2D7D46',
+    color: '#D97706',
+    fontWeight: '600',
+    marginHorizontal: 4,
+  },
+  navButtonTextDisabled: {
+    color: '#CBD5E1',
+  },
+  navInfo: {
+    alignItems: 'center',
+  },
+  navInfoText: {
+    fontSize: 14,
+    color: '#64748B',
     fontWeight: '500',
-  },
-  swipeHintDisabled: {
-    color: '#E2E8F0',
-  },
-  swipeArea: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 50,
-    opacity: 0.1,
-  },
-  swipeAreaLeft: {
-    left: 0,
-  },
-  swipeAreaRight: {
-    right: 0,
   },
 });
