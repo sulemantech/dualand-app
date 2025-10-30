@@ -1,64 +1,98 @@
-// App.tsx - CORRECTED VERSION
+// App.tsx
 import React, { useEffect, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as SplashScreen from 'expo-splash-screen';
-import { useDuaStore } from './src/stores/duaStore';
-import SplashScreenComponent from './src/screens/SplashScreen';
-import DashboardScreen from './src/screens/DashboardScreen';
-import CategoryDetailScreen from './src/screens/CategoryDetailScreen';
 import DuaAudioScreen from './src/screens/DuaAudioScreen';
-import { RootStackParamList } from './src/navigation/NavigationTypes';
+import { databaseService, Category, Dua } from '@/lib/database/database';
 
-const Stack = createStackNavigator<RootStackParamList>();
-
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+const Stack = createStackNavigator();
 
 export default function App() {
-  const [appIsReady, setAppIsReady] = useState(false);
-  const initializeData = useDuaStore(state => state.initializeData);
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function prepare() {
+    const initializeApp = async () => {
       try {
-        // Pre-load resources and initialize database
-        await initializeData();
-        
-        // Artificially delay for two seconds to simulate loading things
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (e) {
-        console.warn(e);
-      } finally {
-        // Tell the application to render
-        setAppIsReady(true);
-        await SplashScreen.hideAsync();
-      }
-    }
+        console.log('🚀 Initializing Dualand App...');
+        setIsLoading(true);
+        setError(null);
 
-    prepare();
+        // Use your existing database service
+        await databaseService.init();
+        
+        console.log('✅ App initialized successfully');
+        setIsReady(true);
+        
+      } catch (err) {
+        console.error('❌ App initialization failed:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeApp();
   }, []);
 
-  if (!appIsReady) {
-    return <SplashScreenComponent />;
+  const retryInitialization = () => {
+    setIsLoading(true);
+    setError(null);
+    initializeApp();
+  };
+
+  // Show loading screen
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
+        <ActivityIndicator size="large" color="#2D5AFF" />
+        <Text style={{ marginTop: 16, fontSize: 16, color: '#666' }}>
+          Initializing Dualand App...
+        </Text>
+      </View>
+    );
   }
 
+  // Show error screen
+  if (error && !isReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#FFF' }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 8 }}>
+          Oops!
+        </Text>
+        <Text style={{ fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+          {error}
+        </Text>
+        <TouchableOpacity 
+          style={{ 
+            backgroundColor: '#2D5AFF', 
+            paddingHorizontal: 24, 
+            paddingVertical: 12, 
+            borderRadius: 8 
+          }}
+          onPress={retryInitialization}
+        >
+          <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+            Try Again
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Main app
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <StatusBar style="auto" />
-        <Stack.Navigator
-          initialRouteName="Dashboard"
-          screenOptions={{
-            headerShown: false,
-            cardStyle: { backgroundColor: '#FFFFFF' },
-          }}
-        >
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
-          <Stack.Screen name="DuaAudio" component={DuaAudioScreen} />
+        <Stack.Navigator>
+          <Stack.Screen 
+            name="DuaAudio" 
+            component={DuaAudioScreen}
+            options={{ headerShown: false }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

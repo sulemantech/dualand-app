@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AudioPlayer } from '../components/AudioPlayer';
+import { AudioPlayer } from './AudioPlayer';
 
 // Mock audio files - you can use these for testing
 const mockAudioFiles = {
-  full: require('../../assets/audio/sample-dua.mp3'), // Add this file
-  wordByWord: require('../../assets/audio/sample-wbw.mp3'), // Add this file
+  full: { uri: 'https://www.soundjay.com/button/beep-07.mp3' }, // Test beep sound
+  wordByWord: { uri: 'https://www.soundjay.com/button/beep-07.mp3' }, // Test beep sound
 };
 
 // Alternative: Use test audio URLs if you don't have local files
