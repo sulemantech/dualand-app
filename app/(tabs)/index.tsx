@@ -25,6 +25,42 @@ const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
 const CARD_WIDTH = (width - 40 - CARD_MARGIN) / 2;
 
+// Import local images
+const localImages = {
+  dua_1: require('../../assets/images/dua_31.png'),
+  dua_2: require('../../assets/images/dua_2.png'),
+  dua_3: require('../../assets/images/dua_3.png'),
+  dua_4: require('../../assets/images/dua_4.png'),
+  dua_5: require('../../assets/images/dua_5.png'),
+  dua_6: require('../../assets/images/dua_6.png'),
+  dua_7: require('../../assets/images/dua_7.png'),
+  dua_8: require('../../assets/images/dua_8.png'),
+  dua_9: require('../../assets/images/dua_9.png'),
+  dua_10: require('../../assets/images/dua_10.png'),
+  dua_11: require('../../assets/images/dua_11.png'),
+  dua_12: require('../../assets/images/dua_12.png'),
+  dua_13: require('../../assets/images/dua_13.png'),
+  dua_14: require('../../assets/images/dua_14.png'),
+  dua_15: require('../../assets/images/dua_15.png'),
+  dua_16: require('../../assets/images/dua_16.png'),
+  dua_17: require('../../assets/images/dua_17.png'),
+  dua_18: require('../../assets/images/dua_18.png'),
+  dua_19: require('../../assets/images/dua_19.png'),
+  dua_20: require('../../assets/images/dua_20.png'),
+  dua_21: require('../../assets/images/dua_21.png'),
+  dua_22: require('../../assets/images/dua_22.png'),
+  dua_23: require('../../assets/images/dua_23.png'),
+  dua_24: require('../../assets/images/dua_24.png'),
+  dua_25: require('../../assets/images/dua_25.png'),
+  dua_26: require('../../assets/images/dua_26.png'),
+  dua_27: require('../../assets/images/dua_27.png'),
+  dua_28: require('../../assets/images/dua_28.png'),
+  dua_29: require('../../assets/images/dua_29.png'),
+  dua_30: require('../../assets/images/dua_30.png'),
+  dua_31: require('../../assets/images/dua_31.png'),
+  dua_32: require('../../assets/images/dua_32.png'),
+};
+
 // Simplified Particle system
 const FloatingParticles = ({ count = 6 }) => {
   const particles = useRef(
@@ -177,12 +213,31 @@ const loadData = async () => {
     );
   }, [searchQuery, duas]);
 
+  // Function to get local image for dua
+  const getLocalImage = (duaId: string, duaNumber?: string) => {
+    // Try to get image by dua number first
+    if (duaNumber) {
+      const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
+      if (localImages[imageKey]) {
+        return localImages[imageKey];
+      }
+    }
+    
+    // Fallback: use ID to cycle through available images
+    const imageIndex = (parseInt(duaId) % 32) + 1;
+    const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
+    return localImages[fallbackImageKey] || localImages.dua_1;
+  };
+
   const handleDuaPress = async (dua: Dua) => {
     Keyboard.dismiss();
     
     try {
       // Get word audio pairs for this dua
       const wordAudioPairs = await databaseService.getWordAudioPairsByDua(dua.id);
+      
+      // Get the local image for the dua detail screen
+      const localImage = getLocalImage(dua.id, dua.duaNumber);
       
       router.push({
         pathname: '/dua-detail',
@@ -201,7 +256,9 @@ const loadData = async () => {
           audio_full: dua.audio_full || '',
           titleAudioResId: dua.titleAudioResId || '',
           wordAudioPairs: JSON.stringify(wordAudioPairs),
-          image_path: dua.image_path || 'https://images.unsplash.com/photo-1544914379-806667cdb683?w=400&h=300&fit=crop'
+          image_path: dua.image_path || '',
+          useLocalImage: 'true', // Flag to indicate we should use local image
+          localImageIndex: (parseInt(dua.id) % 32) + 1 // Pass the image index
         }
       });
     } catch (error) {
@@ -215,7 +272,8 @@ const loadData = async () => {
           arabic: dua.arabic_text,
           translation: dua.translation,
           reference: dua.reference,
-          image_path: dua.image_path || 'https://images.unsplash.com/photo-1544914379-806667cdb683?w=400&h=300&fit=crop'
+          useLocalImage: 'true',
+          localImageIndex: (parseInt(dua.id) % 32) + 1
         }
       });
     }
@@ -329,7 +387,7 @@ const getCategoryColor = (categoryId: string) => {
     });
 
     const categoryColor = getCategoryColor(dua.category_id);
-    const imageUrl = dua.image_path || `https://images.unsplash.com/photo-1544914379-806667cdb683?w=400&h=300&fit=crop&q=80`;
+    const localImage = getLocalImage(dua.id, dua.duaNumber);
 
     return (
       <Animated.View
@@ -369,10 +427,9 @@ const getCategoryColor = (categoryId: string) => {
                 </Text>
               </View>
               <Image 
-                source={{ uri: imageUrl }} 
+                source={localImage} 
                 style={styles.cardImage}
                 resizeMode="cover"
-                onError={() => console.log('Image failed to load for dua:', dua.id)}
               />
               
               {/* Favorite indicator */}
