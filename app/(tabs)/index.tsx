@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,68 +13,205 @@ import {
   TouchableWithoutFeedback,
   Animated,
   Easing,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from '../../Icons';
-import { duaData } from '../../types/types';
+import { databaseService, Category, Dua } from '../../lib/database/database'; // Import your database service
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
 const CARD_WIDTH = (width - 40 - CARD_MARGIN) / 2;
 
+// Simplified Particle system
+const FloatingParticles = ({ count = 6 }) => {
+  const particles = useRef(
+    Array.from({ length: count }, () => new Animated.Value(0))
+  ).current;
+
+  useEffect(() => {
+    particles.forEach((particle, index) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(index * 1000),
+          Animated.timing(particle, {
+            toValue: 1,
+            duration: 4000,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+          Animated.timing(particle, {
+            toValue: 0,
+            duration: 4000,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    });
+  }, []);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {particles.map((particle, index) => {
+        const translateY = particle.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -height],
+        });
+
+        const opacity = particle.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [0, 0.6, 0],
+        });
+
+        return (
+          <Animated.View
+            key={index}
+            style={{
+              position: 'absolute',
+              left: Math.random() * width,
+              top: height + 30,
+              transform: [{ translateY }],
+              opacity,
+            }}
+          >
+            <Text style={{ fontSize: 16, color: '#8B5CF6' }}>
+              {['✨', '⭐', '🌟'][index % 3]}
+            </Text>
+          </Animated.View>
+        );
+      })}
+    </View>
+  );
+};
+
 export default function DashboardScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [duas, setDuas] = useState<Dua[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Animation values
-  const searchSlideAnim = useRef(new Animated.Value(0)).current;
+  const searchOpacityAnim = useRef(new Animated.Value(0)).current;
   const searchScaleAnim = useRef(new Animated.Value(0)).current;
+
+  // Load data from database
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Update the loadData function in your DashboardScreen component
+const loadData = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    console.log('Starting database initialization...');
+    await databaseService.init();
+    
+    console.log('Database initialized, loading data...');
+    
+    const [allDuas, allCategories] = await Promise.all([
+      databaseService.getAllDuas(),
+      databaseService.getAllCategories()
+    ]);
+    
+    console.log(`Successfully loaded ${allDuas.length} duas and ${allCategories.length} categories`);
+    console.log('Duas:', allDuas.map(d => ({id: d.id, title: d.title}))); // Debug log
+    
+    setDuas(allDuas);
+    setCategories(allCategories);
+    
+  } catch (err) {
+    console.error('Error in loadData:', err);
+    setError('Failed to load duas. Please restart the app.');
+    setDuas([]);
+    setCategories([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Filter duas based on search query
   const filteredDuas = useMemo(() => {
     if (!searchQuery.trim()) {
-      return duaData;
+      return duas;
     }
     
     const query = searchQuery.toLowerCase().trim();
-    return duaData.filter(dua =>
+    return duas.filter(dua =>
       dua.title.toLowerCase().includes(query) ||
       dua.translation.toLowerCase().includes(query) ||
-      dua.arabic.includes(query)
+      dua.arabic_text.toLowerCase().includes(query) ||
+      (dua.transliteration && dua.transliteration.toLowerCase().includes(query)) ||
+      (dua.urdu && dua.urdu.toLowerCase().includes(query)) ||
+      (dua.hinditranslation && dua.hinditranslation.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [searchQuery, duas]);
 
-  const handleDuaPress = (dua: any) => {
+  const handleDuaPress = async (dua: Dua) => {
     Keyboard.dismiss();
     
-    // Navigate to dua detail screen
-    router.push({
-      pathname: '/dua-detail',
-      params: { 
-        id: dua.id.toString(),
-        title: dua.title,
-        arabic: dua.arabic,
-        translation: dua.translation,
-        reference: dua.reference,
-        imageUrl: dua.imageUrl
-      }
-    });
+    try {
+      // Get word audio pairs for this dua
+      const wordAudioPairs = await databaseService.getWordAudioPairsByDua(dua.id);
+      
+      router.push({
+        pathname: '/dua-detail',
+        params: { 
+          id: dua.id,
+          title: dua.title,
+          arabic: dua.arabic_text,
+          translation: dua.translation,
+          reference: dua.reference,
+          transliteration: dua.transliteration || '',
+          urdu: dua.urdu || '',
+          hinditranslation: dua.hinditranslation || '',
+          textheading: dua.textheading || '',
+          steps: dua.steps || '',
+          duaNumber: dua.duaNumber || '',
+          audio_full: dua.audio_full || '',
+          titleAudioResId: dua.titleAudioResId || '',
+          wordAudioPairs: JSON.stringify(wordAudioPairs),
+          image_path: dua.image_path || 'https://images.unsplash.com/photo-1544914379-806667cdb683?w=400&h=300&fit=crop'
+        }
+      });
+    } catch (error) {
+      console.error('Error navigating to dua detail:', error);
+      // Fallback navigation without word audio pairs
+      router.push({
+        pathname: '/dua-detail',
+        params: { 
+          id: dua.id,
+          title: dua.title,
+          arabic: dua.arabic_text,
+          translation: dua.translation,
+          reference: dua.reference,
+          image_path: dua.image_path || 'https://images.unsplash.com/photo-1544914379-806667cdb683?w=400&h=300&fit=crop'
+        }
+      });
+    }
   };
 
   const toggleSearch = () => {
     if (isSearchExpanded) {
       // Collapse search
       Animated.parallel([
-        Animated.timing(searchSlideAnim, {
+        Animated.timing(searchOpacityAnim, {
           toValue: 0,
-          duration: 300,
+          duration: 250,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(searchScaleAnim, {
           toValue: 0,
           duration: 300,
+          easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start(() => {
@@ -86,7 +223,7 @@ export default function DashboardScreen() {
       // Expand search
       setIsSearchExpanded(true);
       Animated.parallel([
-        Animated.timing(searchSlideAnim, {
+        Animated.timing(searchOpacityAnim, {
           toValue: 1,
           duration: 400,
           easing: Easing.out(Easing.cubic),
@@ -94,7 +231,7 @@ export default function DashboardScreen() {
         }),
         Animated.timing(searchScaleAnim, {
           toValue: 1,
-          duration: 400,
+          duration: 500,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -106,21 +243,60 @@ export default function DashboardScreen() {
     setSearchQuery('');
   };
 
-  // Animated DuaCard component
-  const DuaCard = ({ dua, index }: { dua: any; index: number }) => {
+  // Get category name for a dua
+  const getCategoryName = (categoryId: string) => {
+  const category = categories.find(cat => cat.id === categoryId);
+  return category?.name || `Category ${categoryId}`;
+};
+
+const getCategoryColor = (categoryId: string) => {
+  const category = categories.find(cat => cat.id === categoryId);
+  return category?.color || '#8B5CF6';
+};
+
+  // Enhanced Animated DuaCard with database data
+  const DuaCard = ({ dua, index }: { dua: Dua; index: number }) => {
     const cardAnim = useRef(new Animated.Value(0)).current;
+    const pressAnim = useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
+      // Staggered entrance animation
       Animated.sequence([
-        Animated.delay(index * 100),
-        Animated.timing(cardAnim, {
+        Animated.delay(index * 60),
+        Animated.spring(cardAnim, {
           toValue: 1,
-          duration: 600,
-          easing: Easing.out(Easing.cubic),
+          tension: 60,
+          friction: 7,
           useNativeDriver: true,
         }),
       ]).start();
     }, []);
+
+    const handlePressIn = () => {
+      Animated.spring(pressAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handlePressOut = () => {
+      Animated.spring(pressAnim, {
+        toValue: 0,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const cardScale = pressAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 0.96],
+    });
+
+    const categoryColor = getCategoryColor(dua.category_id);
+    const imageUrl = dua.image_path || `https://images.unsplash.com/photo-1544914379-806667cdb683?w=400&h=300&fit=crop&q=80`;
 
     return (
       <Animated.View
@@ -130,57 +306,124 @@ export default function DashboardScreen() {
             {
               translateY: cardAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [50, 0],
+                outputRange: [40, 0],
               }),
             },
-            { scale: cardAnim },
+            { 
+              scale: cardAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.9, 1],
+              })
+            },
+            { scale: cardScale },
           ],
         }}
       >
         <TouchableOpacity
           style={styles.card}
           onPress={() => handleDuaPress(dua)}
-          activeOpacity={0.8}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={0.9}
         >
-          <View style={styles.cardImageContainer}>
-            <View style={styles.cardNumber}>
-              <Text style={styles.cardNumberText}>{dua.id.toString().padStart(2, '0')}</Text>
+          <Animated.View style={styles.cardInner}>
+            <View style={styles.cardImageContainer}>
+              {/* Category color overlay */}
+              <View style={[styles.cardOverlay, { backgroundColor: `${categoryColor}40` }]} />
+              <View style={styles.cardNumber}>
+                <Text style={styles.cardNumberText}>
+                  {dua.duaNumber || dua.order_index.toString().padStart(2, '0')}
+                </Text>
+              </View>
+              <Image 
+                source={{ uri: imageUrl }} 
+                style={styles.cardImage}
+                resizeMode="cover"
+                onError={() => console.log('Image failed to load for dua:', dua.id)}
+              />
+              
+              {/* Favorite indicator */}
+              {dua.is_favorited && (
+                <View style={styles.favoriteIndicator}>
+                  <Text style={styles.favoriteText}>❤️</Text>
+                </View>
+              )}
+
+              {/* Memorization status indicator */}
+              {dua.memorization_status !== 'not_started' && (
+                <View style={[
+                  styles.memorizationIndicator,
+                  { 
+                    backgroundColor: dua.memorization_status === 'memorized' ? '#10B981' : 
+                                   dua.memorization_status === 'learning' ? '#F59E0B' : '#6B7280'
+                  }
+                ]}>
+                  <Text style={styles.memorizationText}>
+                    {dua.memorization_status === 'memorized' ? '✓' : 
+                     dua.memorization_status === 'learning' ? '~' : '•'}
+                  </Text>
+                </View>
+              )}
+
+              {/* Floating Elements */}
+              <View style={styles.floatingStars}>
+                <Text style={styles.star}>✨</Text>
+                <Text style={[styles.star, styles.star2]}>⭐</Text>
+              </View>
             </View>
-            <Image 
-              source={{ uri: dua.imageUrl }} 
-              style={styles.cardImage}
-              resizeMode="cover"
-            />
-            {/* Floating Stars - FIXED: Emojis in Text components */}
-            <View style={styles.floatingStars}>
-              <Text style={styles.star}>✨</Text>
-              <Text style={[styles.star, styles.star2]}>⭐</Text>
+            
+            {/* Card banner with category color */}
+            <View style={[styles.cardBanner, { backgroundColor: `${categoryColor}20` }]}>
+              <Text style={styles.cardTitle} numberOfLines={2}>
+                {dua.title}
+              </Text>
+              <View style={styles.cardMeta}>
+                <Text style={[styles.categoryText, { color: categoryColor }]}>
+                  {getCategoryName(dua.category_id)}
+                </Text>
+              </View>
+              <View style={styles.cardSparkle}>
+                <Text style={styles.sparkleText}>🌟</Text>
+              </View>
             </View>
-          </View>
-          
-          <View style={styles.cardBanner}>
-            <Text style={styles.cardTitle} numberOfLines={2}>
-              {dua.title}
-            </Text>
-            {/* Card Sparkle - FIXED: Emoji in Text component */}
-            <View style={styles.cardSparkle}>
-              <Text style={styles.sparkleText}>🌟</Text>
-            </View>
-          </View>
+          </Animated.View>
         </TouchableOpacity>
       </Animated.View>
     );
   };
 
-  const searchHeight = searchSlideAnim.interpolate({
+  // Search animations
+  const searchTransform = searchScaleAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 80],
+    outputRange: [0.8, 1],
   });
 
-  const searchOpacity = searchScaleAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B5CF6" />
+          <Text style={styles.loadingText}>Loading Beautiful Duas...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorEmoji}>😔</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={() => {
@@ -191,81 +434,103 @@ export default function DashboardScreen() {
       }
     }} accessible={false}>
       <SafeAreaView style={styles.container}>
-        {/* Header with Integrated Search */}
+        <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
+        
+        {/* Background Elements */}
+        <FloatingParticles />
+        
+        {/* Header with simplified gradient */}
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={{ uri: 'https://i.ibb.co/L5wK60b/dualand-logo.png' }}
-              style={styles.logo}
-            />
-            <Text style={styles.title}>DUALAND</Text>
-          </View>
-          
-          {/* Search Toggle Button */}
-          <TouchableOpacity 
-            style={styles.searchToggleButton}
-            onPress={toggleSearch}
+          <LinearGradient
+            colors={['#8B5CF6', '#7C3AED']}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
           >
-            <SearchIcon size={24} color="#ffffff" />
-          </TouchableOpacity>
+            <View style={styles.headerContent}>
+              <View style={styles.logoContainer}>
+                <Image
+                  source={{ uri: 'https://i.ibb.co/L5wK60b/dualand-logo.png' }}
+                  style={styles.logo}
+                />
+                <View>
+                  <Text style={styles.title}>DUALAND</Text>
+                  <Text style={styles.subtitle}>{filteredDuas.length} Beautiful Duas</Text>
+                </View>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.searchToggleButton}
+                onPress={toggleSearch}
+              >
+                <View style={styles.searchToggleInner}>
+                  <SearchIcon size={22} color="#ffffff" />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
         </View>
 
-        {/* Animated Search Bar */}
-        <Animated.View 
-          style={[
-            styles.searchContainer,
-            {
-              height: searchHeight,
-              opacity: searchOpacity,
-            }
-          ]}
-        >
-          <View style={styles.searchInputContainer}>
-            <SearchIcon size={20} color="#8B5CF6" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search for beautiful Duas..."
-              placeholderTextColor="#A78BFA"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-              autoFocus={isSearchExpanded}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                <Text style={styles.clearButtonText}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </Animated.View>
+        {/* Search Bar */}
+        {isSearchExpanded && (
+          <Animated.View 
+            style={[
+              styles.searchContainer,
+              {
+                opacity: searchOpacityAnim,
+                transform: [{ scale: searchTransform }],
+              }
+            ]}
+          >
+            <View style={styles.searchInputContainer}>
+              <SearchIcon size={20} color="#8B5CF6" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search for beautiful Duas..."
+                placeholderTextColor="#A78BFA"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoFocus={true}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                  <Text style={styles.clearButtonText}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+        )}
 
         {/* Main Content */}
         <ScrollView 
           style={styles.content}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isSearchExpanded && { paddingTop: 12 }
+          ]}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Welcome Section with Animation - FIXED: Emojis in Text components */}
-          <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeEmoji}>🎉</Text>
-            <Text style={styles.welcomeText}>
-              {searchQuery ? `Found ${filteredDuas.length} Duas! ` : 'Welcome to DuaLand! '}
-              <Text style={styles.emojiText}>{searchQuery ? '🎯' : '🌟'}</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {searchQuery ? 'Your search results' : 'Learn beautiful prayers with fun! '}
-              <Text style={styles.emojiText}>{searchQuery ? '' : '📚'}</Text>
-            </Text>
-          </View>
+          {/* Minimal Welcome Section */}
+          {!searchQuery && (
+            <View style={styles.welcomeSection}>
+              <Text style={styles.welcomeText}>
+                Discover {duas.length} Beautiful Duas 🌟
+              </Text>
+              <Text style={styles.welcomeSubtext}>
+                From {categories.length} categories • Tap to explore
+              </Text>
+            </View>
+          )}
 
-          {/* No Results State - FIXED: Emojis in Text components */}
+          {/* No Results State */}
           {filteredDuas.length === 0 && searchQuery && (
             <View style={styles.noResultsContainer}>
               <Text style={styles.noResultsEmoji}>🔍</Text>
               <Text style={styles.noResultsText}>No Duas found for "{searchQuery}"</Text>
               <Text style={styles.noResultsSubtext}>
-                Try different words or explore all Duas! <Text style={styles.emojiText}>🌈</Text>
+                Try different words or explore all Duas! 🌈
               </Text>
             </View>
           )}
@@ -282,18 +547,6 @@ export default function DashboardScreen() {
           {/* Bottom Padding */}
           <View style={styles.bottomPadding} />
         </ScrollView>
-
-        {/* Floating Action Button for Quick Actions - FIXED: Emojis in Text components */}
-        {!isSearchExpanded && (
-          <View style={styles.floatingActions}>
-            <TouchableOpacity style={styles.floatingButton}>
-              <Text style={styles.floatingEmoji}>🎵</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.floatingButton}>
-              <Text style={styles.floatingEmoji}>⭐</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
@@ -304,19 +557,69 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F0F9FF',
   },
-  header: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F0F9FF',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#8B5CF6',
+    fontWeight: '600',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F0F9FF',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    paddingTop: 50,
+  },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  retryButton: {
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  header: {
     shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 12,
+    overflow: 'hidden',
+  },
+  headerGradient: {
+    paddingTop: 50,
+    paddingBottom: 15,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
   },
   logoContainer: {
     flexDirection: 'row',
@@ -327,34 +630,35 @@ const styles = StyleSheet.create({
     height: 45,
     marginRight: 12,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+    marginTop: 2,
   },
   searchToggleButton: {
-    padding: 12,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 4,
   },
+  searchToggleInner: {
+    padding: 12,
+    borderRadius: 20,
+  },
   searchContainer: {
-    backgroundColor: '#ffffff',
     paddingHorizontal: 20,
     paddingVertical: 12,
+    backgroundColor: '#ffffff',
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     shadowColor: '#8B5CF6',
@@ -362,7 +666,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
-    overflow: 'hidden',
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -385,7 +688,7 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 4,
     marginLeft: 8,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
     borderRadius: 12,
     width: 24,
     height: 24,
@@ -405,36 +708,25 @@ const styles = StyleSheet.create({
   },
   welcomeSection: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 16,
     paddingHorizontal: 20,
   },
-  welcomeEmoji: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#7C3AED',
     textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(139, 92, 246, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    marginBottom: 4,
   },
-  emojiText: {
-    fontSize: 28,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
+  welcomeSubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
     textAlign: 'center',
-    fontWeight: '500',
   },
   noResultsContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: 60,
     paddingHorizontal: 20,
   },
   noResultsEmoji: {
@@ -458,52 +750,82 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
     marginBottom: 16,
+  },
+  cardInner: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
     shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 8,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
   },
   cardImageContainer: {
     position: 'relative',
-    height: 110,
+    height: 100,
+    overflow: 'hidden',
+  },
+  cardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   cardNumber: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#8B5CF6',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     width: 28,
     height: 28,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
     borderWidth: 2,
-    borderColor: '#ffffff',
+    borderColor: '#8B5CF6',
   },
   cardNumberText: {
-    color: '#ffffff',
+    color: '#8B5CF6',
     fontSize: 12,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+  },
+  favoriteIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#EF4444',
+  },
+  favoriteText: {
+    fontSize: 10,
+  },
+  memorizationIndicator: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  memorizationText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   cardImage: {
     width: '100%',
@@ -513,24 +835,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+    zIndex: 10,
   },
   star: {
-    fontSize: 16,
+    fontSize: 14,
     position: 'absolute',
   },
   star2: {
-    top: 12,
+    top: 10,
     right: 4,
     fontSize: 12,
   },
   cardBanner: {
-    backgroundColor: 'rgba(255, 245, 157, 0.3)',
     padding: 12,
-    minHeight: 52,
+    minHeight: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    borderTopWidth: 2,
-    borderTopColor: 'rgba(245, 158, 11, 0.3)',
     position: 'relative',
   },
   cardTitle: {
@@ -539,44 +859,26 @@ const styles = StyleSheet.create({
     color: '#7C3AED',
     textAlign: 'center',
     lineHeight: 16,
-    textShadowColor: 'rgba(139, 92, 246, 0.2)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    marginBottom: 4,
+  },
+  cardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryText: {
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   cardSparkle: {
     position: 'absolute',
-    top: -12,
+    top: -10,
     right: 8,
   },
   sparkleText: {
-    fontSize: 16,
+    fontSize: 14,
   },
   bottomPadding: {
-    height: 30,
-  },
-  floatingActions: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    alignItems: 'center',
-    gap: 12,
-  },
-  floatingButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#8B5CF6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
-    borderWidth: 3,
-    borderColor: '#ffffff',
-  },
-  floatingEmoji: {
-    fontSize: 20,
+    height: 20,
   },
 });
