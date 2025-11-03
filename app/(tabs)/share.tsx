@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -12,7 +12,7 @@ import {
   SafeAreaView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -21,25 +21,35 @@ const AnimatedBenefitItem = ({ benefit, emoji, delay = 0 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  useEffect(() => {
-    Animated.sequence([
-      Animated.delay(delay),
-      Animated.parallel([
-        Animated.spring(fadeAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 60,
-          friction: 8,
-          useNativeDriver: true,
-        })
-      ])
-    ]).start();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const animation = Animated.sequence([
+        Animated.delay(delay),
+        Animated.parallel([
+          Animated.spring(fadeAnim, {
+            toValue: 1,
+            tension: 50,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            tension: 60,
+            friction: 8,
+            useNativeDriver: true,
+          })
+        ])
+      ]);
+
+      animation.start();
+
+      return () => {
+        animation.stop();
+        fadeAnim.setValue(0);
+        slideAnim.setValue(50);
+      };
+    }, [fadeAnim, slideAnim, delay])
+  );
 
   return (
     <Animated.View
@@ -61,22 +71,32 @@ const AnimatedHeader = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(fadeAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 60,
-        friction: 6,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const animation = Animated.parallel([
+        Animated.spring(fadeAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 60,
+          friction: 6,
+          useNativeDriver: true,
+        })
+      ]);
+
+      animation.start();
+
+      return () => {
+        animation.stop();
+        fadeAnim.setValue(0);
+        scaleAnim.setValue(0.8);
+      };
+    }, [fadeAnim, scaleAnim])
+  );
 
   return (
     <Animated.View

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SearchIcon } from '../../Icons';
 import { databaseService, Category, Dua } from '../../lib/database/database'; // Import your database service
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,27 +31,36 @@ const FloatingParticles = ({ count = 6 }) => {
     Array.from({ length: count }, () => new Animated.Value(0))
   ).current;
 
-  useEffect(() => {
-    particles.forEach((particle, index) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 1000),
-          Animated.timing(particle, {
-            toValue: 1,
-            duration: 4000,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-          Animated.timing(particle, {
-            toValue: 0,
-            duration: 4000,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    });
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const animations = particles.map((particle, index) => {
+        return Animated.loop(
+          Animated.sequence([
+            Animated.delay(index * 1000),
+            Animated.timing(particle, {
+              toValue: 1,
+              duration: 4000,
+              easing: Easing.linear,
+              useNativeDriver: true,
+            }),
+            Animated.timing(particle, {
+              toValue: 0,
+              duration: 4000,
+              easing: Easing.linear,
+              useNativeDriver: true,
+            }),
+          ])
+        );
+      });
+
+      animations.forEach(animation => animation.start());
+
+      return () => {
+        animations.forEach(animation => animation.stop());
+        particles.forEach(particle => particle.setValue(0));
+      };
+    }, [particles])
+  );
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -99,6 +108,20 @@ export default function DashboardScreen() {
   // Animation values
   const searchOpacityAnim = useRef(new Animated.Value(0)).current;
   const searchScaleAnim = useRef(new Animated.Value(0)).current;
+
+  // Reset search animations when screen loses focus
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Reset search state when leaving screen
+        setIsSearchExpanded(false);
+        setSearchQuery('');
+        searchOpacityAnim.setValue(0);
+        searchScaleAnim.setValue(0);
+        Keyboard.dismiss();
+      };
+    }, [searchOpacityAnim, searchScaleAnim])
+  );
 
   // Load data from database
   useEffect(() => {
@@ -254,23 +277,33 @@ const getCategoryColor = (categoryId: string) => {
   return category?.color || '#8B5CF6';
 };
 
-  // Enhanced Animated DuaCard with database data
+  // Enhanced Animated DuaCard with useFocusEffect
   const DuaCard = ({ dua, index }: { dua: Dua; index: number }) => {
     const cardAnim = useRef(new Animated.Value(0)).current;
     const pressAnim = useRef(new Animated.Value(0)).current;
 
-    React.useEffect(() => {
-      // Staggered entrance animation
-      Animated.sequence([
-        Animated.delay(index * 60),
-        Animated.spring(cardAnim, {
-          toValue: 1,
-          tension: 60,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, []);
+    useFocusEffect(
+      useCallback(() => {
+        // Staggered entrance animation
+        const animation = Animated.sequence([
+          Animated.delay(index * 60),
+          Animated.spring(cardAnim, {
+            toValue: 1,
+            tension: 60,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+        ]);
+
+        animation.start();
+
+        return () => {
+          animation.stop();
+          cardAnim.setValue(0);
+          pressAnim.setValue(0);
+        };
+      }, [cardAnim, pressAnim, index])
+    );
 
     const handlePressIn = () => {
       Animated.spring(pressAnim, {

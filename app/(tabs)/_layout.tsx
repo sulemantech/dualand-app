@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import { View, Text, Animated, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import React, { useRef, useEffect } from 'react';
 
 // Supercharged Tab Icon with Advanced Animations
@@ -140,7 +139,7 @@ const SuperTabIcon = ({
   );
 };
 
-// Floating Action Button for Center Tab
+// Professional Floating Tab Icon that aligns with others
 const FloatingTabIcon = ({ 
   emoji, 
   label, 
@@ -150,42 +149,75 @@ const FloatingTabIcon = ({
   label: string; 
   focused: boolean;
 }) => {
-  const floatAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const elevateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (focused) {
+      // Professional focused animation - elevated with glow
       Animated.parallel([
-        Animated.spring(floatAnim, {
+        Animated.spring(scaleAnim, {
+          toValue: 1.4,
+          tension: 180,
+          friction: 4,
+          useNativeDriver: true,
+        }),
+        Animated.spring(elevateAnim, {
           toValue: 1,
-          tension: 100,
-          friction: 5,
+          tension: 120,
+          friction: 6,
           useNativeDriver: true,
         }),
         Animated.timing(glowAnim, {
           toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Subtle continuous breathing animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1.35,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1.4,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      // Smooth reset to normal state
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 180,
+          friction: 4,
+          useNativeDriver: true,
+        }),
+        Animated.spring(elevateAnim, {
+          toValue: 0,
+          tension: 120,
+          friction: 6,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
           duration: 300,
           useNativeDriver: true,
         }),
       ]).start();
-    } else {
-      Animated.spring(floatAnim, {
-        toValue: 0,
-        tension: 100,
-        friction: 5,
-        useNativeDriver: true,
-      }).start();
     }
   }, [focused]);
 
-  const translateY = floatAnim.interpolate({
+  const translateY = elevateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -10],
-  });
-
-  const scale = floatAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.15],
+    outputRange: [0, -8],
   });
 
   const glowOpacity = glowAnim.interpolate({
@@ -193,15 +225,25 @@ const FloatingTabIcon = ({
     outputRange: [0.3, 0.8],
   });
 
+  const shadowRadius = elevateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, 24],
+  });
+
+  const shadowOpacity = elevateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 0.8],
+  });
+
   return (
     <View style={styles.floatingContainer}>
-      {/* Outer Glow */}
+      {/* Enhanced Glow Effect */}
       <Animated.View
         style={[
           styles.floatingGlow,
           {
             opacity: glowOpacity,
-            transform: [{ scale }],
+            transform: [{ scale: scaleAnim }],
           }
         ]}
       />
@@ -209,30 +251,53 @@ const FloatingTabIcon = ({
       {/* Main Floating Button */}
       <Animated.View
         style={{
-          transform: [{ translateY }, { scale }],
+          transform: [{ translateY }, { scale: scaleAnim }],
         }}
       >
-        <LinearGradient
-          colors={['#8B5CF6', '#7C3AED', '#6D28D9']}
-          style={styles.floatingButton}
+        <Animated.View
+          style={[
+            styles.floatingButton,
+            {
+              shadowRadius: shadowRadius,
+              shadowOpacity: shadowOpacity,
+            }
+          ]}
         >
-          <Text style={styles.floatingEmoji}>
-            {emoji}
-          </Text>
-        </LinearGradient>
+          <LinearGradient
+            colors={['#8B5CF6', '#7C3AED', '#6D28D9']}
+            style={styles.floatingButtonGradient}
+          >
+            <Text style={styles.floatingEmoji}>
+              {emoji}
+            </Text>
+          </LinearGradient>
+        </Animated.View>
       </Animated.View>
 
-      {/* Label */}
+      {/* Professional Label */}
       <Animated.View
         style={{
+          opacity: elevateAnim,
           transform: [{ translateY }],
-          opacity: floatAnim,
         }}
       >
         <Text style={styles.floatingLabel}>
           {label}
         </Text>
       </Animated.View>
+
+      {/* Subtle Active Indicator */}
+      {focused && (
+        <Animated.View
+          style={[
+            styles.floatingActiveDot,
+            {
+              opacity: elevateAnim,
+              transform: [{ scale: scaleAnim }],
+            }
+          ]}
+        />
+      )}
     </View>
   );
 };
@@ -405,7 +470,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    top: -20,
+    top: -15,
     width: 70,
   },
   floatingGlow: {
@@ -419,15 +484,18 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 4,
     borderColor: 'rgba(255, 255, 255, 0.9)',
     shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
     elevation: 12,
+    overflow: 'hidden',
+  },
+  floatingButtonGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   floatingEmoji: {
     fontSize: 22,
@@ -443,5 +511,17 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 0.5, height: 0.5 },
     textShadowRadius: 1,
+  },
+  floatingActiveDot: {
+    position: 'absolute',
+    bottom: -4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#7C3AED',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
   },
 });
