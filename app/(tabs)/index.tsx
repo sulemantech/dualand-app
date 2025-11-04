@@ -18,14 +18,14 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SearchIcon } from '../../Icons';
-import { databaseService, Category, Dua } from '../../lib/database/database'; // Import your database service
+import { databaseService, Category, Dua } from '../../lib/database/database';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
 const CARD_WIDTH = (width - 40 - CARD_MARGIN) / 2;
 
-// Import local images
+// Import local images - moved outside component to prevent re-creation
 const localImages = {
   dua_1: require('../../assets/images/dua_31.png'),
   dua_2: require('../../assets/images/dua_2.png'),
@@ -61,42 +61,39 @@ const localImages = {
   dua_32: require('../../assets/images/dua_32.png'),
 };
 
-// Simplified Particle system
-const FloatingParticles = ({ count = 6 }) => {
+// Optimized Particle system - prevent constant re-creation
+const FloatingParticles = React.memo(({ count = 6 }) => {
   const particles = useRef(
     Array.from({ length: count }, () => new Animated.Value(0))
   ).current;
 
-  useFocusEffect(
-    useCallback(() => {
-      const animations = particles.map((particle, index) => {
-        return Animated.loop(
-          Animated.sequence([
-            Animated.delay(index * 1000),
-            Animated.timing(particle, {
-              toValue: 1,
-              duration: 4000,
-              easing: Easing.linear,
-              useNativeDriver: true,
-            }),
-            Animated.timing(particle, {
-              toValue: 0,
-              duration: 4000,
-              easing: Easing.linear,
-              useNativeDriver: true,
-            }),
-          ])
-        );
-      });
+  useEffect(() => {
+    const animations = particles.map((particle, index) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(index * 1000),
+          Animated.timing(particle, {
+            toValue: 1,
+            duration: 4000,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+          Animated.timing(particle, {
+            toValue: 0,
+            duration: 4000,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    });
 
-      animations.forEach(animation => animation.start());
+    animations.forEach(animation => animation.start());
 
-      return () => {
-        animations.forEach(animation => animation.stop());
-        particles.forEach(particle => particle.setValue(0));
-      };
-    }, [particles])
-  );
+    return () => {
+      animations.forEach(animation => animation.stop());
+    };
+  }, [particles]);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -130,7 +127,181 @@ const FloatingParticles = ({ count = 6 }) => {
       })}
     </View>
   );
+});
+
+// Function to get local image for dua - moved outside component
+const getLocalImage = (duaId: string, duaNumber?: string) => {
+  // Try to get image by dua number first
+  if (duaNumber) {
+    const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
+    if (localImages[imageKey]) {
+      return localImages[imageKey];
+    }
+  }
+  
+  // Fallback: use ID to cycle through available images
+  const imageIndex = (parseInt(duaId) % 32) + 1;
+  const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
+  return localImages[fallbackImageKey] || localImages.dua_1;
 };
+
+// Optimized DuaCard component
+const DuaCard = React.memo(({ dua, index, onPress, categories }: { 
+  dua: Dua; 
+  index: number;
+  onPress: (dua: Dua) => void;
+  categories: Category[];
+}) => {
+  const cardAnim = useRef(new Animated.Value(0)).current;
+  const pressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Staggered entrance animation - only run once
+    const animation = Animated.sequence([
+      Animated.delay(index * 60),
+      Animated.spring(cardAnim, {
+        toValue: 1,
+        tension: 60,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]);
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [cardAnim, index]);
+
+  const handlePressIn = () => {
+    Animated.spring(pressAnim, {
+      toValue: 1,
+      tension: 100,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(pressAnim, {
+      toValue: 0,
+      tension: 100,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const cardScale = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.96],
+  });
+
+  const getCategoryColor = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.color || '#8B5CF6';
+  };
+
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.name || `Category ${categoryId}`;
+  };
+
+  const categoryColor = getCategoryColor(dua.category_id);
+  const localImage = getLocalImage(dua.id, dua.duaNumber);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: cardAnim,
+        transform: [
+          {
+            translateY: cardAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [40, 0],
+            }),
+          },
+          { 
+            scale: cardAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.9, 1],
+            })
+          },
+          { scale: cardScale },
+        ],
+      }}
+    >
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => onPress(dua)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.9}
+      >
+        <Animated.View style={styles.cardInner}>
+          <View style={styles.cardImageContainer}>
+            {/* Category color overlay */}
+            <View style={[styles.cardOverlay, { backgroundColor: `${categoryColor}40` }]} />
+            <View style={styles.cardNumber}>
+              <Text style={styles.cardNumberText}>
+                {dua.duaNumber || dua.order_index.toString().padStart(2, '0')}
+              </Text>
+            </View>
+            <Image 
+              source={localImage} 
+              style={styles.cardImage}
+              resizeMode="cover"
+            />
+            
+            {/* Favorite indicator */}
+            {dua.is_favorited && (
+              <View style={styles.favoriteIndicator}>
+                <Text style={styles.favoriteText}>❤️</Text>
+              </View>
+            )}
+
+            {/* Memorization status indicator */}
+            {dua.memorization_status !== 'not_started' && (
+              <View style={[
+                styles.memorizationIndicator,
+                { 
+                  backgroundColor: dua.memorization_status === 'memorized' ? '#10B981' : 
+                                 dua.memorization_status === 'learning' ? '#F59E0B' : '#6B7280'
+                }
+              ]}>
+                <Text style={styles.memorizationText}>
+                  {dua.memorization_status === 'memorized' ? '✓' : 
+                   dua.memorization_status === 'learning' ? '~' : '•'}
+                </Text>
+              </View>
+            )}
+
+            {/* Floating Elements */}
+            <View style={styles.floatingStars}>
+              <Text style={styles.star}>✨</Text>
+              <Text style={[styles.star, styles.star2]}>⭐</Text>
+            </View>
+          </View>
+          
+          {/* Card banner with category color */}
+          <View style={[styles.cardBanner, { backgroundColor: `${categoryColor}20` }]}>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {dua.title}
+            </Text>
+            <View style={styles.cardMeta}>
+              <Text style={[styles.categoryText, { color: categoryColor }]}>
+                {getCategoryName(dua.category_id)}
+              </Text>
+            </View>
+            <View style={styles.cardSparkle}>
+              <Text style={styles.sparkleText}>🌟</Text>
+            </View>
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -145,58 +316,48 @@ export default function DashboardScreen() {
   const searchOpacityAnim = useRef(new Animated.Value(0)).current;
   const searchScaleAnim = useRef(new Animated.Value(0)).current;
 
-  // Reset search animations when screen loses focus
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        // Reset search state when leaving screen
-        setIsSearchExpanded(false);
-        setSearchQuery('');
-        searchOpacityAnim.setValue(0);
-        searchScaleAnim.setValue(0);
-        Keyboard.dismiss();
-      };
-    }, [searchOpacityAnim, searchScaleAnim])
-  );
+  // Cache data loading with ref to prevent re-loading
+  const dataLoadedRef = useRef(false);
 
-  // Load data from database
+  // Load data from database - only once
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Starting database initialization...');
+        await databaseService.init();
+        
+        console.log('Database initialized, loading data...');
+        
+        const [allDuas, allCategories] = await Promise.all([
+          databaseService.getAllDuas(),
+          databaseService.getAllCategories()
+        ]);
+        
+        console.log(`Successfully loaded ${allDuas.length} duas and ${allCategories.length} categories`);
+        
+        setDuas(allDuas);
+        setCategories(allCategories);
+        dataLoadedRef.current = true;
+        
+      } catch (err) {
+        console.error('Error in loadData:', err);
+        setError('Failed to load duas. Please restart the app.');
+        setDuas([]);
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadData();
   }, []);
 
-  // Update the loadData function in your DashboardScreen component
-const loadData = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    
-    console.log('Starting database initialization...');
-    await databaseService.init();
-    
-    console.log('Database initialized, loading data...');
-    
-    const [allDuas, allCategories] = await Promise.all([
-      databaseService.getAllDuas(),
-      databaseService.getAllCategories()
-    ]);
-    
-    console.log(`Successfully loaded ${allDuas.length} duas and ${allCategories.length} categories`);
-    console.log('Duas:', allDuas.map(d => ({id: d.id, title: d.title}))); // Debug log
-    
-    setDuas(allDuas);
-    setCategories(allCategories);
-    
-  } catch (err) {
-    console.error('Error in loadData:', err);
-    setError('Failed to load duas. Please restart the app.');
-    setDuas([]);
-    setCategories([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // Filter duas based on search query
+  // Filter duas based on search query - optimized with useMemo
   const filteredDuas = useMemo(() => {
     if (!searchQuery.trim()) {
       return duas;
@@ -213,31 +374,12 @@ const loadData = async () => {
     );
   }, [searchQuery, duas]);
 
-  // Function to get local image for dua
-  const getLocalImage = (duaId: string, duaNumber?: string) => {
-    // Try to get image by dua number first
-    if (duaNumber) {
-      const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
-      if (localImages[imageKey]) {
-        return localImages[imageKey];
-      }
-    }
-    
-    // Fallback: use ID to cycle through available images
-    const imageIndex = (parseInt(duaId) % 32) + 1;
-    const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
-    return localImages[fallbackImageKey] || localImages.dua_1;
-  };
-
-  const handleDuaPress = async (dua: Dua) => {
+  const handleDuaPress = useCallback(async (dua: Dua) => {
     Keyboard.dismiss();
     
     try {
       // Get word audio pairs for this dua
       const wordAudioPairs = await databaseService.getWordAudioPairsByDua(dua.id);
-      
-      // Get the local image for the dua detail screen
-      const localImage = getLocalImage(dua.id, dua.duaNumber);
       
       router.push({
         pathname: '/dua-detail',
@@ -256,9 +398,8 @@ const loadData = async () => {
           audio_full: dua.audio_full || '',
           titleAudioResId: dua.titleAudioResId || '',
           wordAudioPairs: JSON.stringify(wordAudioPairs),
-          image_path: dua.image_path || '',
-          useLocalImage: 'true', // Flag to indicate we should use local image
-          localImageIndex: (parseInt(dua.id) % 32) + 1 // Pass the image index
+          useLocalImage: 'true',
+          localImageIndex: (parseInt(dua.id) % 32) + 1
         }
       });
     } catch (error) {
@@ -277,9 +418,9 @@ const loadData = async () => {
         }
       });
     }
-  };
+  }, [router]);
 
-  const toggleSearch = () => {
+  const toggleSearch = useCallback(() => {
     if (isSearchExpanded) {
       // Collapse search
       Animated.parallel([
@@ -318,169 +459,11 @@ const loadData = async () => {
         }),
       ]).start();
     }
-  };
+  }, [isSearchExpanded, searchOpacityAnim, searchScaleAnim]);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchQuery('');
-  };
-
-  // Get category name for a dua
-  const getCategoryName = (categoryId: string) => {
-  const category = categories.find(cat => cat.id === categoryId);
-  return category?.name || `Category ${categoryId}`;
-};
-
-const getCategoryColor = (categoryId: string) => {
-  const category = categories.find(cat => cat.id === categoryId);
-  return category?.color || '#8B5CF6';
-};
-
-  // Enhanced Animated DuaCard with useFocusEffect
-  const DuaCard = ({ dua, index }: { dua: Dua; index: number }) => {
-    const cardAnim = useRef(new Animated.Value(0)).current;
-    const pressAnim = useRef(new Animated.Value(0)).current;
-
-    useFocusEffect(
-      useCallback(() => {
-        // Staggered entrance animation
-        const animation = Animated.sequence([
-          Animated.delay(index * 60),
-          Animated.spring(cardAnim, {
-            toValue: 1,
-            tension: 60,
-            friction: 7,
-            useNativeDriver: true,
-          }),
-        ]);
-
-        animation.start();
-
-        return () => {
-          animation.stop();
-          cardAnim.setValue(0);
-          pressAnim.setValue(0);
-        };
-      }, [cardAnim, pressAnim, index])
-    );
-
-    const handlePressIn = () => {
-      Animated.spring(pressAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const handlePressOut = () => {
-      Animated.spring(pressAnim, {
-        toValue: 0,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const cardScale = pressAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [1, 0.96],
-    });
-
-    const categoryColor = getCategoryColor(dua.category_id);
-    const localImage = getLocalImage(dua.id, dua.duaNumber);
-
-    return (
-      <Animated.View
-        style={{
-          opacity: cardAnim,
-          transform: [
-            {
-              translateY: cardAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [40, 0],
-              }),
-            },
-            { 
-              scale: cardAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.9, 1],
-              })
-            },
-            { scale: cardScale },
-          ],
-        }}
-      >
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => handleDuaPress(dua)}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          activeOpacity={0.9}
-        >
-          <Animated.View style={styles.cardInner}>
-            <View style={styles.cardImageContainer}>
-              {/* Category color overlay */}
-              <View style={[styles.cardOverlay, { backgroundColor: `${categoryColor}40` }]} />
-              <View style={styles.cardNumber}>
-                <Text style={styles.cardNumberText}>
-                  {dua.duaNumber || dua.order_index.toString().padStart(2, '0')}
-                </Text>
-              </View>
-              <Image 
-                source={localImage} 
-                style={styles.cardImage}
-                resizeMode="cover"
-              />
-              
-              {/* Favorite indicator */}
-              {dua.is_favorited && (
-                <View style={styles.favoriteIndicator}>
-                  <Text style={styles.favoriteText}>❤️</Text>
-                </View>
-              )}
-
-              {/* Memorization status indicator */}
-              {dua.memorization_status !== 'not_started' && (
-                <View style={[
-                  styles.memorizationIndicator,
-                  { 
-                    backgroundColor: dua.memorization_status === 'memorized' ? '#10B981' : 
-                                   dua.memorization_status === 'learning' ? '#F59E0B' : '#6B7280'
-                  }
-                ]}>
-                  <Text style={styles.memorizationText}>
-                    {dua.memorization_status === 'memorized' ? '✓' : 
-                     dua.memorization_status === 'learning' ? '~' : '•'}
-                  </Text>
-                </View>
-              )}
-
-              {/* Floating Elements */}
-              <View style={styles.floatingStars}>
-                <Text style={styles.star}>✨</Text>
-                <Text style={[styles.star, styles.star2]}>⭐</Text>
-              </View>
-            </View>
-            
-            {/* Card banner with category color */}
-            <View style={[styles.cardBanner, { backgroundColor: `${categoryColor}20` }]}>
-              <Text style={styles.cardTitle} numberOfLines={2}>
-                {dua.title}
-              </Text>
-              <View style={styles.cardMeta}>
-                <Text style={[styles.categoryText, { color: categoryColor }]}>
-                  {getCategoryName(dua.category_id)}
-                </Text>
-              </View>
-              <View style={styles.cardSparkle}>
-                <Text style={styles.sparkleText}>🌟</Text>
-              </View>
-            </View>
-          </Animated.View>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
+  }, []);
 
   // Search animations
   const searchTransform = searchScaleAnim.interpolate({
@@ -507,7 +490,12 @@ const getCategoryColor = (categoryId: string) => {
         <View style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>😔</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => {
+            dataLoadedRef.current = false;
+            setLoading(true);
+            setError(null);
+            loadData();
+          }}>
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -526,7 +514,7 @@ const getCategoryColor = (categoryId: string) => {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
         
-        {/* Background Elements */}
+        {/* Background Elements - removed useFocusEffect */}
         <FloatingParticles />
         
         {/* Header with simplified gradient */}
@@ -629,7 +617,13 @@ const getCategoryColor = (categoryId: string) => {
           {filteredDuas.length > 0 && (
             <View style={styles.gridContainer}>
               {filteredDuas.map((dua, index) => (
-                <DuaCard key={dua.id} dua={dua} index={index} />
+                <DuaCard 
+                  key={dua.id} 
+                  dua={dua} 
+                  index={index} 
+                  onPress={handleDuaPress}
+                  categories={categories}
+                />
               ))}
             </View>
           )}
@@ -642,7 +636,9 @@ const getCategoryColor = (categoryId: string) => {
   );
 }
 
+// Keep your existing styles...
 const styles = StyleSheet.create({
+  // ... your existing styles remain the same
   container: {
     flex: 1,
     backgroundColor: '#F0F9FF',
