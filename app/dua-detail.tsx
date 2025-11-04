@@ -1,22 +1,33 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
   Image,
   StyleSheet,
   SafeAreaView,
-  StatusBar,
-  Switch,
-  Dimensions,
   Animated,
   Easing,
+  Dimensions,
+  Vibration,
+  StatusBar,
+  Platform,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { Audio } from 'expo-av';
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const { width, height } = Dimensions.get('window');
+const MAX_WIDTH = 450;
+const CONTAINER_WIDTH = Math.min(width, MAX_WIDTH);
 
 // Enhanced Kid-Friendly Theme with Better Colors for Kids
 const THEME = {
@@ -35,209 +46,103 @@ const THEME = {
     light: '#FFFFFF',      // White
     dark: '#4A5C6B',       // Soft Charcoal - Not too dark
     accent: '#E53E3E',     // Red accent for important text
+  },
+  
+  // Enhanced Gradient Colors aligned with theme
+  gradients: {
+    progress: ['#FF9E7D', '#FF6B9D', '#FF4D7A'], // Pink to coral gradient
+    success: ['#4ECDC4', '#3BB4A8', '#2AA197'], // Mint green gradient
+    header: ['#fcf8b1', '#fef9c3'], // Yellow header gradient
+    card: ['#FFF7D0', '#FFEBB7'], // Card gradient
+    stats: ['#FF9E7D', '#FF6B9D'], // Stats header gradient
   }
 };
 
-interface DuaItem {
-  id: string;
-  number: number;
-  title: string;
-  image: any;
-  isMemorized: boolean;
-  isFavorite: boolean;
-  category: string;
-  lastPracticed?: string;
-  practiceCount: number;
-  progress: number;
-}
+// Local images from your assets
+const localImages = {
+ dua_1: require('../assets/images/dua_31.png'),
+  dua_2: require('../assets/images/dua_2.png'),
+  dua_3: require('../assets/images/dua_3.png'),
+  dua_4: require('../assets/images/dua_4.png'),
+  dua_5: require('../assets/images/dua_5.png'),
+  dua_6: require('../assets/images/dua_6.png'),
+  dua_7: require('../assets/images/dua_7.png'),
+  dua_8: require('../assets/images/dua_8.png'),
+  dua_9: require('../assets/images/dua_9.png'),
+  dua_10: require('../assets/images/dua_10.png'),
+  dua_11: require('../assets/images/dua_11.png'),
+  dua_12: require('../assets/images/dua_12.png'),
+  dua_13: require('../assets/images/dua_13.png'),
+  dua_14: require('../assets/images/dua_14.png'),
+  dua_15: require('../assets/images/dua_15.png'),
+  dua_16: require('../assets/images/dua_16.png'),
+  dua_17: require('../assets/images/dua_17.png'),
+  dua_18: require('../assets/images/dua_18.png'),
+  dua_19: require('../assets/images/dua_19.png'),
+  dua_20: require('../assets/images/dua_20.png'),
+  dua_21: require('../assets/images/dua_21.png'),
+  dua_22: require('../assets/images/dua_22.png'),
+  dua_23: require('../assets/images/dua_23.png'),
+  dua_24: require('../assets/images/dua_24.png'),
+  dua_25: require('../assets/images/dua_25.png'),
+  dua_26: require('../assets/images/dua_26.png'),
+  dua_27: require('../assets/images/dua_27.png'),
+  dua_28: require('../assets/images/dua_28.png'),
+  dua_29: require('../assets/images/dua_29.png'),
+  dua_30: require('../assets/images/dua_30.png'),
+  dua_31: require('../assets/images/dua_31.png'),
+  dua_32: require('../assets/images/dua_32.png'),
+};
 
-const DUAS_DATA: DuaItem[] = [
-  {
+// Helper function to get local image
+const getLocalImage = (duaId: string, duaNumber?: string) => {
+  if (duaNumber) {
+    const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
+    if (localImages[imageKey]) {
+      return localImages[imageKey];
+    }
+  }
+  
+  const imageIndex = (parseInt(duaId) % 32) + 1;
+  const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
+  return localImages[fallbackImageKey] || localImages.dua_1;
+};
+
+// Enhanced Dua data with kid-friendly content
+const enhancedDuaData = {
+  '1': {
     id: '1',
-    number: 1,
-    title: 'Praise and Glory',
-    image: require('../assets/images/dua_31.png'),
-    isMemorized: true,
-    isFavorite: true,
-    category: 'Daily',
-    lastPracticed: '2 hours ago',
-    practiceCount: 15,
-    progress: 100
-  },
-  {
-    id: '2',
-    number: 2,
-    title: 'Peace upon the Prophet',
-    image: require('../assets/images/dua_2.png'),
-    isMemorized: false,
-    isFavorite: true,
-    category: 'Prophet',
-    lastPracticed: '1 day ago',
-    practiceCount: 8,
-    progress: 65
-  },
-  {
-    id: '3',
-    number: 3,
-    title: 'Morning Dua',
-    image: require('../assets/images/dua_3.png'),
-    isMemorized: false,
-    isFavorite: false,
-    category: 'Morning',
-    lastPracticed: 'Just now',
-    practiceCount: 3,
-    progress: 25
-  },
-  {
-    id: '4',
-    number: 4,
-    title: 'Evening Dua',
-    image: require('../assets/images/dua_4.png'),
-    isMemorized: true,
-    isFavorite: false,
-    category: 'Evening',
-    lastPracticed: '3 hours ago',
-    practiceCount: 12,
-    progress: 100
-  },
-  {
-    id: '5',
-    number: 5,
-    title: 'Protection Dua',
-    image: require('../assets/images/dua_5.png'),
-    isMemorized: false,
-    isFavorite: true,
-    category: 'Protection',
-    lastPracticed: '2 days ago',
-    practiceCount: 5,
-    progress: 45
-  },
-  {
-    id: '6',
-    number: 6,
-    title: 'Guidance Dua',
-    image: require('../assets/images/dua_6.png'),
-    isMemorized: false,
-    isFavorite: false,
-    category: 'Guidance',
-    lastPracticed: '1 week ago',
-    practiceCount: 2,
-    progress: 15
-  },
-  {
-    id: '7',
-    number: 7,
-    title: 'Forgiveness Dua',
-    image: require('../assets/images/dua_7.png'),
-    isMemorized: true,
-    isFavorite: true,
-    category: 'Forgiveness',
-    lastPracticed: 'Yesterday',
-    practiceCount: 18,
-    progress: 100
-  },
-  {
-    id: '8',
-    number: 8,
-    title: 'Thanksgiving Dua',
-    image: require('../assets/images/dua_8.png'),
-    isMemorized: false,
-    isFavorite: false,
-    category: 'Gratitude',
-    lastPracticed: '3 days ago',
-    practiceCount: 6,
-    progress: 35
-  },
-];
+    title: 'Praise and Glory 🌟',
+    arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ',
+    translation: 'Glory be to Allah and all praise be to Him; Glory be to Allah, the Most Great.',
+    reference: 'Sahih Muslim',
+    category: 'Tasbeeh',
+    difficulty: '🟢 Easy',
+    sections: [
+      {
+        arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ',
+        translation: 'Glory be to Allah and all praise be to Him; Glory be to Allah, the Most Great.',
+        reference: '[Sahih Muslim]',
+        meaning: 'This beautiful prayer helps us remember how amazing Allah is!'
+      }
+    ],
+    relatedCategory: 'tasbeeh',
+    funFact: '🌟 This dua is like giving Allah a big hug with your words!'
+  }
+};
 
-// View Types
-type ViewMode = 'grid' | 'list' | 'compact';
+// --- ENHANCED CUSTOM COMPONENTS ---
 
-// Enhanced Floating Particles
-const FloatingParticles = React.memo(({ count = 8 }) => {
-  const particles = useRef(
-    Array.from({ length: count }, () => new Animated.Value(0))
-  ).current;
-
-  useEffect(() => {
-    const animations = particles.map((particle, index) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 800),
-          Animated.timing(particle, {
-            toValue: 1,
-            duration: 5000,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-          Animated.timing(particle, {
-            toValue: 0,
-            duration: 5000,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    });
-
-    animations.forEach(animation => animation.start());
-
-    return () => {
-      animations.forEach(animation => animation.stop());
-    };
-  }, [particles]);
-
-  const emojis = ['✨', '⭐', '🌟', '💫', '🦄', '🌈', '🎀', '🌸'];
-
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {particles.map((particle, index) => {
-        const translateY = particle.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -height],
-        });
-
-        const opacity = particle.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [0, 0.6, 0],
-        });
-
-        const scale = particle.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [0.8, 1, 0.8],
-        });
-
-        return (
-          <Animated.View
-            key={index}
-            style={{
-              position: 'absolute',
-              left: Math.random() * width,
-              top: height + 30,
-              transform: [{ translateY }, { scale }],
-              opacity,
-            }}
-          >
-            <Text style={{ 
-              fontSize: 16, 
-              color: [THEME.primary, THEME.accent, THEME.success][index % 3]
-            }}>
-              {emojis[index % emojis.length]}
-            </Text>
-          </Animated.View>
-        );
-      })}
-    </View>
-  );
-});
-
-// Bouncing Button Component
-const BouncingButton = ({ children, onPress, style = {} }) => {
+const BouncingButton = ({ children, onPress, style = {} }: { 
+  children: any; 
+  onPress: () => void; 
+  style?: any; 
+}) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.95,
+      toValue: 0.9,
       tension: 100,
       friction: 3,
       useNativeDriver: true,
@@ -268,632 +173,740 @@ const BouncingButton = ({ children, onPress, style = {} }) => {
   );
 };
 
-// Progress Ring Component
-const ProgressRing = ({ progress, size = 32 }: { progress: number; size?: number }) => {
-  return (
-    <View style={[styles.progressRing, { width: size, height: size }]}>
-      <View style={styles.progressBackground} />
-      <View style={[styles.progressFill, { 
-        width: size - 6, 
-        height: size - 6,
-        borderRadius: (size - 6) / 2,
-        backgroundColor: progress >= 100 ? THEME.success : THEME.primary,
-        opacity: Math.max(progress / 100, 0.1)
-      }]} />
-      <Text style={[styles.progressText, { fontSize: size * 0.25 }]}>
-        {progress}%
-      </Text>
-    </View>
-  );
-};
+const ProgressStar = ({ filled, size = 20 }: { filled: boolean; size?: number }) => (
+  <Text style={{ fontSize: size, marginHorizontal: 2 }}>
+    {filled ? '⭐' : '☆'}
+  </Text>
+);
 
-// Compact Dua Card - For Grid View
-const CompactDuaCard = React.memo(({ 
-  dua, 
-  onToggleMemorized,
-  onPressPractice 
-}: { 
-  dua: DuaItem;
-  onToggleMemorized: (id: string, value: boolean) => void;
-  onPressPractice: (dua: DuaItem) => void;
+// Sleek Mode Toggle Component
+const SleekModeToggle = ({ viewMode, onModeChange }: { 
+  viewMode: 'Word by Word' | 'Complete Dua'; 
+  onModeChange: (mode: 'Word by Word' | 'Complete Dua') => void; 
 }) => {
-  const cardAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(viewMode === 'Word by Word' ? 0 : 1)).current;
 
   useEffect(() => {
-    Animated.spring(cardAnim, {
-      toValue: 1,
-      tension: 60,
-      friction: 7,
+    Animated.spring(slideAnim, {
+      toValue: viewMode === 'Word by Word' ? 0 : 1,
+      tension: 150,
+      friction: 8,
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [viewMode]);
+
+  const translateX = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [4, width * 0.5 - 40],
+  });
 
   return (
-    <Animated.View
-      style={{
-        opacity: cardAnim,
-        transform: [
-          {
-            translateY: cardAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [40, 0],
-            }),
-          },
-        ],
-      }}
-    >
-      <BouncingButton onPress={() => onPressPractice(dua)} style={styles.compactCard}>
-        <View style={styles.compactCardInner}>
-          {/* Header */}
-          <View style={styles.compactHeader}>
-            <View style={styles.duaNumber}>
-              <Text style={styles.duaNumberText}>#{dua.number}</Text>
-            </View>
-            {dua.isFavorite && (
-              <View style={styles.favoriteIndicator}>
-                <Text style={styles.favoriteText}>❤️</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Image */}
-          <Image 
-            source={dua.image} 
-            style={styles.compactImage}
-            defaultSource={require('../assets/images/dua_31.png')}
-          />
-
-          {/* Title */}
-          <Text style={styles.compactTitle} numberOfLines={2}>
-            {dua.title}
-          </Text>
-
-          {/* Progress */}
-          <View style={styles.compactProgress}>
-            <ProgressRing progress={dua.progress} size={28} />
-            <View style={styles.compactProgressInfo}>
-              <Text style={styles.compactPracticeCount}>
-                {dua.practiceCount} practices
-              </Text>
-              <Text style={styles.compactProgressLabel}>
-                {dua.isMemorized ? 'Memorized' : 'In Progress'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={styles.compactActions}>
-            <TouchableOpacity 
-              style={[
-                styles.quickPracticeButton,
-                dua.isMemorized && styles.quickPracticeButtonMemorized
-              ]}
-              onPress={() => onPressPractice(dua)}
-            >
-              <Text style={styles.quickPracticeText}>
-                {dua.isMemorized ? 'Review' : 'Practice'}
-              </Text>
-            </TouchableOpacity>
-            
-            <Switch
-              value={dua.isMemorized}
-              onValueChange={(value) => onToggleMemorized(dua.id, value)}
-              trackColor={{ false: '#F1F5F9', true: `${THEME.success}80` }}
-              thumbColor={dua.isMemorized ? THEME.success : '#FFFFFF'}
-              style={styles.compactSwitch}
-            />
-          </View>
-        </View>
-      </BouncingButton>
-    </Animated.View>
-  );
-});
-
-// List Dua Card - For List View
-const ListDuaCard = React.memo(({ 
-  dua, 
-  onToggleMemorized,
-  onPressPractice 
-}: { 
-  dua: DuaItem;
-  onToggleMemorized: (id: string, value: boolean) => void;
-  onPressPractice: (dua: DuaItem) => void;
-}) => {
-  const cardAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(cardAnim, {
-      toValue: 1,
-      tension: 60,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={{
-        opacity: cardAnim,
-        transform: [
-          {
-            translateY: cardAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [40, 0],
-            }),
-          },
-        ],
-      }}
-    >
-      <BouncingButton onPress={() => onPressPractice(dua)} style={styles.listCard}>
-        <View style={styles.listCardInner}>
-          <View style={styles.listContent}>
-            {/* Left: Image and Basic Info */}
-            <View style={styles.listLeft}>
-              <Image 
-                source={dua.image} 
-                style={styles.listImage}
-                defaultSource={require('../assets/images/dua_31.png')}
-              />
-              <View style={styles.listBasicInfo}>
-                <Text style={styles.listNumber}>#{dua.number}</Text>
-                {dua.isFavorite && (
-                  <View style={styles.favoriteIndicator}>
-                    <Text style={styles.favoriteText}>❤️</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* Middle: Content */}
-            <View style={styles.listMiddle}>
-              <Text style={styles.listTitle} numberOfLines={2}>
-                {dua.title}
-              </Text>
-              <View style={styles.listMeta}>
-                <View style={styles.categoryTag}>
-                  <Text style={styles.categoryText}>{dua.category}</Text>
-                </View>
-                <Text style={styles.lastPracticed}>{dua.lastPracticed}</Text>
-              </View>
-              <Text style={styles.listPracticeCount}>
-                {dua.practiceCount} practices • {dua.progress}% complete
-              </Text>
-            </View>
-
-            {/* Right: Progress and Actions */}
-            <View style={styles.listRight}>
-              <ProgressRing progress={dua.progress} size={36} />
-              <View style={styles.listActions}>
-                <TouchableOpacity 
-                  style={[
-                    styles.listPracticeButton,
-                    dua.isMemorized && styles.listPracticeButtonMemorized
-                  ]}
-                  onPress={() => onPressPractice(dua)}
-                >
-                  <Text style={styles.listPracticeText}>
-                    {dua.isMemorized ? 'Review' : 'Practice'}
-                  </Text>
-                </TouchableOpacity>
-                <Switch
-                  value={dua.isMemorized}
-                  onValueChange={(value) => onToggleMemorized(dua.id, value)}
-                  trackColor={{ false: '#F1F5F9', true: `${THEME.success}80` }}
-                  thumbColor={dua.isMemorized ? THEME.success : '#FFFFFF'}
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-      </BouncingButton>
-    </Animated.View>
-  );
-});
-
-// Minimal Dua Card - For Minimal View
-const MinimalDuaCard = React.memo(({ 
-  dua, 
-  onToggleMemorized,
-  onPressPractice 
-}: { 
-  dua: DuaItem;
-  onToggleMemorized: (id: string, value: boolean) => void;
-  onPressPractice: (dua: DuaItem) => void;
-}) => {
-  const cardAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(cardAnim, {
-      toValue: 1,
-      tension: 60,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={{
-        opacity: cardAnim,
-        transform: [
-          {
-            translateY: cardAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [40, 0],
-            }),
-          },
-        ],
-      }}
-    >
-      <BouncingButton onPress={() => onPressPractice(dua)} style={styles.minimalCard}>
-        <View style={styles.minimalContent}>
-          <View style={styles.minimalLeft}>
-            <Text style={styles.minimalNumber}>#{dua.number}</Text>
-            <View style={styles.minimalText}>
-              <Text style={styles.minimalTitle} numberOfLines={1}>
-                {dua.title}
-              </Text>
-              <Text style={styles.minimalMeta}>
-                {dua.category} • {dua.practiceCount} practices
-              </Text>
-            </View>
-          </View>
-          
-          <View style={styles.minimalRight}>
-            <ProgressRing progress={dua.progress} size={28} />
-            <Switch
-              value={dua.isMemorized}
-              onValueChange={(value) => onToggleMemorized(dua.id, value)}
-              trackColor={{ false: '#F1F5F9', true: `${THEME.success}80` }}
-              thumbColor={dua.isMemorized ? THEME.success : '#FFFFFF'}
-              style={styles.minimalSwitch}
-            />
-          </View>
-        </View>
-        
-        {dua.isFavorite && (
-          <View style={styles.minimalFavorite}>
-            <Text style={styles.favoriteText}>❤️</Text>
-          </View>
-        )}
-      </BouncingButton>
-    </Animated.View>
-  );
-});
-
-// View Toggle Component
-const ViewToggle = ({ viewMode, onViewModeChange }: { 
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-}) => {
-  const views = [
-    { id: 'grid' as ViewMode, icon: '⏹️', label: 'Grid' },
-    { id: 'list' as ViewMode, icon: '📄', label: 'List' },
-    { id: 'compact' as ViewMode, icon: '📋', label: 'Minimal' },
-  ];
-
-  return (
-    <View style={styles.viewToggleContainer}>
-      <Text style={styles.viewToggleLabel}>View:</Text>
-      {views.map((view) => (
-        <BouncingButton
-          key={view.id}
-          onPress={() => onViewModeChange(view.id)}
-          style={[
-            styles.viewToggleButton,
-            viewMode === view.id && styles.viewToggleButtonActive
-          ]}
-        >
-          <Text style={[
-            styles.viewToggleIcon,
-            viewMode === view.id && styles.viewToggleIconActive
-          ]}>
-            {view.icon}
-          </Text>
-          <Text style={[
-            styles.viewToggleText,
-            viewMode === view.id && styles.viewToggleTextActive
-          ]}>
-            {view.label}
-          </Text>
-        </BouncingButton>
-      ))}
-    </View>
-  );
-};
-
-// Filter Tabs Component
-const FilterTabs = ({ 
-  activeFilter, 
-  onFilterChange 
-}: { 
-  activeFilter: string;
-  onFilterChange: (filter: string) => void;
-}) => {
-  const filters = [
-    { id: 'all', label: 'All', count: DUAS_DATA.length },
-    { id: 'favorite', label: 'Favorite', count: DUAS_DATA.filter(d => d.isFavorite).length },
-    { id: 'memorized', label: 'Memorized', count: DUAS_DATA.filter(d => d.isMemorized).length },
-    { id: 'practice', label: 'In Practice', count: DUAS_DATA.filter(d => !d.isMemorized).length },
-  ];
-
-  return (
-    <View style={styles.filtersWrapper}>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersContainer}
+    <View style={styles.sleekToggleContainer}>
+      <Animated.View 
+        style={[
+          styles.sleekToggleSlider,
+          { transform: [{ translateX }] }
+        ]}
+      />
+      
+      <TouchableOpacity 
+        style={styles.sleekToggleOption}
+        onPress={() => onModeChange('Word by Word')}
+        activeOpacity={0.7}
       >
-        {filters.map((filter) => (
-          <BouncingButton
-            key={filter.id}
-            onPress={() => onFilterChange(filter.id)}
+        <Text style={[
+          styles.sleekToggleText,
+          viewMode === 'Word by Word' && styles.sleekToggleTextActive
+        ]}>
+          Word by Word
+        </Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.sleekToggleOption}
+        onPress={() => onModeChange('Complete Dua')}
+        activeOpacity={0.7}
+      >
+        <Text style={[
+          styles.sleekToggleText,
+          viewMode === 'Complete Dua' && styles.sleekToggleTextActive
+        ]}>
+          Complete Dua
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Enhanced Floating Particles
+const FloatingParticles = React.memo(({ count = 8 }: { count?: number }) => {
+  const particles = useRef(
+    Array.from({ length: count }, () => ({
+      anim: new Animated.Value(0),
+      startX: Math.random() * width,
+      duration: 4000 + Math.random() * 3000,
+      size: 12 + Math.random() * 16,
+    }))
+  ).current;
+
+  useEffect(() => {
+    const animations = particles.map((particle, index) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(index * 500),
+          Animated.timing(particle.anim, {
+            toValue: 1,
+            duration: particle.duration,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    });
+
+    animations.forEach(animation => animation.start());
+
+    return () => {
+      animations.forEach(animation => animation.stop());
+    };
+  }, [particles]);
+
+  const emojis = ['✨', '⭐', '🌟', '💫', '🦄', '🌈', '🎀', '🌸'];
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {particles.map((particle, index) => {
+        const translateY = particle.anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -height],
+        });
+
+        const opacity = particle.anim.interpolate({
+          inputRange: [0, 0.3, 0.7, 1],
+          outputRange: [0, 0.8, 0.8, 0],
+        });
+
+        const scale = particle.anim.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [0.5, 1, 0.5],
+        });
+
+        return (
+          <Animated.View
+            key={index}
+            style={{
+              position: 'absolute',
+              left: particle.startX,
+              top: height + 50,
+              transform: [{ translateY }, { scale }],
+              opacity,
+            }}
+          >
+            <Text style={{ 
+              fontSize: particle.size, 
+              color: [THEME.primary, THEME.accent, THEME.success][index % 3]
+            }}>
+              {emojis[index % emojis.length]}
+            </Text>
+          </Animated.View>
+        );
+      })}
+    </View>
+  );
+});
+
+// Word Highlight Component for Kids
+const WordByWordDisplay = ({ arabicText, currentWordIndex }: { 
+  arabicText: string; 
+  currentWordIndex: number; 
+}) => {
+  const words = arabicText.split(' ');
+  
+  return (
+    <View style={[styles.arabicTextContainer, { direction: 'rtl' }]}>
+      <Text style={styles.arabicText}>
+        {words.map((word, index) => (
+          <Text 
+            key={index} 
             style={[
-              styles.filterButton,
-              activeFilter === filter.id && styles.filterButtonActive
+              styles.arabicWord,
+              index === currentWordIndex && styles.highlightedWord
             ]}
           >
-            <Text style={[
-              styles.filterButtonText,
-              activeFilter === filter.id && styles.filterButtonTextActive
-            ]}>
-              {filter.label}
-            </Text>
-            <View style={[
-              styles.filterCount,
-              activeFilter === filter.id && styles.filterCountActive
-            ]}>
-              <Text style={styles.filterCountText}>
-                {filter.count}
-              </Text>
-            </View>
-          </BouncingButton>
+            {word}{' '}
+          </Text>
         ))}
-      </ScrollView>
+      </Text>
+      <View style={styles.readingGuide}>
+        <Text style={styles.readingGuideText}>👆 Read along with the highlighted word!</Text>
+      </View>
     </View>
   );
 };
 
-// Stats Header Component
-const StatsHeader = ({ duas }: { duas: DuaItem[] }) => {
-  const memorizedCount = duas.filter(d => d.isMemorized).length;
-  const totalCount = duas.length;
-  const progress = totalCount > 0 ? (memorizedCount / totalCount) * 100 : 0;
+// Simple Icon Components
+const ArrowLeftIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
+  <Text style={{ fontSize: size, color }}>←</Text>
+);
 
-  return (
-    <View style={styles.statsContainer}>
-      <LinearGradient
-        colors={[THEME.primary, '#FF8BB5']}
-        style={styles.statsGradient}
-      >
-        <Text style={styles.statsTitle}>Your Progress 🎯</Text>
-        
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{memorizedCount}</Text>
-            <Text style={styles.statLabel}>Memorized</Text>
-          </View>
-          
-          <View style={styles.statDivider} />
-          
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{totalCount}</Text>
-            <Text style={styles.statLabel}>Total Duas</Text>
-          </View>
-          
-          <View style={styles.statDivider} />
-          
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{Math.round(progress)}%</Text>
-            <Text style={styles.statLabel}>Complete</Text>
-          </View>
-        </View>
+const PlayIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
+  <Text style={{ fontSize: size, color }}>▶️</Text>
+);
 
-        <View style={styles.overallProgress}>
-          <View style={styles.progressBar}>
-            <Animated.View 
-              style={[
-                styles.progressFillBar,
-                { width: `${progress}%` }
-              ]} 
-            />
-          </View>
-        </View>
-      </LinearGradient>
-    </View>
-  );
-};
+const PauseIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
+  <Text style={{ fontSize: size, color }}>⏸️</Text>
+);
 
-export default function DuaTrackerScreen() {
-  const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [duas, setDuas] = useState<DuaItem[]>(DUAS_DATA);
+const RewindIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
+  <Text style={{ fontSize: size, color }}>⏪</Text>
+);
 
-  const filteredDuas = useMemo(() => {
-    switch (activeFilter) {
-      case 'favorite':
-        return duas.filter(dua => dua.isFavorite);
-      case 'memorized':
-        return duas.filter(dua => dua.isMemorized);
-      case 'practice':
-        return duas.filter(dua => !dua.isMemorized);
-      default:
-        return duas;
+const RepeatIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
+  <Text style={{ fontSize: size, color }}>🔁</Text>
+);
+
+const ShareIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
+  <Text style={{ fontSize: size, color }}>📤</Text>
+);
+
+// Audio Control Button Component
+const AudioControlButton = ({ 
+  IconComponent, 
+  iconName, 
+  onClick, 
+  isPlayButton = false, 
+  isPlaying = false, 
+  repeatMode = 'off', 
+  isAudioLoading = false 
+}: { 
+  IconComponent?: any; 
+  iconName?: string; 
+  onClick: () => void; 
+  isPlayButton?: boolean; 
+  isPlaying?: boolean; 
+  repeatMode?: 'off' | 'one' | 'all'; 
+  isAudioLoading?: boolean; 
+}) => {
+  const secondaryActive = repeatMode !== 'off';
+  
+  const iconColor = (isPlayButton || secondaryActive) ? THEME.text.light : THEME.primary; 
+
+  const secondaryStyle = [
+    styles.controlButton,
+    { backgroundColor: secondaryActive ? THEME.primary : 'rgba(255, 107, 157, 0.1)' }
+  ];
+
+  const primaryStyle = [
+    styles.playButtonContainer,
+    {
+      backgroundColor: isPlaying ? THEME.success : THEME.primary,
+      ...styles.playButtonShadow,
     }
-  }, [duas, activeFilter]);
+  ];
 
-  const handleToggleMemorized = useCallback((id: string, value: boolean) => {
-    setDuas(prev => prev.map(dua => 
-      dua.id === id ? { 
-        ...dua, 
-        isMemorized: value,
-        progress: value ? 100 : Math.min((dua.practiceCount / 20) * 100, 99)
-      } : dua
-    ));
-  }, []);
-
-  const handlePracticePress = useCallback((dua: DuaItem) => {
-    const newPracticeCount = dua.practiceCount + 1;
-    const newProgress = dua.isMemorized ? 100 : Math.min((newPracticeCount / 20) * 100, 99);
-    
-    setDuas(prev => prev.map(d => 
-      d.id === dua.id ? { 
-        ...d, 
-        practiceCount: newPracticeCount, 
-        lastPracticed: 'Just now',
-        progress: newProgress
-      } : d
-    ));
-    
-    console.log('Practice pressed for:', dua.title);
-  }, []);
-
-  const handleHomePress = useCallback(() => {
-    router.back();
-  }, [router]);
-
-  // Render appropriate card based on view mode
-  const renderDuaCard = (dua: DuaItem) => {
-    switch (viewMode) {
-      case 'grid':
-        return (
-          <CompactDuaCard
-            key={dua.id}
-            dua={dua}
-            onToggleMemorized={handleToggleMemorized}
-            onPressPractice={handlePracticePress}
-          />
-        );
-      case 'list':
-        return (
-          <ListDuaCard
-            key={dua.id}
-            dua={dua}
-            onToggleMemorized={handleToggleMemorized}
-            onPressPractice={handlePracticePress}
-          />
-        );
-      case 'compact':
-        return (
-          <MinimalDuaCard
-            key={dua.id}
-            dua={dua}
-            onToggleMemorized={handleToggleMemorized}
-            onPressPractice={handlePracticePress}
-          />
-        );
-    }
+  const getRepeatIcon = () => {
+    if (repeatMode === 'off') return '🔁';
+    if (repeatMode === 'one') return '🔂'; 
+    if (repeatMode === 'all') return '🔄';
+    return '🔁';
   };
 
+  if (!isPlayButton) {
+    if (iconName === 'repeat') {
+      return (
+        <BouncingButton onPress={onClick}>
+          <View style={[styles.controlButton, secondaryActive && styles.controlButtonActive]}>
+            <Text style={styles.emojiButtonText}>{getRepeatIcon()}</Text>
+          </View>
+        </BouncingButton>
+      );
+    }
+    
+    return (
+      <BouncingButton onPress={onClick}>
+        <View style={secondaryStyle}>
+          {IconComponent && <IconComponent name={iconName} size={24} color={iconColor} />}
+        </View>
+      </BouncingButton>
+    );
+  }
+
+  if (isAudioLoading) {
+    return (
+      <View style={styles.loadingButton}>
+        <Text style={styles.loadingText}>✨</Text>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
+    <BouncingButton onPress={onClick}>
+      <View style={primaryStyle}>
+        {isPlaying ? (
+          <PauseIcon size={38} color={THEME.text.light} />
+        ) : (
+          <PlayIcon size={38} color={THEME.text.light} />
+        )}
+      </View>
+    </BouncingButton>
+  );
+};
+
+// --- MAIN SCREEN COMPONENT ---
+export default function DuaDetailScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  const [viewMode, setViewMode] = useState<'Word by Word' | 'Complete Dua'>('Complete Dua');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off');
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [showCelebration, setShowCelebration] = useState(false);
+  
+  // Audio State
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
+
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const heartScaleAnim = useRef(new Animated.Value(1)).current;
+  const playButtonScale = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const celebrationAnim = useRef(new Animated.Value(0)).current;
+
+  const duaId = params.id as string;
+  const dua = enhancedDuaData[duaId] || {
+    id: params.id,
+    title: params.title || 'Praise and Glory 🌟',
+    arabic: params.arabic || 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ',
+    translation: params.translation || 'Glory be to Allah and all praise be to Him; Glory be to Allah, the Most Great.',
+    reference: params.reference || 'Sahih Muslim',
+    category: 'Tasbeeh',
+    difficulty: '🟢 Easy',
+    sections: [{
+      arabic: params.arabic || 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ',
+      translation: params.translation || 'Glory be to Allah and all praise be to Him; Glory be to Allah, the Most Great.',
+      reference: '[Sahih Muslim]',
+      meaning: 'This beautiful prayer helps us remember how amazing Allah is!'
+    }],
+    relatedCategory: 'tasbeeh',
+    funFact: '🌟 This dua is like giving Allah a big hug with your words!'
+  };
+
+  // Get local image for the dua
+  const localImage = getLocalImage(dua.id, params.duaNumber as string);
+
+  // Play button animation
+  const animatePlayButton = () => {
+    Animated.sequence([
+      Animated.spring(playButtonScale, {
+        toValue: 0.85,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.spring(playButtonScale, {
+        toValue: 1,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Celebration animation when completing a dua
+  const triggerCelebration = () => {
+    setShowCelebration(true);
+    Animated.sequence([
+      Animated.spring(celebrationAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 10,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.spring(celebrationAnim, {
+        toValue: 0,
+        tension: 100,
+        friction: 10,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowCelebration(false));
+  };
+
+  // Word-by-word progression (simulated)
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (viewMode === 'Word by Word' && isPlaying) {
+      const words = dua.sections[0].arabic.split(' ');
+      interval = setInterval(() => {
+        setCurrentWordIndex(prev => {
+          if (prev >= words.length - 1) {
+            clearInterval(interval);
+            triggerCelebration();
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 1500);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [viewMode, isPlaying, dua.sections[0].arabic]);
+
+  // Pulsing animation for play button when playing
+  useEffect(() => {
+    if (isPlaying) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    // Entry animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
+  // --- HANDLERS ---
+  const handlePlayPause = async () => {
+    if (isAudioLoading) return;
+    
+    Vibration.vibrate(30);
+    animatePlayButton();
+    
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleRepeatToggle = () => {
+    const modes = ['off', 'one', 'all'] as const;
+    const currentIndex = modes.indexOf(repeatMode);
+    setRepeatMode(modes[(currentIndex + 1) % modes.length]);
+    Vibration.vibrate(20);
+  };
+
+  const handleFavorite = () => {
+    Vibration.vibrate(30);
+    setIsFavorite(!isFavorite);
+    
+    Animated.sequence([
+      Animated.spring(heartScaleAnim, {
+        toValue: 1.4,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.spring(heartScaleAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handleModeChange = (mode: 'Word by Word' | 'Complete Dua') => {
+    Vibration.vibrate(20);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setViewMode(mode);
+    setCurrentWordIndex(0);
+  };
+
+  const handleShare = async () => {
+    console.log('Share dua:', dua.title);
+  };
+
+  const currentDuaSection = dua.sections[0];
+
+  return (
+    <SafeAreaView style={styles.screen}>
+      <StatusBar barStyle="light-content" backgroundColor={THEME.primary} />
       
+      {/* Background Particles */}
       <FloatingParticles />
       
-      {/* Header - Updated to match dashboard */}
-      <View style={styles.header}>
-        <LinearGradient
+      {/* Celebration Animation */}
+      {showCelebration && (
+        <Animated.View 
+          style={[
+            styles.celebrationContainer,
+            {
+              opacity: celebrationAnim,
+              transform: [{ scale: celebrationAnim }]
+            }
+          ]}
+        >
+          <Text style={styles.celebrationText}>🎉 Masha'Allah! 🎉</Text>
+          <Text style={styles.celebrationSubtext}>You completed the Dua!</Text>
+        </Animated.View>
+      )}
+
+      {/* HEADER */}
+      <Animated.View 
+        style={[
+          styles.header,
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+        ]}
+      >
+        <LinearGradient 
           colors={[THEME.header, '#fef9c3']}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         >
           <View style={styles.headerContent}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={{ uri: 'https://i.ibb.co/L5wK60b/dualand-logo.png' }}
-                style={styles.logo}
-              />
-              <View>
-                <Text style={styles.title}>Dua Tracker 📊</Text>
-                <Text style={styles.subtitle}>Track your memorization progress! 🌟</Text>
+            <BouncingButton onPress={() => router.back()}>
+              <View style={styles.headerButton}>
+                <ArrowLeftIcon size={28} color={THEME.text.dark} />
+              </View>
+            </BouncingButton>
+            
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle} numberOfLines={1}>{dua.title}</Text>
+              <View style={styles.headerSubtitleContainer}>
+                <Text style={styles.headerSubtitle}>{dua.category} • </Text>
+                <Text style={styles.difficultyBadge}>{dua.difficulty}</Text>
               </View>
             </View>
             
-            <BouncingButton onPress={handleHomePress}>
-              <TouchableOpacity style={styles.backButton}>
-                <Text style={styles.backIcon}>←</Text>
-              </TouchableOpacity>
+            <BouncingButton onPress={handleFavorite}>
+              <View style={styles.headerButton}>
+                <Animated.View style={{ transform: [{ scale: heartScaleAnim }] }}>
+                  <Text style={styles.favoriteEmoji}>{isFavorite ? '❤️' : '🤍'}</Text>
+                </Animated.View>
+              </View>
             </BouncingButton>
           </View>
         </LinearGradient>
-      </View>
+      </Animated.View>
 
-      {/* Stats Header */}
-      <StatsHeader duas={duas} />
-
-      {/* View Toggle */}
-      <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-
-      {/* Filter Tabs */}
-      <FilterTabs 
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-      />
-
-      {/* Dua List */}
-      <View style={styles.duaListContainer}>
-        <ScrollView 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.duaListContent,
-            viewMode === 'grid' && styles.gridContent,
-            viewMode === 'compact' && styles.compactContent
-          ]}
-        >
-          {filteredDuas.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateEmoji}>📝</Text>
-              <Text style={styles.emptyStateTitle}>
-                No Duas Found
-              </Text>
-              <Text style={styles.emptyStateText}>
-                {activeFilter === 'all' 
-                  ? 'Start adding Duas to track your progress!' 
-                  : `No ${activeFilter} Duas found. Try a different filter.`
-                }
-              </Text>
+      {/* Main Content */}
+      <ScrollView 
+        style={styles.mainContent}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero Image */}
+        <View style={styles.heroImageContainer}>
+          <Image 
+            source={localImage} 
+            style={styles.heroImage} 
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.6)']}
+            style={styles.heroOverlay}
+          />
+          
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>{dua.title}</Text>
+            <View style={styles.progressContainer}>
+              <Text style={styles.progressText}>Learning Progress:</Text>
+              <View style={styles.starsContainer}>
+                <ProgressStar filled={true} />
+                <ProgressStar filled={true} />
+                <ProgressStar filled={false} />
+                <ProgressStar filled={false} />
+                <ProgressStar filled={false} />
+              </View>
             </View>
-          ) : (
-            <>
-              {!activeFilter && (
-                <View style={styles.welcomeSection}>
-                  <Text style={styles.welcomeText}>
-                    Track Your {filteredDuas.length} Duas Progress 📈
-                  </Text>
-                  <Text style={styles.welcomeSubtext}>
-                    Practice makes perfect! Keep going! 💫
-                  </Text>
+          </View>
+        </View>
+
+        <View style={styles.contentPadding}>
+          
+          {/* Sleek Mode Toggle */}
+          <View style={styles.sleekToggleWrapper}>
+            <SleekModeToggle 
+              viewMode={viewMode}
+              onModeChange={handleModeChange}
+            />
+          </View>
+
+          {/* Dua Content Card */}
+          <View style={styles.duaCard}>
+            {/* Arabic Text Display */}
+            {viewMode === 'Word by Word' ? (
+              <WordByWordDisplay 
+                arabicText={currentDuaSection.arabic}
+                currentWordIndex={currentWordIndex}
+              />
+            ) : (
+              <View style={[styles.arabicTextContainer, { direction: 'rtl' }]}>
+                <Text style={styles.arabicText}>
+                  {currentDuaSection.arabic}
+                </Text>
+              </View>
+            )}
+            
+            {/* Audio Controls */}
+            <View style={styles.audioControls}>
+              <AudioControlButton 
+                IconComponent={RewindIcon} 
+                iconName="replay-5" 
+                onClick={() => console.log('Rewind')} 
+              />
+              <AudioControlButton 
+                IconComponent={RepeatIcon}
+                iconName="repeat" 
+                onClick={handleRepeatToggle} 
+                repeatMode={repeatMode}
+              />
+              <Animated.View style={{ 
+                transform: [
+                  { scale: playButtonScale },
+                  { scale: isPlaying ? pulseAnim : 1 }
+                ] 
+              }}>
+                <AudioControlButton 
+                  onClick={handlePlayPause} 
+                  isPlayButton={true} 
+                  isPlaying={isPlaying}
+                  isAudioLoading={isAudioLoading}
+                />
+              </Animated.View>
+              <AudioControlButton 
+                IconComponent={RewindIcon} 
+                iconName="forward-5" 
+                onClick={() => console.log('Forward')} 
+              />
+              <AudioControlButton 
+                IconComponent={ShareIcon} 
+                iconName="share-2" 
+                onClick={handleShare} 
+              />
+            </View>
+
+            {/* Kid-Friendly Info Sections */}
+            <View style={styles.kidInfoContainer}>
+              <View style={styles.infoBox}>
+                <Text style={styles.infoTitle}>📚 Translation</Text>
+                <Text style={styles.infoText}>{currentDuaSection.translation}</Text>
+              </View>
+
+              <View style={styles.infoBox}>
+                <Text style={styles.infoTitle}>💡 What it Means</Text>
+                <Text style={styles.infoText}>{currentDuaSection.meaning}</Text>
+              </View>
+
+              <View style={styles.infoBox}>
+                <Text style={styles.infoTitle}>🎯 Reference</Text>
+                <Text style={styles.infoText}>{currentDuaSection.reference}</Text>
+              </View>
+
+              {dua.funFact && (
+                <View style={[styles.infoBox, styles.funFactBox]}>
+                  <Text style={styles.funFactTitle}>🌟 Fun Fact!</Text>
+                  <Text style={styles.funFactText}>{dua.funFact}</Text>
                 </View>
               )}
-              {filteredDuas.map(renderDuaCard)}
-            </>
-          )}
-        </ScrollView>
+            </View>
+          </View>
+
+          {/* Encouragement Section */}
+          <View style={styles.encouragementSection}>
+            <Text style={styles.encouragementTitle}>You're doing amazing! 🎨</Text>
+            <Text style={styles.encouragementText}>
+              Keep practicing and you'll be a Dua master in no time! 
+              Remember, every time you say a Dua, angels smile 😇
+            </Text>
+          </View>
+          
+        </View>
+      </ScrollView>
+
+      {/* Kid-Friendly Footer */}
+      <View style={styles.footer}>
+        <BouncingButton onPress={() => router.back()}>
+          <View style={styles.footerButton}>
+            <Text style={styles.footerEmoji}>👈</Text>
+            <Text style={styles.footerText}>Back</Text>
+          </View>
+        </BouncingButton>
+        
+        <BouncingButton onPress={() => console.log('Stars')}>
+          <View style={styles.footerButton}>
+            <Text style={styles.footerEmoji}>⭐</Text>
+            <Text style={styles.footerText}>Stars</Text>
+          </View>
+        </BouncingButton>
+        
+        <BouncingButton onPress={() => router.push('/')}>
+          <View style={styles.footerButton}>
+            <Text style={styles.footerEmoji}>🏠</Text>
+            <Text style={styles.footerText}>Home</Text>
+          </View>
+        </BouncingButton>
+        
+        <BouncingButton onPress={() => console.log('Games')}>
+          <View style={styles.footerButton}>
+            <Text style={styles.footerEmoji}>🎮</Text>
+            <Text style={styles.footerText}>Games</Text>
+          </View>
+        </BouncingButton>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: THEME.tertiary,
   },
-  // Header Styles - Updated to match dashboard
   header: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    alignSelf: 'center',
     overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
   },
   headerGradient: {
-    paddingTop: 50,
-    paddingBottom: 15,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50,
+    paddingBottom: 16,
   },
   headerContent: {
     flexDirection: 'row',
@@ -901,543 +914,415 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
   },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 45,
-    height: 45,
-    marginRight: 12,
-    borderRadius: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: THEME.text.dark,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: THEME.text.primary,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: THEME.text.dark,
-    fontWeight: 'bold',
-  },
-  statsContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 0,
-    marginTop: -20,
-  },
-  statsGradient: {
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  statsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: THEME.text.light,
-    marginBottom: 16,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: THEME.text.light,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  overallProgress: {
-    marginTop: 8,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFillBar: {
-    height: '100%',
-    backgroundColor: THEME.text.light,
-    borderRadius: 3,
-  },
-  // View Toggle
-  viewToggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: THEME.neutral,
-    borderBottomWidth: 1,
-    borderBottomColor: `${THEME.primary}15`,
-  },
-  viewToggleLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: THEME.text.secondary,
-    marginRight: 12,
-  },
-  viewToggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  headerButton: {
+    padding: 12,
     borderRadius: 16,
-    marginRight: 8,
-    backgroundColor: 'rgba(255, 107, 157, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  viewToggleButtonActive: {
-    backgroundColor: THEME.primary,
-  },
-  viewToggleIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  viewToggleIconActive: {
-    color: THEME.text.light,
-  },
-  viewToggleText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: THEME.primary,
-  },
-  viewToggleTextActive: {
-    color: THEME.text.light,
-  },
-  // Filters
-  filtersWrapper: {
-    height: 60,
-    justifyContent: 'center',
-  },
-  filtersContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: THEME.neutral,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: `${THEME.primary}20`,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    height: 36,
-  },
-  filterButtonActive: {
-    backgroundColor: THEME.primary,
-    borderColor: THEME.primary,
-  },
-  filterButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    marginRight: 6,
-  },
-  filterButtonTextActive: {
-    color: THEME.text.light,
-  },
-  filterCount: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    minWidth: 20,
-    alignItems: 'center',
-  },
-  filterCountActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  filterCountText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: THEME.primary,
-  },
-  // Dua List Container
-  duaListContainer: {
+  headerTitleContainer: {
     flex: 1,
-  },
-  duaListContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    paddingTop: 8,
-  },
-  gridContent: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  compactContent: {
-    paddingHorizontal: 12,
-  },
-  // Progress Ring
-  progressRing: {
+    marginHorizontal: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
   },
-  progressBackground: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 22,
-    backgroundColor: '#F1F5F9',
-  },
-  progressFill: {
-    position: 'absolute',
-  },
-  progressText: {
+  headerTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
-    color: THEME.text.primary,
-  },
-  // Common Styles
-  duaNumber: {
-    backgroundColor: THEME.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  duaNumberText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: THEME.text.light,
-  },
-  favoriteIndicator: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: THEME.text.accent,
-  },
-  favoriteText: {
-    fontSize: 10,
-  },
-  categoryTag: {
-    backgroundColor: `${THEME.accent}30`,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: THEME.accent,
-  },
-  lastPracticed: {
-    fontSize: 11,
-    color: THEME.text.secondary,
-  },
-  // Compact Card (Grid View)
-  compactCard: {
-    width: (width - 52) / 2,
-    marginBottom: 12,
-  },
-  compactCardInner: {
-    borderRadius: 20,
-    backgroundColor: THEME.secondary,
-    padding: 12,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: THEME.accent,
-  },
-  compactHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  compactImage: {
-    width: '100%',
-    height: 80,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  compactTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    lineHeight: 16,
-    marginBottom: 8,
+    color: THEME.text.dark,
     textAlign: 'center',
   },
-  compactProgress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  compactProgressInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  compactPracticeCount: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    marginBottom: 2,
-  },
-  compactProgressLabel: {
-    fontSize: 10,
-    color: THEME.text.secondary,
-  },
-  compactActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  quickPracticeButton: {
-    backgroundColor: THEME.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 8,
-  },
-  quickPracticeButtonMemorized: {
-    backgroundColor: THEME.success,
-  },
-  quickPracticeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: THEME.text.light,
-    textAlign: 'center',
-  },
-  compactSwitch: {
-    transform: [{ scale: 0.8 }],
-  },
-  // List Card
-  listCard: {
-    marginBottom: 8,
-  },
-  listCardInner: {
-    borderRadius: 20,
-    backgroundColor: THEME.secondary,
-    padding: 12,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: THEME.accent,
-  },
-  listContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  listLeft: {
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  listImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  listBasicInfo: {
-    alignItems: 'center',
-  },
-  listNumber: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: THEME.primary,
-    marginBottom: 2,
-  },
-  listMiddle: {
-    flex: 1,
-    marginRight: 12,
-  },
-  listTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    lineHeight: 18,
-    marginBottom: 4,
-  },
-  listMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  listPracticeCount: {
-    fontSize: 11,
-    color: THEME.text.secondary,
-  },
-  listRight: {
-    alignItems: 'center',
-  },
-  listActions: {
+  headerSubtitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
   },
-  listPracticeButton: {
-    backgroundColor: THEME.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 6,
+  headerSubtitle: {
+    fontSize: 14,
+    color: THEME.text.dark,
+    fontWeight: '500',
   },
-  listPracticeButtonMemorized: {
-    backgroundColor: THEME.success,
-  },
-  listPracticeText: {
-    fontSize: 10,
+  difficultyBadge: {
+    fontSize: 12,
+    color: THEME.text.dark,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
     fontWeight: '600',
+  },
+  favoriteEmoji: {
+    fontSize: 20,
+  },
+  mainContent: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 80,
+  },
+  heroImageContainer: {
+    width: '100%',
+    height: 280,
+    backgroundColor: THEME.secondary,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    height: '60%',
+    top: '40%',
+  },
+  heroContent: {
+    padding: 24,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: THEME.text.light,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 8,
+    marginBottom: 12,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 16,
+  },
+  progressText: {
+    fontSize: 14,
+    color: THEME.text.light,
+    fontWeight: '600',
+    marginRight: 12,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+  },
+  contentPadding: {
+    paddingHorizontal: 20,
+  },
+  // Sleek Toggle Styles
+  sleekToggleWrapper: {
+    marginTop: -20,
+    zIndex: 10,
+    paddingHorizontal: 8,
+  },
+  sleekToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: THEME.neutral,
+    borderRadius: 25,
+    padding: 4,
+    height: 48,
+    position: 'relative',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+    borderWidth: 2,
+    borderColor: THEME.accent,
+  },
+  sleekToggleSlider: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    width: '50%',
+    backgroundColor: THEME.primary,
+    borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  sleekToggleOption: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  sleekToggleText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: THEME.text.secondary,
+  },
+  sleekToggleTextActive: {
     color: THEME.text.light,
   },
-  // Minimal Card
-  minimalCard: {
-    backgroundColor: THEME.neutral,
+  duaCard: {
+    backgroundColor: THEME.secondary,
+    borderRadius: 24,
+    padding: 24,
+    marginTop: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+    borderWidth: 3,
+    borderColor: THEME.accent,
+  },
+  audioControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 24,
+  },
+  controlButton: {
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 107, 157, 0.1)',
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  controlButtonActive: {
+    backgroundColor: THEME.primary,
+  },
+  emojiButtonText: {
+    fontSize: 20,
+  },
+  playButtonContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playButtonShadow: {
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.primary,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.4,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  loadingButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: THEME.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 32,
+  },
+  arabicTextContainer: {
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(255, 107, 157, 0.2)',
+    paddingBottom: 20,
+  },
+  arabicText: {
+    fontSize: 26,
+    lineHeight: 48,
+    textAlign: 'right',
+    fontFamily: Platform.OS === 'ios' ? 'Geeza Pro' : 'sans-serif', 
+    color: THEME.text.primary,
+    fontWeight: '600',
+  },
+  arabicWord: {
+    fontWeight: '600',
+  },
+  highlightedWord: {
+    backgroundColor: THEME.primary + '40',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
+    color: THEME.primary,
+  },
+  readingGuide: {
+    marginTop: 16,
     padding: 12,
-    marginBottom: 6,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: 'rgba(255, 209, 102, 0.2)',
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: THEME.accent,
+  },
+  readingGuideText: {
+    fontSize: 14,
+    color: THEME.text.primary,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  kidInfoContainer: {
+    marginTop: 8,
+  },
+  infoBox: {
+    backgroundColor: THEME.neutral,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 16,
     borderLeftWidth: 4,
     borderLeftColor: THEME.primary,
   },
-  minimalContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  minimalLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  minimalNumber: {
-    fontSize: 12,
+  infoTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: THEME.primary,
-    marginRight: 8,
-    minWidth: 24,
-  },
-  minimalText: {
-    flex: 1,
-  },
-  minimalTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    marginBottom: 2,
-  },
-  minimalMeta: {
-    fontSize: 11,
-    color: THEME.text.secondary,
-  },
-  minimalRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  minimalSwitch: {
-    transform: [{ scale: 0.7 }],
-    marginLeft: 8,
-  },
-  minimalFavorite: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-  },
-  // Welcome Section
-  welcomeSection: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
     marginBottom: 8,
   },
-  welcomeText: {
+  infoText: {
+    fontSize: 15,
+    color: THEME.text.primary,
+    lineHeight: 22,
+  },
+  funFactBox: {
+    backgroundColor: 'rgba(255, 209, 102, 0.3)',
+    borderLeftColor: THEME.accent,
+  },
+  funFactTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#B45309',
+    marginBottom: 8,
+  },
+  funFactText: {
+    fontSize: 15,
+    color: THEME.text.primary,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  encouragementSection: {
+    backgroundColor: THEME.neutral,
+    padding: 24,
+    borderRadius: 20,
+    marginTop: 24,
+    borderWidth: 3,
+    borderColor: THEME.success,
+    ...Platform.select({
+      ios: {
+        shadowColor: THEME.success,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  encouragementTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: THEME.text.primary,
+    color: THEME.success,
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  encouragementText: {
+    fontSize: 15,
+    color: THEME.text.primary,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  celebrationContainer: {
+    position: 'absolute',
+    top: '30%',
+    left: '10%',
+    right: '10%',
+    backgroundColor: THEME.neutral,
+    padding: 32,
+    borderRadius: 24,
+    alignItems: 'center',
+    zIndex: 1000,
+    borderWidth: 4,
+    borderColor: THEME.accent,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 15,
+      },
+    }),
+  },
+  celebrationText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: THEME.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  celebrationSubtext: {
+    fontSize: 18,
+    color: THEME.text.secondary,
+    textAlign: 'center',
+  },
+  footer: {
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 80,
+    backgroundColor: THEME.secondary,
+    borderTopWidth: 3,
+    borderTopColor: THEME.accent,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  footerButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  footerEmoji: {
+    fontSize: 24,
     marginBottom: 4,
   },
-  welcomeSubtext: {
-    fontSize: 14,
+  footerText: {
+    fontSize: 12,
     color: THEME.text.primary,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  // Empty State
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 40,
-  },
-  emptyStateEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: THEME.text.primary,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: THEME.text.primary,
-    textAlign: 'center',
-    lineHeight: 22,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

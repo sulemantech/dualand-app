@@ -13,6 +13,24 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 
 const { width } = Dimensions.get('window');
+const THEME = {
+  primary: '#FF6B9D',      // Softer Pink
+  secondary: '#FFF7D0',    // Bright Lemon Yellow
+  tertiary: '#E8F4FF',     // Softer Sky Blue
+  neutral: '#FFFFFF',      // White
+  accent: '#FFD166',       // Sunny Yellow
+  success: '#4ECDC4',      // Mint Green
+  header: '#fcf8b1',       // Yellow Header Color
+  
+  // Kid-Friendly Text Colors - Softer and Warmer
+  text: {
+    primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
+    secondary: '#6B7B8C',  // Warm Gray - Gentle contrast
+    light: '#FFFFFF',      // White
+    dark: '#4A5C6B',       // Soft Charcoal - Not too dark
+    accent: '#E53E3E',     // Red accent for important text
+  }
+};
 
 // Animated Feature Item Component
 const AnimatedFeatureItem = ({ feature, emoji, delay = 0 }) => {
@@ -105,7 +123,7 @@ const AnimatedHeader = () => {
     >
       <View style={styles.header}>
         <LinearGradient
-          colors={['#8B5CF6', '#7C3AED']}
+          colors={[THEME.header, '#fef9c3']}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -277,11 +295,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: THEME.text.dark,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    color: THEME.text.dark,
     fontWeight: '500',
     marginTop: 2,
   },

@@ -663,7 +663,7 @@ const StatsHeader = ({ duas }: { duas: DuaItem[] }) => {
   return (
     <View style={styles.statsContainer}>
       <LinearGradient
-        colors={[THEME.primary, '#FF8BB5']}
+        colors={['#edcd8cff', '#d2b170ff']}
         style={styles.statsGradient}
       >
         <Text style={styles.statsTitle}>Your Progress 🎯</Text>
@@ -806,7 +806,7 @@ export default function DuaTrackerScreen() {
                 source={{ uri: 'https://i.ibb.co/L5wK60b/dualand-logo.png' }}
                 style={styles.logo}
               />
-              <View>
+              <View style={{ marginBottom: 15 }}>
                 <Text style={styles.title}>Dua Tracker 📊</Text>
                 <Text style={styles.subtitle}>Track your memorization progress! 🌟</Text>
               </View>

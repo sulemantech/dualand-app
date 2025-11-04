@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import { View, Text, Animated, StyleSheet, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useEffect } from 'react';
 
@@ -18,7 +18,7 @@ const THEME = {
   }
 };
 
-// Enhanced Tab Icon with Kid-Friendly Animations
+// Enhanced Tab Icon with Smoother Animations
 const SuperTabIcon = ({ 
   emoji, 
   label, 
@@ -35,83 +35,145 @@ const SuperTabIcon = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
+  const bgShadeAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (focused) {
-      // Bouncy focused animation sequence
-      Animated.sequence([
+      // Faster, smoother focused animation
+      Animated.parallel([
         Animated.spring(bounceAnim, {
           toValue: 1,
-          tension: 200,
-          friction: 3,
+          tension: 300, // Increased tension for faster movement
+          friction: 5,  // Reduced friction for smoother motion
           useNativeDriver: true,
         }),
-        Animated.parallel([
-          Animated.spring(scaleAnim, {
-            toValue: 1.2,
-            tension: 150,
-            friction: 3,
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]),
+        Animated.spring(scaleAnim, {
+          toValue: 1.2,
+          tension: 250,
+          friction: 5,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 250, // Faster duration
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bgShadeAnim, {
+          toValue: 1,
+          duration: 200, // Faster duration
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(floatAnim, {
+          toValue: 1,
+          tension: 150,
+          friction: 6,
+          useNativeDriver: true,
+        }),
       ]).start();
 
-      // Continuous playful animation
+      // Smoother continuous floating animation
       Animated.loop(
         Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.15,
-            duration: 1000,
+          Animated.timing(floatAnim, {
+            toValue: 1.05, // Smaller range for smoother motion
+            duration: 800, // Faster cycle
+            easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
-          Animated.timing(scaleAnim, {
-            toValue: 1.2,
-            duration: 1000,
+          Animated.timing(floatAnim, {
+            toValue: 1,
+            duration: 800,
+            easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
         ])
       ).start();
     } else {
-      // Smooth reset to normal state
+      // Smoother, faster reset
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
-          tension: 150,
-          friction: 3,
+          tension: 250,
+          friction: 6,
           useNativeDriver: true,
         }),
         Animated.spring(bounceAnim, {
           toValue: 0,
-          tension: 150,
-          friction: 3,
+          tension: 250,
+          friction: 6,
+          useNativeDriver: true,
+        }),
+        Animated.spring(floatAnim, {
+          toValue: 0,
+          tension: 200,
+          friction: 6,
           useNativeDriver: true,
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: 200,
+          duration: 150, // Faster reset
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bgShadeAnim, {
+          toValue: 0,
+          duration: 150, // Faster reset
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
     }
   }, [focused]);
 
-  const translateY = bounceAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -5],
-  });
+  const translateY = Animated.add(
+    bounceAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -6], // Slightly reduced movement for smoother feel
+    }),
+    floatAnim.interpolate({
+      inputRange: [0, 1, 1.05],
+      outputRange: [0, -3, -4], // Reduced floating range
+    })
+  );
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.3],
+    outputRange: [0, 0.4],
+  });
+
+  const bgShadeOpacity = bgShadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.15],
+  });
+
+  const bgShadeScale = bgShadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.8, 1.2],
   });
 
   return (
     <View style={styles.tabIconContainer}>
+      {/* Background Shade Effect */}
+      <Animated.View
+        style={[
+          styles.bgShade,
+          {
+            backgroundColor: pulseColor,
+            opacity: bgShadeOpacity,
+            transform: [
+              { scale: bgShadeScale },
+              { translateY: floatAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -1]
+              })}
+            ],
+          }
+        ]}
+      />
+      
       {/* Glow Effect */}
       <Animated.View
         style={[
@@ -149,7 +211,14 @@ const SuperTabIcon = ({
       </Animated.View>
 
       {/* Label */}
-      <Animated.View style={{ transform: [{ translateY }] }}>
+      <Animated.View style={{ 
+        transform: [{ 
+          translateY: floatAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -1]
+          }) 
+        }] 
+      }}>
         <Text style={[
           styles.tabLabel,
           { 
@@ -161,24 +230,35 @@ const SuperTabIcon = ({
         </Text>
       </Animated.View>
 
-      {/* Active Indicator Star */}
+      {/* Active Indicator Star with Gradient */}
       {focused && (
         <Animated.View
           style={[
             styles.activeStar,
             {
-              transform: [{ scale: scaleAnim }],
+              transform: [
+                { scale: scaleAnim },
+                { translateY: floatAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -2]
+                })}
+              ],
             }
           ]}
         >
-          <Text style={styles.starText}>⭐</Text>
+          <LinearGradient
+            colors={gradientColors}
+            style={styles.starGradient}
+          >
+            <Text style={styles.starText}>⭐</Text>
+          </LinearGradient>
         </Animated.View>
       )}
     </View>
   );
 };
 
-// Central Floating Tab Icon matching home screen theme
+// Enhanced Central Floating Tab Icon with Smoother Animations
 const FloatingTabIcon = ({ 
   emoji, 
   label, 
@@ -192,97 +272,121 @@ const FloatingTabIcon = ({
   const glowAnim = useRef(new Animated.Value(0)).current;
   const elevateAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const bgShadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (focused) {
-      // Exciting focused animation with rotation
+      // Smoother, faster focused animation
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1.3,
-          tension: 180,
-          friction: 4,
+          tension: 250, // Increased tension
+          friction: 6,  // Reduced friction
           useNativeDriver: true,
         }),
         Animated.spring(elevateAnim, {
           toValue: 1,
-          tension: 120,
-          friction: 6,
+          tension: 180,
+          friction: 7,
           useNativeDriver: true,
         }),
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 500,
+          duration: 300, // Faster
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(rotateAnim, {
           toValue: 1,
-          duration: 600,
+          duration: 400, // Faster
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(floatAnim, {
+          toValue: 1,
+          tension: 150,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bgShadeAnim, {
+          toValue: 1,
+          duration: 250, // Faster
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
 
-      // Continuous playful animations
+      // Smoother continuous floating
       Animated.loop(
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(scaleAnim, {
-              toValue: 1.25,
-              duration: 1500,
-              useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1.3,
-              duration: 1500,
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(rotateAnim, {
-              toValue: 0,
-              duration: 2000,
-              useNativeDriver: true,
-            }),
-            Animated.timing(rotateAnim, {
-              toValue: 1,
-              duration: 2000,
-              useNativeDriver: true,
-            }),
-          ]),
+        Animated.sequence([
+          Animated.timing(floatAnim, {
+            toValue: 1.08, // Smaller range
+            duration: 1000, // Faster cycle
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(floatAnim, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
         ])
       ).start();
     } else {
-      // Smooth reset
+      // Smoother, faster reset
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
-          tension: 180,
-          friction: 4,
+          tension: 250,
+          friction: 7,
           useNativeDriver: true,
         }),
         Animated.spring(elevateAnim, {
           toValue: 0,
-          tension: 120,
-          friction: 6,
+          tension: 180,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+        Animated.spring(floatAnim, {
+          toValue: 0,
+          tension: 200,
+          friction: 7,
           useNativeDriver: true,
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: 300,
+          duration: 200, // Faster
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(rotateAnim, {
           toValue: 0,
-          duration: 300,
+          duration: 200, // Faster
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(bgShadeAnim, {
+          toValue: 0,
+          duration: 200, // Faster
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
     }
   }, [focused]);
 
-  const translateY = elevateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -10],
-  });
+  const translateY = Animated.add(
+    elevateAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -8], // Slightly reduced
+    }),
+    floatAnim.interpolate({
+      inputRange: [0, 1, 1.08],
+      outputRange: [0, -4, -5], // Reduced floating range
+    })
+  );
 
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -291,16 +395,41 @@ const FloatingTabIcon = ({
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.2, 0.6],
+    outputRange: [0.2, 0.8],
+  });
+
+  const bgShadeOpacity = bgShadeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.2],
   });
 
   const shadowRadius = elevateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [12, 20],
+    outputRange: [12, 20], // Reduced shadow growth
   });
 
   return (
     <View style={styles.floatingContainer}>
+      {/* Enhanced Background Shade */}
+      <Animated.View
+        style={[
+          styles.floatingBgShade,
+          {
+            opacity: bgShadeOpacity,
+            transform: [
+              { scale: floatAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.9, 1.2] // Reduced scale
+              })},
+              { translateY: floatAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -2] // Reduced movement
+              })}
+            ],
+          }
+        ]}
+      />
+      
       {/* Enhanced Glow Effect */}
       <Animated.View
         style={[
@@ -341,7 +470,12 @@ const FloatingTabIcon = ({
       <Animated.View
         style={{
           opacity: elevateAnim,
-          transform: [{ translateY }],
+          transform: [{ 
+            translateY: floatAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -2] // Reduced movement
+            }) 
+          }],
         }}
       >
         <Text style={styles.floatingLabel}>
@@ -349,7 +483,7 @@ const FloatingTabIcon = ({
         </Text>
       </Animated.View>
 
-      {/* Floating Stars */}
+      {/* Floating Stars with Gradient */}
       {focused && (
         <>
           <Animated.View
@@ -357,22 +491,44 @@ const FloatingTabIcon = ({
               styles.floatingStar1,
               {
                 opacity: elevateAnim,
-                transform: [{ scale: scaleAnim }],
+                transform: [
+                  { scale: scaleAnim },
+                  { translateY: floatAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -3] // Reduced movement
+                  })}
+                ],
               }
             ]}
           >
-            <Text style={styles.starText}>✨</Text>
+            <LinearGradient
+              colors={[THEME.primary, '#FF8BB5']}
+              style={styles.starGradient}
+            >
+              <Text style={styles.starText}>✨</Text>
+            </LinearGradient>
           </Animated.View>
           <Animated.View
             style={[
               styles.floatingStar2,
               {
                 opacity: elevateAnim,
-                transform: [{ scale: scaleAnim }],
+                transform: [
+                  { scale: scaleAnim },
+                  { translateY: floatAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -3] // Reduced movement
+                  })}
+                ],
               }
             ]}
           >
-            <Text style={styles.starText}>🌟</Text>
+            <LinearGradient
+              colors={[THEME.primary, '#FF8BB5']}
+              style={styles.starGradient}
+            >
+              <Text style={styles.starText}>🌟</Text>
+            </LinearGradient>
           </Animated.View>
         </>
       )}
@@ -389,21 +545,6 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <FloatingTabIcon 
-              emoji="🏠" 
-              label="Home" 
-              focused={focused} 
-            />
-          ),
-        }}
-      />
-      
-      {/* NEW: Tracker Screen */}
       <Tabs.Screen
         name="tracker"
         options={{
@@ -436,6 +577,21 @@ export default function TabLayout() {
         }}
       />
       
+      {/* CENTER: Home Screen */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ focused }) => (
+            <FloatingTabIcon 
+              emoji="🏠" 
+              label="Home" 
+              focused={focused} 
+            />
+          ),
+        }}
+      />
+      
       <Tabs.Screen
         name="share"
         options={{
@@ -447,6 +603,22 @@ export default function TabLayout() {
               focused={focused}
               gradientColors={[THEME.accent, '#FFC145']}
               pulseColor={THEME.accent}
+            />
+          ),
+        }}
+      />
+      
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ focused }) => (
+            <SuperTabIcon 
+              emoji="⚙️" 
+              label="Settings" 
+              focused={focused}
+              gradientColors={['#FF9E7D', '#FF6B9D']}
+              pulseColor="#FF9E7D"
             />
           ),
         }}
@@ -481,6 +653,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     position: 'relative',
     width: 70,
+  },
+  // Background shade for regular tabs
+  bgShade: {
+    position: 'absolute',
+    top: -2,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
   glowEffect: {
     position: 'absolute',
@@ -538,10 +718,19 @@ const styles = StyleSheet.create({
   activeStar: {
     position: 'absolute',
     top: -8,
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  starGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
   },
   starText: {
     fontSize: 12,
@@ -552,6 +741,14 @@ const styles = StyleSheet.create({
     position: 'relative',
     top: -18,
     width: 70,
+  },
+  // Background shade for floating tab
+  floatingBgShade: {
+    position: 'absolute',
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: THEME.primary,
   },
   floatingGlow: {
     position: 'absolute',
@@ -597,10 +794,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: 45,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   floatingStar2: {
     position: 'absolute',
     top: -5,
     left: 45,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
 });
