@@ -25,7 +25,27 @@ const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
 const CARD_WIDTH = (width - 40 - CARD_MARGIN) / 2;
 
-// Import local images - moved outside component to prevent re-creation
+// Enhanced Kid-Friendly Theme with Better Contrast
+const THEME = {
+  primary: '#FF6B9D',      // Softer Pink
+  secondary: '#FFF7D0',    // Bright Lemon Yellow
+  tertiary: '#E8F4FF',     // Softer Sky Blue
+  neutral: '#FFFFFF',      // White
+  accent: '#FFD166',       // Sunny Yellow
+  success: '#4ECDC4',      // Mint Green
+  header: '#fcf8b1',       // Yellow Header Color
+  
+  // Kid-Friendly Text Colors - Softer and Warmer
+  text: {
+    primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
+    secondary: '#6B7B8C',  // Warm Gray - Gentle contrast
+    light: '#FFFFFF',      // White
+    dark: '#4A5C6B',       // Soft Charcoal - Not too dark
+    accent: '#E53E3E',     // Red accent for important text
+  }
+};
+
+// Import local images
 const localImages = {
   dua_1: require('../../assets/images/dua_31.png'),
   dua_2: require('../../assets/images/dua_2.png'),
@@ -61,8 +81,8 @@ const localImages = {
   dua_32: require('../../assets/images/dua_32.png'),
 };
 
-// Optimized Particle system - prevent constant re-creation
-const FloatingParticles = React.memo(({ count = 6 }) => {
+// Enhanced Floating Particles
+const FloatingParticles = React.memo(({ count = 8 }) => {
   const particles = useRef(
     Array.from({ length: count }, () => new Animated.Value(0))
   ).current;
@@ -71,16 +91,16 @@ const FloatingParticles = React.memo(({ count = 6 }) => {
     const animations = particles.map((particle, index) => {
       return Animated.loop(
         Animated.sequence([
-          Animated.delay(index * 1000),
+          Animated.delay(index * 800),
           Animated.timing(particle, {
             toValue: 1,
-            duration: 4000,
+            duration: 5000,
             easing: Easing.linear,
             useNativeDriver: true,
           }),
           Animated.timing(particle, {
             toValue: 0,
-            duration: 4000,
+            duration: 5000,
             easing: Easing.linear,
             useNativeDriver: true,
           }),
@@ -95,6 +115,8 @@ const FloatingParticles = React.memo(({ count = 6 }) => {
     };
   }, [particles]);
 
+  const emojis = ['✨', '⭐', '🌟', '💫', '🦄', '🌈', '🎀', '🌸'];
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {particles.map((particle, index) => {
@@ -108,6 +130,11 @@ const FloatingParticles = React.memo(({ count = 6 }) => {
           outputRange: [0, 0.6, 0],
         });
 
+        const scale = particle.interpolate({
+          inputRange: [0, 0.5, 1],
+          outputRange: [0.8, 1, 0.8],
+        });
+
         return (
           <Animated.View
             key={index}
@@ -115,12 +142,15 @@ const FloatingParticles = React.memo(({ count = 6 }) => {
               position: 'absolute',
               left: Math.random() * width,
               top: height + 30,
-              transform: [{ translateY }],
+              transform: [{ translateY }, { scale }],
               opacity,
             }}
           >
-            <Text style={{ fontSize: 16, color: '#8B5CF6' }}>
-              {['✨', '⭐', '🌟'][index % 3]}
+            <Text style={{ 
+              fontSize: 16, 
+              color: [THEME.primary, THEME.accent, THEME.success][index % 3]
+            }}>
+              {emojis[index % emojis.length]}
             </Text>
           </Animated.View>
         );
@@ -129,9 +159,8 @@ const FloatingParticles = React.memo(({ count = 6 }) => {
   );
 });
 
-// Function to get local image for dua - moved outside component
+// Function to get local image for dua
 const getLocalImage = (duaId: string, duaNumber?: string) => {
-  // Try to get image by dua number first
   if (duaNumber) {
     const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
     if (localImages[imageKey]) {
@@ -139,13 +168,56 @@ const getLocalImage = (duaId: string, duaNumber?: string) => {
     }
   }
   
-  // Fallback: use ID to cycle through available images
   const imageIndex = (parseInt(duaId) % 32) + 1;
   const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
   return localImages[fallbackImageKey] || localImages.dua_1;
 };
 
-// Optimized DuaCard component
+// Bouncing Button Component
+const BouncingButton = ({ children, onPress, style = {} }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      tension: 100,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      tension: 100,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={style}
+        activeOpacity={0.8}
+      >
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// Progress Star Component
+const ProgressStar = ({ filled, size = 16 }) => (
+  <Text style={{ fontSize: size, marginHorizontal: 1 }}>
+    {filled ? '⭐' : '☆'}
+  </Text>
+);
+
+// Optimized DuaCard component - REMOVED OVERLAYS
 const DuaCard = React.memo(({ dua, index, onPress, categories }: { 
   dua: Dua; 
   index: number;
@@ -156,7 +228,6 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
   const pressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Staggered entrance animation - only run once
     const animation = Animated.sequence([
       Animated.delay(index * 60),
       Animated.spring(cardAnim, {
@@ -199,7 +270,7 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
 
   const getCategoryColor = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
-    return category?.color || '#8B5CF6';
+    return category?.color || THEME.primary;
   };
 
   const getCategoryName = (categoryId: string) => {
@@ -209,6 +280,19 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
 
   const categoryColor = getCategoryColor(dua.category_id);
   const localImage = getLocalImage(dua.id, dua.duaNumber);
+
+  const getProgressStars = () => {
+    switch (dua.memorization_status) {
+      case 'memorized':
+        return [true, true, true, true, true];
+      case 'learning':
+        return [true, true, true, false, false];
+      default:
+        return [true, false, false, false, false];
+    }
+  };
+
+  const progressStars = getProgressStars();
 
   return (
     <Animated.View
@@ -231,22 +315,18 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
         ],
       }}
     >
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => onPress(dua)}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={0.9}
-      >
+      <BouncingButton onPress={() => onPress(dua)} style={styles.card}>
         <Animated.View style={styles.cardInner}>
           <View style={styles.cardImageContainer}>
-            {/* Category color overlay */}
-            <View style={[styles.cardOverlay, { backgroundColor: `${categoryColor}40` }]} />
+            {/* REMOVED: Category color overlay - no more blur/shade on images */}
+            
             <View style={styles.cardNumber}>
               <Text style={styles.cardNumberText}>
                 {dua.duaNumber || dua.order_index.toString().padStart(2, '0')}
               </Text>
             </View>
+            
+            {/* Clean image without overlays */}
             <Image 
               source={localImage} 
               style={styles.cardImage}
@@ -260,21 +340,12 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
               </View>
             )}
 
-            {/* Memorization status indicator */}
-            {dua.memorization_status !== 'not_started' && (
-              <View style={[
-                styles.memorizationIndicator,
-                { 
-                  backgroundColor: dua.memorization_status === 'memorized' ? '#10B981' : 
-                                 dua.memorization_status === 'learning' ? '#F59E0B' : '#6B7280'
-                }
-              ]}>
-                <Text style={styles.memorizationText}>
-                  {dua.memorization_status === 'memorized' ? '✓' : 
-                   dua.memorization_status === 'learning' ? '~' : '•'}
-                </Text>
-              </View>
-            )}
+            {/* Progress Stars */}
+            <View style={styles.progressContainer}>
+              {progressStars.map((filled, index) => (
+                <ProgressStar key={index} filled={filled} size={12} />
+              ))}
+            </View>
 
             {/* Floating Elements */}
             <View style={styles.floatingStars}>
@@ -283,8 +354,8 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
             </View>
           </View>
           
-          {/* Card banner with category color */}
-          <View style={[styles.cardBanner, { backgroundColor: `${categoryColor}20` }]}>
+          {/* Card banner with better text contrast */}
+          <View style={[styles.cardBanner, { backgroundColor: THEME.neutral }]}>
             <Text style={styles.cardTitle} numberOfLines={2}>
               {dua.title}
             </Text>
@@ -298,7 +369,7 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
             </View>
           </View>
         </Animated.View>
-      </TouchableOpacity>
+      </BouncingButton>
     </Animated.View>
   );
 });
@@ -312,14 +383,10 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Animation values
   const searchOpacityAnim = useRef(new Animated.Value(0)).current;
   const searchScaleAnim = useRef(new Animated.Value(0)).current;
-
-  // Cache data loading with ref to prevent re-loading
   const dataLoadedRef = useRef(false);
 
-  // Load data from database - only once
   useEffect(() => {
     if (dataLoadedRef.current) return;
 
@@ -357,7 +424,6 @@ export default function DashboardScreen() {
     loadData();
   }, []);
 
-  // Filter duas based on search query - optimized with useMemo
   const filteredDuas = useMemo(() => {
     if (!searchQuery.trim()) {
       return duas;
@@ -378,7 +444,6 @@ export default function DashboardScreen() {
     Keyboard.dismiss();
     
     try {
-      // Get word audio pairs for this dua
       const wordAudioPairs = await databaseService.getWordAudioPairsByDua(dua.id);
       
       router.push({
@@ -404,7 +469,6 @@ export default function DashboardScreen() {
       });
     } catch (error) {
       console.error('Error navigating to dua detail:', error);
-      // Fallback navigation without word audio pairs
       router.push({
         pathname: '/dua-detail',
         params: { 
@@ -422,7 +486,6 @@ export default function DashboardScreen() {
 
   const toggleSearch = useCallback(() => {
     if (isSearchExpanded) {
-      // Collapse search
       Animated.parallel([
         Animated.timing(searchOpacityAnim, {
           toValue: 0,
@@ -442,7 +505,6 @@ export default function DashboardScreen() {
         Keyboard.dismiss();
       });
     } else {
-      // Expand search
       setIsSearchExpanded(true);
       Animated.parallel([
         Animated.timing(searchOpacityAnim, {
@@ -465,39 +527,38 @@ export default function DashboardScreen() {
     setSearchQuery('');
   }, []);
 
-  // Search animations
   const searchTransform = searchScaleAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0.8, 1],
   });
 
-  // Loading state
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B5CF6" />
-          <Text style={styles.loadingText}>Loading Beautiful Duas...</Text>
+          <ActivityIndicator size="large" color={THEME.primary} />
+          <Text style={styles.loadingText}>Loading Beautiful Duas... 🌟</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>😔</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => {
-            dataLoadedRef.current = false;
-            setLoading(true);
-            setError(null);
-            loadData();
-          }}>
-            <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
+          <BouncingButton>
+            <TouchableOpacity style={styles.retryButton} onPress={() => {
+              dataLoadedRef.current = false;
+              setLoading(true);
+              setError(null);
+              loadData();
+            }}>
+              <Text style={styles.retryButtonText}>Try Again 🔄</Text>
+            </TouchableOpacity>
+          </BouncingButton>
         </View>
       </SafeAreaView>
     );
@@ -512,15 +573,14 @@ export default function DashboardScreen() {
       }
     }} accessible={false}>
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
+        <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
         
-        {/* Background Elements - removed useFocusEffect */}
         <FloatingParticles />
         
-        {/* Header with simplified gradient */}
+        {/* Header with better text contrast */}
         <View style={styles.header}>
           <LinearGradient
-            colors={['#8B5CF6', '#7C3AED']}
+            colors={[THEME.header, '#fef9c3']}
             style={styles.headerGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -532,24 +592,25 @@ export default function DashboardScreen() {
                   style={styles.logo}
                 />
                 <View>
-                  <Text style={styles.title}>DUALAND</Text>
-                  <Text style={styles.subtitle}>{filteredDuas.length} Beautiful Duas</Text>
+                  <Text style={styles.title}>DUALAND 🎨</Text>
+                  <Text style={styles.subtitle}>{filteredDuas.length} Beautiful Duas to Explore!</Text>
                 </View>
               </View>
               
-              <TouchableOpacity 
-                style={styles.searchToggleButton}
-                onPress={toggleSearch}
-              >
-                <View style={styles.searchToggleInner}>
-                  <SearchIcon size={22} color="#ffffff" />
-                </View>
-              </TouchableOpacity>
+              <BouncingButton>
+                <TouchableOpacity 
+                  style={styles.searchToggleButton}
+                  onPress={toggleSearch}
+                >
+                  <View style={styles.searchToggleInner}>
+                    <SearchIcon size={22} color={THEME.text.dark} />
+                  </View>
+                </TouchableOpacity>
+              </BouncingButton>
             </View>
           </LinearGradient>
         </View>
 
-        {/* Search Bar */}
         {isSearchExpanded && (
           <Animated.View 
             style={[
@@ -561,26 +622,27 @@ export default function DashboardScreen() {
             ]}
           >
             <View style={styles.searchInputContainer}>
-              <SearchIcon size={20} color="#8B5CF6" />
+              <SearchIcon size={20} color={THEME.primary} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search for beautiful Duas..."
-                placeholderTextColor="#A78BFA"
+                placeholder="Search for beautiful Duas... 🔍"
+                placeholderTextColor={THEME.text.secondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 returnKeyType="search"
                 autoFocus={true}
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                  <Text style={styles.clearButtonText}>✕</Text>
-                </TouchableOpacity>
+                <BouncingButton>
+                  <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                    <Text style={styles.clearButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </BouncingButton>
               )}
             </View>
           </Animated.View>
         )}
 
-        {/* Main Content */}
         <ScrollView 
           style={styles.content}
           showsVerticalScrollIndicator={false}
@@ -590,19 +652,17 @@ export default function DashboardScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Minimal Welcome Section */}
           {!searchQuery && (
             <View style={styles.welcomeSection}>
               <Text style={styles.welcomeText}>
                 Discover {duas.length} Beautiful Duas 🌟
               </Text>
               <Text style={styles.welcomeSubtext}>
-                From {categories.length} categories • Tap to explore
+                From {categories.length} categories • Tap to explore and learn! 📚
               </Text>
             </View>
           )}
 
-          {/* No Results State */}
           {filteredDuas.length === 0 && searchQuery && (
             <View style={styles.noResultsContainer}>
               <Text style={styles.noResultsEmoji}>🔍</Text>
@@ -613,7 +673,6 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Duas Grid */}
           {filteredDuas.length > 0 && (
             <View style={styles.gridContainer}>
               {filteredDuas.map((dua, index) => (
@@ -628,7 +687,6 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Bottom Padding */}
           <View style={styles.bottomPadding} />
         </ScrollView>
       </SafeAreaView>
@@ -636,30 +694,28 @@ export default function DashboardScreen() {
   );
 }
 
-// Keep your existing styles...
 const styles = StyleSheet.create({
-  // ... your existing styles remain the same
   container: {
     flex: 1,
-    backgroundColor: '#F0F9FF',
+    backgroundColor: THEME.tertiary,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F0F9FF',
+    backgroundColor: THEME.tertiary,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#8B5CF6',
     fontWeight: '600',
+    color: THEME.text.primary, // Better contrast
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F0F9FF',
+    backgroundColor: THEME.tertiary,
     paddingHorizontal: 20,
   },
   errorEmoji: {
@@ -668,33 +724,34 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    color: '#6B7280',
+    color: THEME.text.primary, // Better contrast
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 24,
+    fontWeight: '500',
   },
   retryButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: THEME.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 20,
-    shadowColor: '#8B5CF6',
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   retryButtonText: {
-    color: '#ffffff',
+    color: THEME.text.light,
     fontSize: 16,
     fontWeight: '600',
   },
   header: {
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
     overflow: 'hidden',
   },
   headerGradient: {
@@ -720,17 +777,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: THEME.text.dark,
   },
   subtitle: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '500',
+    color: THEME.text.primary, // Better contrast
+    fontWeight: '600', // Bolder for better readability
     marginTop: 2,
   },
   searchToggleButton: {
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -744,10 +801,10 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: THEME.neutral,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    shadowColor: '#8B5CF6',
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
@@ -756,25 +813,25 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    backgroundColor: `${THEME.primary}10`,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderWidth: 2,
-    borderColor: '#8B5CF6',
+    borderColor: THEME.primary,
   },
   searchInput: {
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    color: '#7C3AED',
+    color: THEME.text.primary, // Better contrast
     fontWeight: '600',
     paddingVertical: 2,
   },
   clearButton: {
     padding: 4,
     marginLeft: 8,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    backgroundColor: `${THEME.primary}20`,
     borderRadius: 12,
     width: 24,
     height: 24,
@@ -783,7 +840,7 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     fontSize: 14,
-    color: '#7C3AED',
+    color: THEME.primary,
     fontWeight: 'bold',
   },
   content: {
@@ -800,14 +857,15 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#7C3AED',
+    color: THEME.text.primary, // Better contrast
     textAlign: 'center',
     marginBottom: 4,
   },
   welcomeSubtext: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: THEME.text.primary, // Better contrast
     textAlign: 'center',
+    fontWeight: '500',
   },
   noResultsContainer: {
     alignItems: 'center',
@@ -822,15 +880,16 @@ const styles = StyleSheet.create({
   noResultsText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#6B7280',
+    color: THEME.text.primary, // Better contrast
     marginBottom: 8,
     textAlign: 'center',
   },
   noResultsSubtext: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: THEME.text.primary, // Better contrast
     textAlign: 'center',
     lineHeight: 22,
+    fontWeight: '500',
   },
   gridContainer: {
     flexDirection: 'row',
@@ -845,22 +904,21 @@ const styles = StyleSheet.create({
   cardInner: {
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#ffffff',
-    shadowColor: '#8B5CF6',
+    backgroundColor: THEME.secondary,
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 8,
+    borderWidth: 2,
+    borderColor: THEME.accent,
   },
   cardImageContainer: {
     position: 'relative',
     height: 100,
     overflow: 'hidden',
   },
-  cardOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
-  },
+  // REMOVED: cardOverlay style - no more image overlays
   cardNumber: {
     position: 'absolute',
     top: 8,
@@ -873,10 +931,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
     borderWidth: 2,
-    borderColor: '#8B5CF6',
+    borderColor: THEME.primary,
   },
   cardNumberText: {
-    color: '#8B5CF6',
+    color: THEME.primary,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -892,26 +950,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
     borderWidth: 1,
-    borderColor: '#EF4444',
+    borderColor: THEME.text.accent,
   },
   favoriteText: {
     fontSize: 10,
   },
-  memorizationIndicator: {
+  progressContainer: {
     position: 'absolute',
     bottom: 8,
-    right: 8,
-    width: 20,
-    height: 20,
+    left: 8,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  memorizationText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: 'bold',
   },
   cardImage: {
     width: '100%',
@@ -942,7 +994,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#7C3AED',
+    color: THEME.text.primary, // Better contrast
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: 4,

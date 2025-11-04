@@ -56,7 +56,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '1',
     number: 1,
     title: 'Praise and Glory',
-    image: require('../assets/images/dua_31.png'),
+    image: require('../../assets/images/dua_31.png'),
     isMemorized: true,
     isFavorite: true,
     category: 'Daily',
@@ -68,7 +68,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '2',
     number: 2,
     title: 'Peace upon the Prophet',
-    image: require('../assets/images/dua_2.png'),
+    image: require('../../assets/images/dua_2.png'),
     isMemorized: false,
     isFavorite: true,
     category: 'Prophet',
@@ -80,7 +80,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '3',
     number: 3,
     title: 'Morning Dua',
-    image: require('../assets/images/dua_3.png'),
+    image: require('../../assets/images/dua_3.png'),
     isMemorized: false,
     isFavorite: false,
     category: 'Morning',
@@ -92,7 +92,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '4',
     number: 4,
     title: 'Evening Dua',
-    image: require('../assets/images/dua_4.png'),
+    image: require('../../assets/images/dua_4.png'),
     isMemorized: true,
     isFavorite: false,
     category: 'Evening',
@@ -104,7 +104,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '5',
     number: 5,
     title: 'Protection Dua',
-    image: require('../assets/images/dua_5.png'),
+    image: require('../../assets/images/dua_5.png'),
     isMemorized: false,
     isFavorite: true,
     category: 'Protection',
@@ -116,7 +116,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '6',
     number: 6,
     title: 'Guidance Dua',
-    image: require('../assets/images/dua_6.png'),
+    image: require('../../assets/images/dua_6.png'),
     isMemorized: false,
     isFavorite: false,
     category: 'Guidance',
@@ -128,7 +128,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '7',
     number: 7,
     title: 'Forgiveness Dua',
-    image: require('../assets/images/dua_7.png'),
+    image: require('../../assets/images/dua_7.png'),
     isMemorized: true,
     isFavorite: true,
     category: 'Forgiveness',
@@ -140,7 +140,7 @@ const DUAS_DATA: DuaItem[] = [
     id: '8',
     number: 8,
     title: 'Thanksgiving Dua',
-    image: require('../assets/images/dua_8.png'),
+    image: require('../../assets/images/dua_8.png'),
     isMemorized: false,
     isFavorite: false,
     category: 'Gratitude',
@@ -340,7 +340,7 @@ const CompactDuaCard = React.memo(({
           <Image 
             source={dua.image} 
             style={styles.compactImage}
-            defaultSource={require('../assets/images/dua_31.png')}
+            defaultSource={require('../../assets/images/dua_31.png')}
           />
 
           {/* Title */}
@@ -432,7 +432,7 @@ const ListDuaCard = React.memo(({
               <Image 
                 source={dua.image} 
                 style={styles.listImage}
-                defaultSource={require('../assets/images/dua_31.png')}
+                defaultSource={require('../../assets/images/dua_31.png')}
               />
               <View style={styles.listBasicInfo}>
                 <Text style={styles.listNumber}>#{dua.number}</Text>

@@ -3,7 +3,22 @@ import { View, Text, Animated, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useEffect } from 'react';
 
-// Supercharged Tab Icon with Advanced Animations
+// Updated theme to match home screen
+const THEME = {
+  primary: '#FF6B9D',      // Softer Pink
+  secondary: '#FFF7D0',    // Bright Lemon Yellow
+  tertiary: '#E8F4FF',     // Softer Sky Blue
+  neutral: '#FFFFFF',      // White
+  accent: '#FFD166',       // Sunny Yellow
+  success: '#4ECDC4',      // Mint Green
+  text: {
+    primary: '#2D3748',    // Soft Dark
+    secondary: '#718096',  // Soft Gray
+    light: '#FFFFFF',      // White
+  }
+};
+
+// Enhanced Tab Icon with Kid-Friendly Animations
 const SuperTabIcon = ({ 
   emoji, 
   label, 
@@ -19,44 +34,59 @@ const SuperTabIcon = ({
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (focused) {
-      // Focused animation sequence
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1.3,
-          tension: 150,
+      // Bouncy focused animation sequence
+      Animated.sequence([
+        Animated.spring(bounceAnim, {
+          toValue: 1,
+          tension: 200,
           friction: 3,
           useNativeDriver: true,
         }),
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Continuous pulse animation
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowAnim, {
-            toValue: 0.7,
-            duration: 800,
+        Animated.parallel([
+          Animated.spring(scaleAnim, {
+            toValue: 1.2,
+            tension: 150,
+            friction: 3,
             useNativeDriver: true,
           }),
           Animated.timing(glowAnim, {
             toValue: 1,
-            duration: 800,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+
+      // Continuous playful animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1.15,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1.2,
+            duration: 1000,
             useNativeDriver: true,
           }),
         ])
       ).start();
     } else {
-      // Reset animations when not focused
+      // Smooth reset to normal state
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
+          tension: 150,
+          friction: 3,
+          useNativeDriver: true,
+        }),
+        Animated.spring(bounceAnim, {
+          toValue: 0,
           tension: 150,
           friction: 3,
           useNativeDriver: true,
@@ -70,9 +100,14 @@ const SuperTabIcon = ({
     }
   }, [focused]);
 
+  const translateY = bounceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -5],
+  });
+
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.4],
+    outputRange: [0, 0.3],
   });
 
   return (
@@ -92,7 +127,7 @@ const SuperTabIcon = ({
       {/* Main Icon Container */}
       <Animated.View
         style={{
-          transform: [{ scale: scaleAnim }],
+          transform: [{ translateY }, { scale: scaleAnim }],
         }}
       >
         {focused ? (
@@ -114,32 +149,36 @@ const SuperTabIcon = ({
       </Animated.View>
 
       {/* Label */}
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Animated.View style={{ transform: [{ translateY }] }}>
         <Text style={[
           styles.tabLabel,
-          { color: focused ? gradientColors[1] : '#6B7280' }
+          { 
+            color: focused ? gradientColors[1] : THEME.text.secondary,
+            fontWeight: focused ? 'bold' : '600'
+          }
         ]}>
           {label}
         </Text>
       </Animated.View>
 
-      {/* Active Indicator Dot */}
+      {/* Active Indicator Star */}
       {focused && (
         <Animated.View
           style={[
-            styles.activeDot,
+            styles.activeStar,
             {
-              backgroundColor: gradientColors[1],
               transform: [{ scale: scaleAnim }],
             }
           ]}
-        />
+        >
+          <Text style={styles.starText}>⭐</Text>
+        </Animated.View>
       )}
     </View>
   );
 };
 
-// Professional Floating Tab Icon that aligns with others
+// Central Floating Tab Icon matching home screen theme
 const FloatingTabIcon = ({ 
   emoji, 
   label, 
@@ -152,13 +191,14 @@ const FloatingTabIcon = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const elevateAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (focused) {
-      // Professional focused animation - elevated with glow
+      // Exciting focused animation with rotation
       Animated.parallel([
         Animated.spring(scaleAnim, {
-          toValue: 1.4,
+          toValue: 1.3,
           tension: 180,
           friction: 4,
           useNativeDriver: true,
@@ -171,28 +211,47 @@ const FloatingTabIcon = ({
         }),
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 400,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 600,
           useNativeDriver: true,
         }),
       ]).start();
 
-      // Subtle continuous breathing animation
+      // Continuous playful animations
       Animated.loop(
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.35,
-            duration: 1200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1.4,
-            duration: 1200,
-            useNativeDriver: true,
-          }),
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(scaleAnim, {
+              toValue: 1.25,
+              duration: 1500,
+              useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+              toValue: 1.3,
+              duration: 1500,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.sequence([
+            Animated.timing(rotateAnim, {
+              toValue: 0,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(rotateAnim, {
+              toValue: 1,
+              duration: 2000,
+              useNativeDriver: true,
+            }),
+          ]),
         ])
       ).start();
     } else {
-      // Smooth reset to normal state
+      // Smooth reset
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
@@ -211,28 +270,33 @@ const FloatingTabIcon = ({
           duration: 300,
           useNativeDriver: true,
         }),
+        Animated.timing(rotateAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [focused]);
 
   const translateY = elevateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -8],
+    outputRange: [0, -10],
+  });
+
+  const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
   });
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.3, 0.8],
+    outputRange: [0.2, 0.6],
   });
 
   const shadowRadius = elevateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [16, 24],
-  });
-
-  const shadowOpacity = elevateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.4, 0.8],
+    outputRange: [12, 20],
   });
 
   return (
@@ -251,7 +315,7 @@ const FloatingTabIcon = ({
       {/* Main Floating Button */}
       <Animated.View
         style={{
-          transform: [{ translateY }, { scale: scaleAnim }],
+          transform: [{ translateY }, { scale: scaleAnim }, { rotate }],
         }}
       >
         <Animated.View
@@ -259,12 +323,11 @@ const FloatingTabIcon = ({
             styles.floatingButton,
             {
               shadowRadius: shadowRadius,
-              shadowOpacity: shadowOpacity,
             }
           ]}
         >
           <LinearGradient
-            colors={['#8B5CF6', '#7C3AED', '#6D28D9']}
+            colors={[THEME.primary, '#FF8BB5']}
             style={styles.floatingButtonGradient}
           >
             <Text style={styles.floatingEmoji}>
@@ -274,7 +337,7 @@ const FloatingTabIcon = ({
         </Animated.View>
       </Animated.View>
 
-      {/* Professional Label */}
+      {/* Fun Label */}
       <Animated.View
         style={{
           opacity: elevateAnim,
@@ -286,17 +349,32 @@ const FloatingTabIcon = ({
         </Text>
       </Animated.View>
 
-      {/* Subtle Active Indicator */}
+      {/* Floating Stars */}
       {focused && (
-        <Animated.View
-          style={[
-            styles.floatingActiveDot,
-            {
-              opacity: elevateAnim,
-              transform: [{ scale: scaleAnim }],
-            }
-          ]}
-        />
+        <>
+          <Animated.View
+            style={[
+              styles.floatingStar1,
+              {
+                opacity: elevateAnim,
+                transform: [{ scale: scaleAnim }],
+              }
+            ]}
+          >
+            <Text style={styles.starText}>✨</Text>
+          </Animated.View>
+          <Animated.View
+            style={[
+              styles.floatingStar2,
+              {
+                opacity: elevateAnim,
+                transform: [{ scale: scaleAnim }],
+              }
+            ]}
+          >
+            <Text style={styles.starText}>🌟</Text>
+          </Animated.View>
+        </>
       )}
     </View>
   );
@@ -312,22 +390,6 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="info"
-        options={{
-          title: 'Learn',
-          tabBarIcon: ({ focused }) => (
-            <SuperTabIcon 
-              emoji="📚" 
-              label="Learn" 
-              focused={focused}
-              gradientColors={['#EC4899', '#DB2777']}
-              pulseColor="#EC4899"
-            />
-          ),
-        }}
-      />
-      
-      <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
@@ -336,6 +398,39 @@ export default function TabLayout() {
               emoji="🏠" 
               label="Home" 
               focused={focused} 
+            />
+          ),
+        }}
+      />
+      
+      {/* NEW: Tracker Screen */}
+      <Tabs.Screen
+        name="tracker"
+        options={{
+          title: 'Tracker',
+          tabBarIcon: ({ focused }) => (
+            <SuperTabIcon 
+              emoji="📊" 
+              label="Tracker" 
+              focused={focused}
+              gradientColors={[THEME.success, '#3BB4A8']}
+              pulseColor={THEME.success}
+            />
+          ),
+        }}
+      />
+      
+      <Tabs.Screen
+        name="info"
+        options={{
+          title: 'Learn',
+          tabBarIcon: ({ focused }) => (
+            <SuperTabIcon 
+              emoji="📚" 
+              label="Learn" 
+              focused={focused}
+              gradientColors={['#8B5CF6', '#7C3AED']}
+              pulseColor="#8B5CF6"
             />
           ),
         }}
@@ -350,24 +445,8 @@ export default function TabLayout() {
               emoji="🌟" 
               label="Share" 
               focused={focused}
-              gradientColors={['#F59E0B', '#D97706']}
-              pulseColor="#F59E0B"
-            />
-          ),
-        }}
-      />
-      
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Power',
-          tabBarIcon: ({ focused }) => (
-            <SuperTabIcon 
-              emoji="⚡" 
-              label="Power" 
-              focused={focused}
-              gradientColors={['#10B981', '#059669']}
-              pulseColor="#10B981"
+              gradientColors={[THEME.accent, '#FFC145']}
+              pulseColor={THEME.accent}
             />
           ),
         }}
@@ -378,21 +457,23 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 80,
+    height: 85,
     borderTopWidth: 0,
-    backgroundColor: '#ffffff',
+    backgroundColor: THEME.neutral,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: 16,
+    borderWidth: 2,
+    borderColor: `${THEME.primary}20`,
   },
   tabIconContainer: {
     alignItems: 'center',
@@ -403,92 +484,92 @@ const styles = StyleSheet.create({
   },
   glowEffect: {
     position: 'absolute',
-    top: -5,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    top: -4,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   focusedIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
     borderWidth: 3,
     borderColor: 'rgba(255, 255, 255, 0.9)',
   },
   unfocusedIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 2,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    shadowColor: '#000',
+    borderColor: `${THEME.primary}30`,
+    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   focusedEmoji: {
-    fontSize: 20,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    fontSize: 18,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 2,
   },
   unfocusedEmoji: {
-    fontSize: 18,
+    fontSize: 16,
     opacity: 0.8,
   },
   tabLabel: {
     fontSize: 11,
-    fontWeight: '600',
     marginTop: 4,
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 0.5, height: 0.5 },
     textShadowRadius: 1,
   },
-  activeDot: {
+  activeStar: {
     position: 'absolute',
-    bottom: -2,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
+    top: -8,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  starText: {
+    fontSize: 12,
   },
   floatingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    top: -15,
+    top: -18,
     width: 70,
   },
   floatingGlow: {
     position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#8B5CF6',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: THEME.primary,
   },
   floatingButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    elevation: 15,
     overflow: 'hidden',
   },
   floatingButtonGradient: {
@@ -498,7 +579,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   floatingEmoji: {
-    fontSize: 22,
+    fontSize: 20,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -506,22 +587,20 @@ const styles = StyleSheet.create({
   floatingLabel: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#7C3AED',
+    color: THEME.primary,
     marginTop: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 0.5, height: 0.5 },
     textShadowRadius: 1,
   },
-  floatingActiveDot: {
+  floatingStar1: {
     position: 'absolute',
-    bottom: -4,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#7C3AED',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
+    top: -5,
+    right: 45,
+  },
+  floatingStar2: {
+    position: 'absolute',
+    top: -5,
+    left: 45,
   },
 });
