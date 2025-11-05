@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
+import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 
 const { width } = Dimensions.get('window');
 const THEME = {
@@ -145,6 +146,7 @@ const AnimatedHeader = () => {
 
 export default function InfoScreen() {
   return (
+    <ScreenWrapper bottomMargin={30}>
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
       
@@ -257,6 +259,7 @@ export default function InfoScreen() {
         <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 

@@ -31,14 +31,14 @@ const CONTAINER_WIDTH = Math.min(width, MAX_WIDTH);
 
 // Enhanced Kid-Friendly Theme with Better Colors for Kids
 const THEME = {
-  primary: '#FF6B9D',      // Softer Pink
+  primary: '#7E57C2',      // Softer Purple
   secondary: '#FFF7D0',    // Bright Lemon Yellow
   tertiary: '#E8F4FF',     // Softer Sky Blue
   neutral: '#FFFFFF',      // White
   accent: '#FFD166',       // Sunny Yellow
   success: '#4ECDC4',      // Mint Green
   header: '#fcf8b1',       // Yellow Header Color
-  
+
   // Kid-Friendly Text Colors - Softer and Warmer
   text: {
     primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
@@ -46,15 +46,6 @@ const THEME = {
     light: '#FFFFFF',      // White
     dark: '#4A5C6B',       // Soft Charcoal - Not too dark
     accent: '#E53E3E',     // Red accent for important text
-  },
-  
-  // Enhanced Gradient Colors aligned with theme
-  gradients: {
-    progress: ['#FF9E7D', '#FF6B9D', '#FF4D7A'], // Pink to coral gradient
-    success: ['#4ECDC4', '#3BB4A8', '#2AA197'], // Mint green gradient
-    header: ['#fcf8b1', '#fef9c3'], // Yellow header gradient
-    card: ['#FFF7D0', '#FFEBB7'], // Card gradient
-    stats: ['#FF9E7D', '#FF6B9D'], // Stats header gradient
   }
 };
 

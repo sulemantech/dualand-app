@@ -1,15 +1,15 @@
 import { Tabs } from 'expo-router';
-import { View, Text, Animated, StyleSheet, Easing } from 'react-native';
+import { View, Text, Animated, StyleSheet, Easing, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useEffect } from 'react';
 
 // Updated theme to match home screen
 const THEME = {
-  primary: '#FF6B9D',      // Softer Pink
+  primary: '#7E57C2',      // Vibrant Purple - Fun and energetic
   secondary: '#FFF7D0',    // Bright Lemon Yellow
   tertiary: '#E8F4FF',     // Softer Sky Blue
   neutral: '#FFFFFF',      // White
-  accent: '#FFD166',       // Sunny Yellow
+  accent: '#26C6DA',       // Bright Teal - Fresh and modern
   success: '#4ECDC4',      // Mint Green
   text: {
     primary: '#2D3748',    // Soft Dark
@@ -44,8 +44,8 @@ const SuperTabIcon = ({
       Animated.parallel([
         Animated.spring(bounceAnim, {
           toValue: 1,
-          tension: 300, // Increased tension for faster movement
-          friction: 5,  // Reduced friction for smoother motion
+          tension: 300,
+          friction: 5,
           useNativeDriver: true,
         }),
         Animated.spring(scaleAnim, {
@@ -56,13 +56,13 @@ const SuperTabIcon = ({
         }),
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 250, // Faster duration
+          duration: 250,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(bgShadeAnim, {
           toValue: 1,
-          duration: 200, // Faster duration
+          duration: 200,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -78,8 +78,8 @@ const SuperTabIcon = ({
       Animated.loop(
         Animated.sequence([
           Animated.timing(floatAnim, {
-            toValue: 1.05, // Smaller range for smoother motion
-            duration: 800, // Faster cycle
+            toValue: 1.05,
+            duration: 800,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
@@ -114,13 +114,13 @@ const SuperTabIcon = ({
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: 150, // Faster reset
+          duration: 150,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(bgShadeAnim, {
           toValue: 0,
-          duration: 150, // Faster reset
+          duration: 150,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -131,11 +131,11 @@ const SuperTabIcon = ({
   const translateY = Animated.add(
     bounceAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, -6], // Slightly reduced movement for smoother feel
+      outputRange: [0, -6],
     }),
     floatAnim.interpolate({
       inputRange: [0, 1, 1.05],
-      outputRange: [0, -3, -4], // Reduced floating range
+      outputRange: [0, -3, -4],
     })
   );
 
@@ -281,8 +281,8 @@ const FloatingTabIcon = ({
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1.3,
-          tension: 250, // Increased tension
-          friction: 6,  // Reduced friction
+          tension: 250,
+          friction: 6,
           useNativeDriver: true,
         }),
         Animated.spring(elevateAnim, {
@@ -293,13 +293,13 @@ const FloatingTabIcon = ({
         }),
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 300, // Faster
+          duration: 300,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(rotateAnim, {
           toValue: 1,
-          duration: 400, // Faster
+          duration: 400,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -311,7 +311,7 @@ const FloatingTabIcon = ({
         }),
         Animated.timing(bgShadeAnim, {
           toValue: 1,
-          duration: 250, // Faster
+          duration: 250,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -321,8 +321,8 @@ const FloatingTabIcon = ({
       Animated.loop(
         Animated.sequence([
           Animated.timing(floatAnim, {
-            toValue: 1.08, // Smaller range
-            duration: 1000, // Faster cycle
+            toValue: 1.08,
+            duration: 1000,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
@@ -357,19 +357,19 @@ const FloatingTabIcon = ({
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: 200, // Faster
+          duration: 200,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(rotateAnim, {
           toValue: 0,
-          duration: 200, // Faster
+          duration: 200,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(bgShadeAnim, {
           toValue: 0,
-          duration: 200, // Faster
+          duration: 200,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
@@ -380,11 +380,11 @@ const FloatingTabIcon = ({
   const translateY = Animated.add(
     elevateAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, -8], // Slightly reduced
+      outputRange: [0, -8],
     }),
     floatAnim.interpolate({
       inputRange: [0, 1, 1.08],
-      outputRange: [0, -4, -5], // Reduced floating range
+      outputRange: [0, -4, -5],
     })
   );
 
@@ -405,7 +405,7 @@ const FloatingTabIcon = ({
 
   const shadowRadius = elevateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [12, 20], // Reduced shadow growth
+    outputRange: [12, 20],
   });
 
   return (
@@ -419,11 +419,11 @@ const FloatingTabIcon = ({
             transform: [
               { scale: floatAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0.9, 1.2] // Reduced scale
+                outputRange: [0.9, 1.2]
               })},
               { translateY: floatAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0, -2] // Reduced movement
+                outputRange: [0, -2]
               })}
             ],
           }
@@ -456,7 +456,7 @@ const FloatingTabIcon = ({
           ]}
         >
           <LinearGradient
-            colors={[THEME.primary, '#FF8BB5']}
+            colors={[THEME.primary, '#8B6BC9']}
             style={styles.floatingButtonGradient}
           >
             <Text style={styles.floatingEmoji}>
@@ -473,7 +473,7 @@ const FloatingTabIcon = ({
           transform: [{ 
             translateY: floatAnim.interpolate({
               inputRange: [0, 1],
-              outputRange: [0, -2] // Reduced movement
+              outputRange: [0, -2]
             }) 
           }],
         }}
@@ -495,14 +495,14 @@ const FloatingTabIcon = ({
                   { scale: scaleAnim },
                   { translateY: floatAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, -3] // Reduced movement
+                    outputRange: [0, -3]
                   })}
                 ],
               }
             ]}
           >
             <LinearGradient
-              colors={[THEME.primary, '#FF8BB5']}
+              colors={[THEME.primary, '#8B6BC9']}
               style={styles.starGradient}
             >
               <Text style={styles.starText}>✨</Text>
@@ -517,14 +517,14 @@ const FloatingTabIcon = ({
                   { scale: scaleAnim },
                   { translateY: floatAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, -3] // Reduced movement
+                    outputRange: [0, -3]
                   })}
                 ],
               }
             ]}
           >
             <LinearGradient
-              colors={[THEME.primary, '#FF8BB5']}
+              colors={[THEME.primary, '#8B6BC9']}
               style={styles.starGradient}
             >
               <Text style={styles.starText}>🌟</Text>
@@ -554,7 +554,7 @@ export default function TabLayout() {
               emoji="📊" 
               label="Tracker" 
               focused={focused}
-              gradientColors={[THEME.success, '#3BB4A8']}
+              gradientColors={[THEME.primary, '#3a8dfd']}
               pulseColor={THEME.success}
             />
           ),
@@ -570,7 +570,7 @@ export default function TabLayout() {
               emoji="📚" 
               label="Learn" 
               focused={focused}
-              gradientColors={['#8B5CF6', '#7C3AED']}
+              gradientColors={[THEME.secondary, '#9e904bff']}
               pulseColor="#8B5CF6"
             />
           ),
@@ -601,7 +601,7 @@ export default function TabLayout() {
               emoji="🌟" 
               label="Share" 
               focused={focused}
-              gradientColors={[THEME.accent, '#FFC145']}
+              gradientColors={[THEME.accent, '#1FB4C8']}
               pulseColor={THEME.accent}
             />
           ),
@@ -629,7 +629,7 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 85,
+    height: Platform.OS === 'ios' ? 95 : 85, // Increased height for iOS
     borderTopWidth: 0,
     backgroundColor: THEME.neutral,
     position: 'absolute',
@@ -644,7 +644,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 16,
-    borderWidth: 2,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 15, // ✅ ADDED PADDING - Critical fix!
+    paddingTop: 8, // ✅ ADDED TOP PADDING
+    borderWidth: 1,
     borderColor: `${THEME.primary}20`,
   },
   tabIconContainer: {
@@ -653,6 +655,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     position: 'relative',
     width: 70,
+    marginBottom: Platform.OS === 'ios' ? 5 : 0, // ✅ ADDED MARGIN for iOS
   },
   // Background shade for regular tabs
   bgShade: {
@@ -741,6 +744,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     top: -18,
     width: 70,
+    marginBottom: Platform.OS === 'ios' ? 5 : 0, // ✅ ADDED MARGIN for iOS
   },
   // Background shade for floating tab
   floatingBgShade: {

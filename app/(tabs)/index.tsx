@@ -20,6 +20,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { SearchIcon } from '../../Icons';
 import { databaseService, Category, Dua } from '../../lib/database/database';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ScreenWrapper } from '@/components/common/ScreenWrapper';
+
 
 const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
@@ -27,14 +29,14 @@ const CARD_WIDTH = (width - 40 - CARD_MARGIN) / 2;
 
 // Enhanced Kid-Friendly Theme with Better Contrast
 const THEME = {
-  primary: '#FF6B9D',      // Softer Pink
+  primary: '#7E57C2',      // Softer Purple
   secondary: '#FFF7D0',    // Bright Lemon Yellow
   tertiary: '#E8F4FF',     // Softer Sky Blue
   neutral: '#FFFFFF',      // White
   accent: '#FFD166',       // Sunny Yellow
   success: '#4ECDC4',      // Mint Green
   header: '#fcf8b1',       // Yellow Header Color
-  
+
   // Kid-Friendly Text Colors - Softer and Warmer
   text: {
     primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
@@ -146,8 +148,8 @@ const FloatingParticles = React.memo(({ count = 8 }) => {
               opacity,
             }}
           >
-            <Text style={{ 
-              fontSize: 16, 
+            <Text style={{
+              fontSize: 16,
               color: [THEME.primary, THEME.accent, THEME.success][index % 3]
             }}>
               {emojis[index % emojis.length]}
@@ -167,7 +169,7 @@ const getLocalImage = (duaId: string, duaNumber?: string) => {
       return localImages[imageKey];
     }
   }
-  
+
   const imageIndex = (parseInt(duaId) % 32) + 1;
   const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
   return localImages[fallbackImageKey] || localImages.dua_1;
@@ -218,8 +220,8 @@ const ProgressStar = ({ filled, size = 16 }) => (
 );
 
 // Optimized DuaCard component - REMOVED OVERLAYS
-const DuaCard = React.memo(({ dua, index, onPress, categories }: { 
-  dua: Dua; 
+const DuaCard = React.memo(({ dua, index, onPress, categories }: {
+  dua: Dua;
   index: number;
   onPress: (dua: Dua) => void;
   categories: Category[];
@@ -305,7 +307,7 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
               outputRange: [40, 0],
             }),
           },
-          { 
+          {
             scale: cardAnim.interpolate({
               inputRange: [0, 1],
               outputRange: [0.9, 1],
@@ -319,20 +321,20 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
         <Animated.View style={styles.cardInner}>
           <View style={styles.cardImageContainer}>
             {/* REMOVED: Category color overlay - no more blur/shade on images */}
-            
+
             <View style={styles.cardNumber}>
               <Text style={styles.cardNumberText}>
                 {dua.duaNumber || dua.order_index.toString().padStart(2, '0')}
               </Text>
             </View>
-            
+
             {/* Clean image without overlays */}
-            <Image 
-              source={localImage} 
+            <Image
+              source={localImage}
               style={styles.cardImage}
               resizeMode="cover"
             />
-            
+
             {/* Favorite indicator */}
             {dua.is_favorited && (
               <View style={styles.favoriteIndicator}>
@@ -353,9 +355,9 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
               <Text style={[styles.star, styles.star2]}>⭐</Text>
             </View>
           </View>
-          
+
           {/* Card banner with better text contrast */}
-          <View style={[styles.cardBanner, { backgroundColor: THEME.neutral }]}>
+          <View style={[styles.cardBanner, { backgroundColor: '#ede77bff' }]}>
             <Text style={styles.cardTitle} numberOfLines={2}>
               {dua.title}
             </Text>
@@ -394,23 +396,23 @@ export default function DashboardScreen() {
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log('Starting database initialization...');
         await databaseService.init();
-        
+
         console.log('Database initialized, loading data...');
-        
+
         const [allDuas, allCategories] = await Promise.all([
           databaseService.getAllDuas(),
           databaseService.getAllCategories()
         ]);
-        
+
         console.log(`Successfully loaded ${allDuas.length} duas and ${allCategories.length} categories`);
-        
+
         setDuas(allDuas);
         setCategories(allCategories);
         dataLoadedRef.current = true;
-        
+
       } catch (err) {
         console.error('Error in loadData:', err);
         setError('Failed to load duas. Please restart the app.');
@@ -428,7 +430,7 @@ export default function DashboardScreen() {
     if (!searchQuery.trim()) {
       return duas;
     }
-    
+
     const query = searchQuery.toLowerCase().trim();
     return duas.filter(dua =>
       dua.title.toLowerCase().includes(query) ||
@@ -442,13 +444,13 @@ export default function DashboardScreen() {
 
   const handleDuaPress = useCallback(async (dua: Dua) => {
     Keyboard.dismiss();
-    
+
     try {
       const wordAudioPairs = await databaseService.getWordAudioPairsByDua(dua.id);
-      
+
       router.push({
         pathname: '/dua-detail',
-        params: { 
+        params: {
           id: dua.id,
           title: dua.title,
           arabic: dua.arabic_text,
@@ -471,7 +473,7 @@ export default function DashboardScreen() {
       console.error('Error navigating to dua detail:', error);
       router.push({
         pathname: '/dua-detail',
-        params: { 
+        params: {
           id: dua.id,
           title: dua.title,
           arabic: dua.arabic_text,
@@ -572,124 +574,126 @@ export default function DashboardScreen() {
         Keyboard.dismiss();
       }
     }} accessible={false}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
-        
-        <FloatingParticles />
-        
-        {/* Header with better text contrast */}
-        <View style={styles.header}>
-          <LinearGradient
-            colors={[THEME.header, '#fef9c3']}
-            style={styles.headerGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <View style={styles.headerContent}>
-              <View style={styles.logoContainer}>
-                <Image
-                  source={{ uri: 'https://i.ibb.co/L5wK60b/dualand-logo.png' }}
-                  style={styles.logo}
-                />
-                <View>
-                  <Text style={styles.title}>DUALAND 🎨</Text>
-                  <Text style={styles.subtitle}>{filteredDuas.length} Beautiful Duas to Explore!</Text>
-                </View>
-              </View>
-              
-              <BouncingButton>
-                <TouchableOpacity 
-                  style={styles.searchToggleButton}
-                  onPress={toggleSearch}
-                >
-                  <View style={styles.searchToggleInner}>
-                    <SearchIcon size={22} color={THEME.text.dark} />
-                  </View>
-                </TouchableOpacity>
-              </BouncingButton>
-            </View>
-          </LinearGradient>
-        </View>
+      <ScreenWrapper>
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
 
-        {isSearchExpanded && (
-          <Animated.View 
-            style={[
-              styles.searchContainer,
-              {
-                opacity: searchOpacityAnim,
-                transform: [{ scale: searchTransform }],
-              }
-            ]}
-          >
-            <View style={styles.searchInputContainer}>
-              <SearchIcon size={20} color={THEME.primary} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search for beautiful Duas... 🔍"
-                placeholderTextColor={THEME.text.secondary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                returnKeyType="search"
-                autoFocus={true}
-              />
-              {searchQuery.length > 0 && (
+          <FloatingParticles />
+
+          {/* Header with better text contrast */}
+          <View style={styles.header}>
+            <LinearGradient
+              colors={[THEME.header, '#fef9c3']}
+              style={styles.headerGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <View style={styles.headerContent}>
+                <View style={styles.logoContainer}>
+                  <Image
+                    source={{ uri: 'https://i.ibb.co/L5wK60b/dualand-logo.png' }}
+                    style={styles.logo}
+                  />
+                  <View>
+                    <Text style={styles.title}>DUALAND 🎨</Text>
+                    <Text style={styles.subtitle}>{filteredDuas.length} Beautiful Duas to Explore!</Text>
+                  </View>
+                </View>
+
                 <BouncingButton>
-                  <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                    <Text style={styles.clearButtonText}>✕</Text>
+                  <TouchableOpacity
+                    style={styles.searchToggleButton}
+                    onPress={toggleSearch}
+                  >
+                    <View style={styles.searchToggleInner}>
+                      <SearchIcon size={22} color={THEME.text.dark} />
+                    </View>
                   </TouchableOpacity>
                 </BouncingButton>
-              )}
-            </View>
-          </Animated.View>
-        )}
+              </View>
+            </LinearGradient>
+          </View>
 
-        <ScrollView 
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.scrollContent,
-            isSearchExpanded && { paddingTop: 12 }
-          ]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {!searchQuery && (
-            <View style={styles.welcomeSection}>
-              <Text style={styles.welcomeText}>
-                Discover {duas.length} Beautiful Duas 🌟
-              </Text>
-              <Text style={styles.welcomeSubtext}>
-                From {categories.length} categories • Tap to explore and learn! 📚
-              </Text>
-            </View>
-          )}
-
-          {filteredDuas.length === 0 && searchQuery && (
-            <View style={styles.noResultsContainer}>
-              <Text style={styles.noResultsEmoji}>🔍</Text>
-              <Text style={styles.noResultsText}>No Duas found for "{searchQuery}"</Text>
-              <Text style={styles.noResultsSubtext}>
-                Try different words or explore all Duas! 🌈
-              </Text>
-            </View>
-          )}
-
-          {filteredDuas.length > 0 && (
-            <View style={styles.gridContainer}>
-              {filteredDuas.map((dua, index) => (
-                <DuaCard 
-                  key={dua.id} 
-                  dua={dua} 
-                  index={index} 
-                  onPress={handleDuaPress}
-                  categories={categories}
+          {isSearchExpanded && (
+            <Animated.View
+              style={[
+                styles.searchContainer,
+                {
+                  opacity: searchOpacityAnim,
+                  transform: [{ scale: searchTransform }],
+                }
+              ]}
+            >
+              <View style={styles.searchInputContainer}>
+                <SearchIcon size={20} color={THEME.primary} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search for beautiful Duas... 🔍"
+                  placeholderTextColor={THEME.text.secondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  returnKeyType="search"
+                  autoFocus={true}
                 />
-              ))}
-            </View>
+                {searchQuery.length > 0 && (
+                  <BouncingButton>
+                    <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                      <Text style={styles.clearButtonText}>✕</Text>
+                    </TouchableOpacity>
+                  </BouncingButton>
+                )}
+              </View>
+            </Animated.View>
           )}
 
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-      </SafeAreaView>
+          <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.scrollContent,
+              isSearchExpanded && { paddingTop: 12 }
+            ]}
+            keyboardShouldPersistTaps="handled"
+          >
+            {!searchQuery && (
+              <View style={styles.welcomeSection}>
+                <Text style={styles.welcomeText}>
+                  Discover {duas.length} Beautiful Duas 🌟
+                </Text>
+                <Text style={styles.welcomeSubtext}>
+                  From {categories.length} categories • Tap to explore and learn! 📚
+                </Text>
+              </View>
+            )}
+
+            {filteredDuas.length === 0 && searchQuery && (
+              <View style={styles.noResultsContainer}>
+                <Text style={styles.noResultsEmoji}>🔍</Text>
+                <Text style={styles.noResultsText}>No Duas found for "{searchQuery}"</Text>
+                <Text style={styles.noResultsSubtext}>
+                  Try different words or explore all Duas! 🌈
+                </Text>
+              </View>
+            )}
+
+            {filteredDuas.length > 0 && (
+              <View style={styles.gridContainer}>
+                {filteredDuas.map((dua, index) => (
+                  <DuaCard
+                    key={dua.id}
+                    dua={dua}
+                    index={index}
+                    onPress={handleDuaPress}
+                    categories={categories}
+                  />
+                ))}
+              </View>
+            )}
+
+            <View style={styles.bottomPadding} />
+          </ScrollView>
+        </SafeAreaView>
+      </ScreenWrapper>
     </TouchableWithoutFeedback>
   );
 }
@@ -985,6 +989,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   cardBanner: {
+
     padding: 12,
     minHeight: 60,
     justifyContent: 'center',
@@ -1002,6 +1007,7 @@ const styles = StyleSheet.create({
   cardMeta: {
     flexDirection: 'row',
     alignItems: 'center',
+
   },
   categoryText: {
     fontSize: 10,

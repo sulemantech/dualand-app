@@ -15,38 +15,28 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 
 const { width, height } = Dimensions.get('window');
 
 // Enhanced Kid-Friendly Theme with Better Colors for Kids
 const THEME = {
-  primary: '#FF6B9D',      // Softer Pink
+  primary: '#7E57C2',      // Vibrant Purple - Fun and energetic
   secondary: '#FFF7D0',    // Bright Lemon Yellow
   tertiary: '#E8F4FF',     // Softer Sky Blue
   neutral: '#FFFFFF',      // White
-  accent: '#FFD166',       // Sunny Yellow
+  accent: '#26C6DA',       // Bright Teal - Fresh and modern
   success: '#4ECDC4',      // Mint Green
   header: '#fcf8b1',       // Yellow Header Color
   
-  // Kid-Friendly Text Colors - Softer and Warmer
   text: {
-    primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
-    secondary: '#6B7B8C',  // Warm Gray - Gentle contrast
+    primary: '#2D4A63',    // Soft Blue-Gray
+    secondary: '#6B7B8C',  // Warm Gray
     light: '#FFFFFF',      // White
-    dark: '#4A5C6B',       // Soft Charcoal - Not too dark
-    accent: '#E53E3E',     // Red accent for important text
-  },
-  
-  // Enhanced Gradient Colors aligned with theme
-  gradients: {
-    progress: ['#FF9E7D', '#FF6B9D', '#FF4D7A'], // Pink to coral gradient
-    success: ['#4ECDC4', '#3BB4A8', '#2AA197'], // Mint green gradient
-    header: ['#fcf8b1', '#fef9c3'], // Yellow header gradient
-    card: ['#FFF7D0', '#FFEBB7'], // Card gradient
-    stats: ['#FF9E7D', '#FF6B9D'], // Stats header gradient
+    dark: '#4A5C6B',       // Soft Charcoal
+    accent: '#E53E3E',     // Red accent
   }
 };
-
 interface DuaItem {
   id: string;
   number: number;
@@ -58,6 +48,7 @@ interface DuaItem {
   lastPracticed?: string;
   practiceCount: number;
   progress: number;
+  memorization_status: 'not_started' | 'learning' | 'memorized';
 }
 
 const DUAS_DATA: DuaItem[] = [
@@ -71,7 +62,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Daily',
     lastPracticed: '2 hours ago',
     practiceCount: 15,
-    progress: 100
+    progress: 100,
+    memorization_status: 'memorized'
   },
   {
     id: '2',
@@ -83,7 +75,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Prophet',
     lastPracticed: '1 day ago',
     practiceCount: 8,
-    progress: 65
+    progress: 65,
+    memorization_status: 'learning'
   },
   {
     id: '3',
@@ -95,7 +88,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Morning',
     lastPracticed: 'Just now',
     practiceCount: 3,
-    progress: 25
+    progress: 25,
+    memorization_status: 'learning'
   },
   {
     id: '4',
@@ -107,7 +101,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Evening',
     lastPracticed: '3 hours ago',
     practiceCount: 12,
-    progress: 100
+    progress: 100,
+    memorization_status: 'memorized'
   },
   {
     id: '5',
@@ -119,7 +114,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Protection',
     lastPracticed: '2 days ago',
     practiceCount: 5,
-    progress: 45
+    progress: 45,
+    memorization_status: 'learning'
   },
   {
     id: '6',
@@ -131,7 +127,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Guidance',
     lastPracticed: '1 week ago',
     practiceCount: 2,
-    progress: 15
+    progress: 15,
+    memorization_status: 'not_started'
   },
   {
     id: '7',
@@ -143,7 +140,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Forgiveness',
     lastPracticed: 'Yesterday',
     practiceCount: 18,
-    progress: 100
+    progress: 100,
+    memorization_status: 'memorized'
   },
   {
     id: '8',
@@ -155,7 +153,8 @@ const DUAS_DATA: DuaItem[] = [
     category: 'Gratitude',
     lastPracticed: '3 days ago',
     practiceCount: 6,
-    progress: 35
+    progress: 35,
+    memorization_status: 'learning'
   },
 ];
 
@@ -277,15 +276,8 @@ const BouncingButton = ({ children, onPress, style = {} }) => {
   );
 };
 
-// Enhanced Progress Ring Component with Theme-Aligned Colors
+// Progress Ring Component
 const ProgressRing = ({ progress, size = 32 }: { progress: number; size?: number }) => {
-  const getProgressColor = (progress: number) => {
-    if (progress >= 100) return THEME.gradients.success[0];
-    if (progress >= 75) return THEME.gradients.progress[0];
-    if (progress >= 50) return THEME.gradients.progress[1];
-    return THEME.gradients.progress[2];
-  };
-
   return (
     <View style={[styles.progressRing, { width: size, height: size }]}>
       <View style={styles.progressBackground} />
@@ -293,7 +285,7 @@ const ProgressRing = ({ progress, size = 32 }: { progress: number; size?: number
         width: size - 6, 
         height: size - 6,
         borderRadius: (size - 6) / 2,
-        backgroundColor: getProgressColor(progress),
+        backgroundColor: progress >= 100 ? THEME.success : THEME.primary,
         opacity: Math.max(progress / 100, 0.1)
       }]} />
       <Text style={[styles.progressText, { fontSize: size * 0.25 }]}>
@@ -303,26 +295,100 @@ const ProgressRing = ({ progress, size = 32 }: { progress: number; size?: number
   );
 };
 
-// Compact Dua Card - For Grid View
-const CompactDuaCard = React.memo(({ 
+// Progress Star Component
+const ProgressStar = ({ filled, size = 12 }: { filled: boolean; size?: number }) => {
+  return (
+    <Text style={[styles.progressStar, { fontSize: size }]}>
+      {filled ? '⭐' : '☆'}
+    </Text>
+  );
+};
+
+// Enhanced Dua Card Component (Replaces CompactDuaCard)
+const DuaCard = React.memo(({ 
   dua, 
-  onToggleMemorized,
-  onPressPractice 
+  index,
+  onPress,
+  onToggleFavorite,
+  onToggleMemorized
 }: { 
   dua: DuaItem;
+  index: number;
+  onPress: (dua: DuaItem) => void;
+  onToggleFavorite: (id: string, value: boolean) => void;
   onToggleMemorized: (id: string, value: boolean) => void;
-  onPressPractice: (dua: DuaItem) => void;
 }) => {
   const cardAnim = useRef(new Animated.Value(0)).current;
+  const pressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.spring(cardAnim, {
+    const animation = Animated.sequence([
+      Animated.delay(index * 60),
+      Animated.spring(cardAnim, {
+        toValue: 1,
+        tension: 60,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]);
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [cardAnim, index]);
+
+  const handlePressIn = () => {
+    Animated.spring(pressAnim, {
       toValue: 1,
-      tension: 60,
-      friction: 7,
+      tension: 100,
+      friction: 3,
       useNativeDriver: true,
     }).start();
-  }, []);
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(pressAnim, {
+      toValue: 0,
+      tension: 100,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const cardScale = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.96],
+  });
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'Daily': '#FF6B9D',
+      'Prophet': '#4ECDC4',
+      'Morning': '#45B7D1',
+      'Evening': '#FFD166',
+      'Protection': '#EF476F',
+      'Guidance': '#06D6A0',
+      'Forgiveness': '#9D4EDD',
+      'Gratitude': '#FF9E6D',
+    };
+    return colors[category] || THEME.primary;
+  };
+
+  const getProgressStars = () => {
+    switch (dua.memorization_status) {
+      case 'memorized':
+        return [true, true, true, true, true];
+      case 'learning':
+        return [true, true, true, false, false];
+      default:
+        return [true, false, false, false, false];
+    }
+  };
+
+  const categoryColor = getCategoryColor(dua.category);
+  const progressStars = getProgressStars();
 
   return (
     <Animated.View
@@ -335,83 +401,111 @@ const CompactDuaCard = React.memo(({
               outputRange: [40, 0],
             }),
           },
+          { 
+            scale: cardAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.9, 1],
+            })
+          },
+          { scale: cardScale },
         ],
       }}
     >
-      <BouncingButton onPress={() => onPressPractice(dua)} style={styles.compactCard}>
-        <LinearGradient
-          colors={THEME.gradients.card}
-          style={styles.compactCardInner}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {/* Header */}
-          <View style={styles.compactHeader}>
-            <View style={styles.duaNumber}>
-              <Text style={styles.duaNumberText}>#{dua.number}</Text>
-            </View>
-            {dua.isFavorite && (
-              <View style={styles.favoriteIndicator}>
-                <Text style={styles.favoriteText}>❤️</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Image */}
-          <Image 
-            source={dua.image} 
-            style={styles.compactImage}
-            defaultSource={require('../assets/images/dua_31.png')}
-          />
-
-          {/* Title */}
-          <Text style={styles.compactTitle} numberOfLines={2}>
-            {dua.title}
-          </Text>
-
-          {/* Progress */}
-          <View style={styles.compactProgress}>
-            <ProgressRing progress={dua.progress} size={28} />
-            <View style={styles.compactProgressInfo}>
-              <Text style={styles.compactPracticeCount}>
-                {dua.practiceCount} practices
-              </Text>
-              <Text style={styles.compactProgressLabel}>
-                {dua.isMemorized ? 'Memorized' : 'In Progress'}
+      <BouncingButton onPress={() => onPress(dua)} style={styles.card}>
+        <Animated.View style={styles.cardInner}>
+          {/* Card Image Container */}
+          <View style={styles.cardImageContainer}>
+            {/* Dua Number */}
+            <View style={styles.cardNumber}>
+              <Text style={styles.cardNumberText}>
+                #{dua.number.toString().padStart(2, '0')}
               </Text>
             </View>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={styles.compactActions}>
+            
+            {/* Dua Image */}
+            <Image 
+              source={dua.image} 
+              style={styles.cardImage}
+              resizeMode="cover"
+              defaultSource={require('../assets/images/dua_31.png')}
+            />
+            
+            {/* Favorite Indicator */}
             <TouchableOpacity 
-              style={[
-                styles.quickPracticeButton,
-                dua.isMemorized && styles.quickPracticeButtonMemorized
-              ]}
-              onPress={() => onPressPractice(dua)}
+              style={styles.favoriteIndicator}
+              onPress={() => onToggleFavorite(dua.id, !dua.isFavorite)}
             >
-              <LinearGradient
-                colors={dua.isMemorized ? THEME.gradients.success : THEME.gradients.progress}
-                style={styles.quickPracticeButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+              <Text style={styles.favoriteText}>
+                {dua.isFavorite ? '❤️' : '🤍'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Progress Stars */}
+            <View style={styles.progressContainer}>
+              {progressStars.map((filled, starIndex) => (
+                <ProgressStar key={starIndex} filled={filled} size={12} />
+              ))}
+            </View>
+
+            {/* Floating Elements */}
+            <View style={styles.floatingStars}>
+              <Text style={styles.star}>✨</Text>
+              <Text style={[styles.star, styles.star2]}>⭐</Text>
+            </View>
+          </View>
+          
+          {/* Card banner with better text contrast */}
+          <View style={[styles.cardBanner, { backgroundColor: '#ede77bff' }]}>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {dua.title}
+            </Text>
+            <View style={styles.cardMeta}>
+              <Text style={[styles.categoryText, { color: categoryColor }]}>
+                {dua.category}
+              </Text>
+            </View>
+
+            {/* Progress Info */}
+            <View style={styles.progressInfo}>
+              <ProgressRing progress={dua.progress} size={28} />
+              <View style={styles.progressDetails}>
+                <Text style={styles.progressLabel}>
+                  {dua.isMemorized ? 'Memorized! 🎉' : 'Keep practicing! 💪'}
+                </Text>
+                <Text style={styles.lastPracticed}>
+                  {dua.lastPracticed}
+                </Text>
+              </View>
+            </View>
+
+            {/* Quick Actions */}
+            <View style={styles.quickActions}>
+              <BouncingButton
+                onPress={() => onPress(dua)}
+                style={[
+                  styles.practiceButton,
+                  dua.isMemorized && styles.practiceButtonMemorized
+                ]}
               >
-                <Text style={styles.quickPracticeText}>
+                <Text style={styles.practiceButtonText}>
                   {dua.isMemorized ? 'Review' : 'Practice'}
                 </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            
-            <Switch
-              value={dua.isMemorized}
-              onValueChange={(value) => onToggleMemorized(dua.id, value)}
-              trackColor={{ false: '#F1F5F9', true: `${THEME.success}80` }}
-              thumbColor={dua.isMemorized ? THEME.success : '#FFFFFF'}
-              style={styles.compactSwitch}
-            />
+              </BouncingButton>
+              
+              <Switch
+                value={dua.isMemorized}
+                onValueChange={(value) => onToggleMemorized(dua.id, value)}
+                trackColor={{ false: '#F1F5F9', true: `${THEME.success}80` }}
+                thumbColor={dua.isMemorized ? THEME.success : '#FFFFFF'}
+                style={styles.memorizedSwitch}
+              />
+            </View>
+
+            <View style={styles.cardSparkle}>
+              <Text style={styles.sparkleText}>🌟</Text>
+            </View>
           </View>
-        </LinearGradient>
+        </Animated.View>
       </BouncingButton>
     </Animated.View>
   );
@@ -453,12 +547,7 @@ const ListDuaCard = React.memo(({
       }}
     >
       <BouncingButton onPress={() => onPressPractice(dua)} style={styles.listCard}>
-        <LinearGradient
-          colors={THEME.gradients.card}
-          style={styles.listCardInner}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
+        <View style={styles.listCardInner}>
           <View style={styles.listContent}>
             {/* Left: Image and Basic Info */}
             <View style={styles.listLeft}>
@@ -498,19 +587,15 @@ const ListDuaCard = React.memo(({
               <ProgressRing progress={dua.progress} size={36} />
               <View style={styles.listActions}>
                 <TouchableOpacity 
-                  style={styles.listPracticeButton}
+                  style={[
+                    styles.listPracticeButton,
+                    dua.isMemorized && styles.listPracticeButtonMemorized
+                  ]}
                   onPress={() => onPressPractice(dua)}
                 >
-                  <LinearGradient
-                    colors={dua.isMemorized ? THEME.gradients.success : THEME.gradients.progress}
-                    style={styles.listPracticeButtonGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Text style={styles.listPracticeText}>
-                      {dua.isMemorized ? 'Review' : 'Practice'}
-                    </Text>
-                  </LinearGradient>
+                  <Text style={styles.listPracticeText}>
+                    {dua.isMemorized ? 'Review' : 'Practice'}
+                  </Text>
                 </TouchableOpacity>
                 <Switch
                   value={dua.isMemorized}
@@ -521,7 +606,7 @@ const ListDuaCard = React.memo(({
               </View>
             </View>
           </View>
-        </LinearGradient>
+        </View>
       </BouncingButton>
     </Animated.View>
   );
@@ -563,12 +648,7 @@ const MinimalDuaCard = React.memo(({
       }}
     >
       <BouncingButton onPress={() => onPressPractice(dua)} style={styles.minimalCard}>
-        <LinearGradient
-          colors={['#FFFFFF', '#F8FAFC']}
-          style={styles.minimalContent}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
+        <View style={styles.minimalContent}>
           <View style={styles.minimalLeft}>
             <Text style={styles.minimalNumber}>#{dua.number}</Text>
             <View style={styles.minimalText}>
@@ -591,7 +671,7 @@ const MinimalDuaCard = React.memo(({
               style={styles.minimalSwitch}
             />
           </View>
-        </LinearGradient>
+        </View>
         
         {dua.isFavorite && (
           <View style={styles.minimalFavorite}>
@@ -609,9 +689,9 @@ const ViewToggle = ({ viewMode, onViewModeChange }: {
   onViewModeChange: (mode: ViewMode) => void;
 }) => {
   const views = [
-    { id: 'grid' as ViewMode, icon: '⏹️', label: 'Grid' },
-    { id: 'list' as ViewMode, icon: '📄', label: 'List' },
     { id: 'compact' as ViewMode, icon: '📋', label: 'Minimal' },
+    { id: 'list' as ViewMode, icon: '📄', label: 'List' },
+    { id: 'grid' as ViewMode, icon: '⏹️', label: 'Grid' },
   ];
 
   return (
@@ -696,7 +776,7 @@ const FilterTabs = ({
   );
 };
 
-// Enhanced Stats Header Component with Theme-Aligned Gradients
+// Stats Header Component
 const StatsHeader = ({ duas }: { duas: DuaItem[] }) => {
   const memorizedCount = duas.filter(d => d.isMemorized).length;
   const totalCount = duas.length;
@@ -704,12 +784,12 @@ const StatsHeader = ({ duas }: { duas: DuaItem[] }) => {
 
   return (
     <View style={styles.statsContainer}>
-      <LinearGradient
-        colors={THEME.gradients.stats}
-        style={styles.statsGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+  <LinearGradient
+  colors={[THEME.primary, '#3a8dfd']}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 1 }}
+  style={styles.statsGradient}
+>
         <Text style={styles.statsTitle}>Your Progress 🎯</Text>
         
         <View style={styles.statsRow}>
@@ -735,11 +815,11 @@ const StatsHeader = ({ duas }: { duas: DuaItem[] }) => {
 
         <View style={styles.overallProgress}>
           <View style={styles.progressBar}>
-            <LinearGradient
-              colors={THEME.gradients.progress}
-              style={[styles.progressFillBar, { width: `${progress}%` }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <Animated.View 
+              style={[
+                styles.progressFillBar,
+                { width: `${progress}%` }
+              ]} 
             />
           </View>
         </View>
@@ -751,7 +831,7 @@ const StatsHeader = ({ duas }: { duas: DuaItem[] }) => {
 export default function DuaTrackerScreen() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('compact');
   const [duas, setDuas] = useState<DuaItem[]>(DUAS_DATA);
 
   const filteredDuas = useMemo(() => {
@@ -767,12 +847,19 @@ export default function DuaTrackerScreen() {
     }
   }, [duas, activeFilter]);
 
+  const handleToggleFavorite = useCallback((id: string, value: boolean) => {
+    setDuas(prev => prev.map(dua => 
+      dua.id === id ? { ...dua, isFavorite: value } : dua
+    ));
+  }, []);
+
   const handleToggleMemorized = useCallback((id: string, value: boolean) => {
     setDuas(prev => prev.map(dua => 
       dua.id === id ? { 
         ...dua, 
         isMemorized: value,
-        progress: value ? 100 : Math.min((dua.practiceCount / 20) * 100, 99)
+        progress: value ? 100 : Math.min((dua.practiceCount / 20) * 100, 99),
+        memorization_status: value ? 'memorized' : 'learning'
       } : dua
     ));
   }, []);
@@ -798,15 +885,17 @@ export default function DuaTrackerScreen() {
   }, [router]);
 
   // Render appropriate card based on view mode
-  const renderDuaCard = (dua: DuaItem) => {
+  const renderDuaCard = (dua: DuaItem, index: number) => {
     switch (viewMode) {
       case 'grid':
         return (
-          <CompactDuaCard
+          <DuaCard
             key={dua.id}
             dua={dua}
+            index={index}
+            onPress={handlePracticePress}
+            onToggleFavorite={handleToggleFavorite}
             onToggleMemorized={handleToggleMemorized}
-            onPressPractice={handlePracticePress}
           />
         );
       case 'list':
@@ -831,6 +920,7 @@ export default function DuaTrackerScreen() {
   };
 
   return (
+    <ScreenWrapper bottomMargin={70}>
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
       
@@ -839,7 +929,7 @@ export default function DuaTrackerScreen() {
       {/* Header - Updated to match dashboard */}
       <View style={styles.header}>
         <LinearGradient
-          colors={THEME.gradients.header}
+          colors={[THEME.header, '#fef9c3']}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -912,12 +1002,13 @@ export default function DuaTrackerScreen() {
                   </Text>
                 </View>
               )}
-              {filteredDuas.map(renderDuaCard)}
+              {filteredDuas.map((dua, index) => renderDuaCard(dua, index))}
             </>
           )}
         </ScrollView>
       </View>
     </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
@@ -1039,6 +1130,7 @@ const styles = StyleSheet.create({
   },
   progressFillBar: {
     height: '100%',
+    backgroundColor: THEME.text.light,
     borderRadius: 3,
   },
   // View Toggle
@@ -1176,6 +1268,160 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: THEME.text.primary,
   },
+  // Enhanced Dua Card Styles (Replaces Compact Card)
+  card: {
+    width: (width - 52) / 2,
+    marginBottom: 12,
+  },
+  cardInner: {
+    borderRadius: 20,
+    backgroundColor: THEME.secondary,
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: THEME.accent,
+    overflow: 'hidden',
+  },
+  cardImageContainer: {
+    position: 'relative',
+    height: 120,
+  },
+  cardNumber: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: THEME.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 2,
+  },
+  cardNumberText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: THEME.text.light,
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  favoriteIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: THEME.text.accent,
+    zIndex: 2,
+  },
+  favoriteText: {
+    fontSize: 10,
+  },
+  progressContainer: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    flexDirection: 'row',
+    zIndex: 2,
+  },
+  progressStar: {
+    marginRight: 1,
+  },
+  floatingStars: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+  },
+  star: {
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  star2: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+  },
+  cardBanner: {
+    padding: 12,
+    position: 'relative',
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: THEME.text.primary,
+    marginBottom: 6,
+    lineHeight: 16,
+  },
+  cardMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressDetails: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  progressLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: THEME.text.primary,
+    marginBottom: 2,
+  },
+  lastPracticed: {
+    fontSize: 10,
+    color: THEME.text.secondary,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  practiceButton: {
+    backgroundColor: THEME.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 8,
+  },
+  practiceButtonMemorized: {
+    backgroundColor: THEME.success,
+  },
+  practiceButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: THEME.text.light,
+    textAlign: 'center',
+  },
+  memorizedSwitch: {
+    transform: [{ scale: 0.8 }],
+  },
+  cardSparkle: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+  },
+  sparkleText: {
+    fontSize: 16,
+  },
   // Common Styles
   duaNumber: {
     backgroundColor: THEME.primary,
@@ -1188,19 +1434,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: THEME.text.light,
   },
-  favoriteIndicator: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: THEME.text.accent,
-  },
-  favoriteText: {
-    fontSize: 10,
-  },
   categoryTag: {
     backgroundColor: `${THEME.accent}30`,
     paddingHorizontal: 8,
@@ -1208,114 +1441,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 8,
   },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: THEME.accent,
-  },
-  lastPracticed: {
-    fontSize: 11,
-    color: THEME.text.secondary,
-  },
-  // Button Gradients
-  quickPracticeButtonGradient: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listPracticeButtonGradient: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Compact Card (Grid View)
-  compactCard: {
-    width: (width - 52) / 2,
-    marginBottom: 12,
-  },
-  compactCardInner: {
-    borderRadius: 20,
-    padding: 12,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: THEME.accent,
-  },
-  compactHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  compactImage: {
-    width: '100%',
-    height: 80,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  compactTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    lineHeight: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  compactProgress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  compactProgressInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  compactPracticeCount: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    marginBottom: 2,
-  },
-  compactProgressLabel: {
-    fontSize: 10,
-    color: THEME.text.secondary,
-  },
-  compactActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  quickPracticeButton: {
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 8,
-    overflow: 'hidden',
-  },
-  quickPracticeButtonMemorized: {
-    // Gradient handles the color
-  },
-  quickPracticeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: THEME.text.light,
-    textAlign: 'center',
-  },
-  compactSwitch: {
-    transform: [{ scale: 0.8 }],
-  },
   // List Card
   listCard: {
     marginBottom: 8,
   },
   listCardInner: {
     borderRadius: 20,
+    backgroundColor: THEME.secondary,
     padding: 12,
     shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 8 },
@@ -1377,12 +1509,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   listPracticeButton: {
+    backgroundColor: THEME.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 6,
     marginRight: 6,
-    overflow: 'hidden',
   },
   listPracticeButtonMemorized: {
-    // Gradient handles the color
+    backgroundColor: THEME.success,
   },
   listPracticeText: {
     fontSize: 10,
@@ -1391,7 +1525,9 @@ const styles = StyleSheet.create({
   },
   // Minimal Card
   minimalCard: {
+    backgroundColor: THEME.neutral,
     borderRadius: 12,
+    padding: 12,
     marginBottom: 6,
     marginHorizontal: 4,
     shadowColor: '#000',
@@ -1401,10 +1537,11 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderLeftWidth: 4,
     borderLeftColor: THEME.primary,
-    overflow: 'hidden',
   },
   minimalContent: {
-    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   minimalLeft: {
     flexDirection: 'row',

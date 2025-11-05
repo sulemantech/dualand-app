@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 
 const { width } = Dimensions.get('window');
 const THEME = {
@@ -235,6 +236,7 @@ export default function SettingsScreen() {
   const [hapticFeedback, setHapticFeedback] = useState(true);
 
   return (
+    <ScreenWrapper bottomMargin={30}>
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
       
@@ -355,6 +357,7 @@ export default function SettingsScreen() {
         <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
