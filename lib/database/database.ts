@@ -1,4 +1,4 @@
-// database.ts - COMPLETE RESTRUCTURED VERSION
+// database.ts - DEBUG-OPTIMIZED VERSION
 import * as SQLite from 'expo-sqlite';
 
 export interface Category {
@@ -46,6 +46,10 @@ class DatabaseService {
   private isInitialized = false;
   private initPromise: Promise<void> | null = null;
 
+  // Debug configuration
+  private readonly DEBUG_MODE = __DEV__;
+  private readonly ALWAYS_FRESH_DB = true; // Set to false when not debugging
+
   async init(): Promise<void> {
     if (this.initPromise) {
       return this.initPromise;
@@ -62,23 +66,72 @@ class DatabaseService {
         return;
       }
 
-      console.log('Opening database...');
-      this.db = SQLite.openDatabase('dualand-2.db');
-      console.log('Database opened successfully');
+      // Use timestamp-based database name in debug mode for fresh DB every time
+      const dbName = this.DEBUG_MODE && this.ALWAYS_FRESH_DB 
+        ? `dualand-debug-${Date.now()}.db`
+        : 'dualand-2.db';
 
-      await this.createTables();
-      
-      const shouldSeed = await this.shouldSeedData();
-      if (shouldSeed) {
+      console.log(`📀 Opening database: ${dbName}`);
+      this.db = SQLite.openDatabase(dbName);
+      console.log('✅ Database opened successfully');
+
+      // In debug mode with fresh DB, always reset and seed
+      if (this.DEBUG_MODE && this.ALWAYS_FRESH_DB) {
+        console.log('🐛 DEBUG: Creating fresh database...');
+        await this.resetDatabaseForDebugging();
+        await this.createTables();
         await this.seedInitialData();
+      } else {
+        // Production behavior
+        await this.createTables();
+        const shouldSeed = await this.shouldSeedData();
+        if (shouldSeed) {
+          await this.seedInitialData();
+        }
       }
 
       this.isInitialized = true;
-      console.log('Database initialized successfully');
+      console.log('✅ Database initialized successfully');
+
+      // Log database info in debug mode
+      if (this.DEBUG_MODE) {
+        const status = await this.getDatabaseStatus();
+        console.log('📊 Database Status:', status);
+        
+        const rowCounts = await this.debugGetTableRowCounts();
+        console.log('📈 Table Row Counts:', rowCounts);
+      }
     } catch (error) {
-      console.error('Database initialization error:', error);
+      console.error('❌ Database initialization error:', error);
       throw error;
     }
+  }
+
+  private async resetDatabaseForDebugging(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+
+      this.db.transaction(
+        (tx) => {
+          // Drop all tables in correct order (respecting foreign keys)
+          tx.executeSql('DROP TABLE IF EXISTS word_audio_pairs');
+          tx.executeSql('DROP TABLE IF EXISTS duas');
+          tx.executeSql('DROP TABLE IF EXISTS categories');
+          console.log('🗑️ DEBUG: All tables dropped for fresh start');
+        },
+        (error) => {
+          console.error('❌ Error resetting database:', error);
+          reject(error);
+        },
+        () => {
+          console.log('✅ Database reset successfully for debugging');
+          resolve();
+        }
+      );
+    });
   }
 
   private async shouldSeedData(): Promise<boolean> {
@@ -175,11 +228,11 @@ class DatabaseService {
           `);
         },
         (error) => {
-          console.error('Error creating tables:', error);
+          console.error('❌ Error creating tables:', error);
           reject(error);
         },
         () => {
-          console.log('Tables created/verified successfully');
+          console.log('✅ Tables created/verified successfully');
           resolve();
         }
       );
@@ -194,7 +247,7 @@ class DatabaseService {
       }
 
       try {
-        console.log('Seeding initial data...');
+        console.log('🌱 Seeding initial data...');
 
         this.db.transaction(
           (tx) => {
@@ -202,7 +255,7 @@ class DatabaseService {
             const initialCategories = [
               { id: '1', name: 'Praise and Glory', icon: 'star', color: '#2D7D46', order_index: 1 },
               { id: '2', name: 'Peace and Blessings', icon: 'peace', color: '#3182CE', order_index: 2 },
-              { id: '3', name: 'Morning Duas', icon: 'sunny', color: '#F6AD55', order_index: 3 },
+              { id: '3', name: 'Morning Duas', icon: 'sunny', color: '#a0825cff', order_index: 3 },
               { id: '4', name: 'Evening Duas', icon: 'moon', color: '#805AD5', order_index: 4 },
               { id: '5', name: 'Protection', icon: 'shield', color: '#E53E3E', order_index: 5 },
               { id: '6', name: 'Toilet Etiquette', icon: 'restroom', color: '#DD6B20', order_index: 6 },
@@ -389,8 +442,6 @@ class DatabaseService {
                 audio_full: 'dua07_part01_audio01_complete',
                 steps: 'Rub your face and your eyes with your hands to remove any remaining effects of sleep and say:'
               },
-              // Continue with remaining duas...
-              // Note: I've included the first 10 as examples. You would continue this pattern for all 43 duas
             ];
 
             initialDuas.forEach((dua) => {
@@ -446,9 +497,6 @@ class DatabaseService {
               { id: '24', dua_id: '5', word_text: 'وَ بِکَ نَحْیَا', audio_res_id: 'dua03_part01_audio03', sequence_order: 2 },
               { id: '25', dua_id: '5', word_text: 'وَ بِکَ نَمُوْتُ', audio_res_id: 'dua03_part01_audio04', sequence_order: 3 },
               { id: '26', dua_id: '5', word_text: 'وَ اِلَيْكَ الْمَصِیْرُ', audio_res_id: 'dua03_part01_audio05', sequence_order: 4 },
-
-              // Continue with remaining word audio pairs...
-              // Note: I've included the first 26 as examples. You would continue this pattern for all word audio pairs
             ];
 
             initialWordAudioPairs.forEach((pair) => {
@@ -459,11 +507,11 @@ class DatabaseService {
             });
           },
           (error) => {
-            console.error('Error seeding initial data:', error);
+            console.error('❌ Error seeding initial data:', error);
             reject(error);
           },
           () => {
-            console.log('Initial data seeded successfully');
+            console.log('✅ Initial data seeded successfully');
             resolve();
           }
         );
@@ -472,6 +520,97 @@ class DatabaseService {
       }
     });
   }
+
+  // ================= DEBUG METHODS =================
+
+  async debugGetTableRowCounts(): Promise<{ [key: string]: number }> {
+    await this.ensureInitialized();
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        resolve({});
+        return;
+      }
+
+      const tables = ['categories', 'duas', 'word_audio_pairs'];
+      const counts: { [key: string]: number } = {};
+      let completedQueries = 0;
+
+      this.db.transaction(
+        (tx) => {
+          tables.forEach((table) => {
+            tx.executeSql(
+              `SELECT COUNT(*) as count FROM ${table}`,
+              [],
+              (_, { rows }) => {
+                counts[table] = rows.item(0).count;
+                completedQueries++;
+                
+                if (completedQueries === tables.length) {
+                  resolve(counts);
+                }
+              },
+              (_, error) => {
+                console.error(`❌ Error counting ${table}:`, error);
+                counts[table] = -1;
+                completedQueries++;
+                
+                if (completedQueries === tables.length) {
+                  resolve(counts);
+                }
+                return false;
+              }
+            );
+          });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  }
+
+  async debugExportData(): Promise<any> {
+    const [categories, duas, status] = await Promise.all([
+      this.getAllCategories(),
+      this.getAllDuas(),
+      this.getDatabaseStatus()
+    ]);
+
+    return {
+      categories,
+      duas: duas.map(dua => ({
+        id: dua.id,
+        title: dua.title,
+        category_id: dua.category_id,
+        is_favorited: dua.is_favorited,
+        memorization_status: dua.memorization_status
+      })),
+      exportTimestamp: new Date().toISOString(),
+      debugInfo: status,
+      tableCounts: await this.debugGetTableRowCounts()
+    };
+  }
+
+  async debugResetDatabase(): Promise<void> {
+    console.log('🔄 DEBUG: Manual database reset triggered');
+    this.isInitialized = false;
+    this.initPromise = null;
+    await this.close();
+    await this.init();
+  }
+
+  async debugPrintDatabaseInfo(): Promise<void> {
+    const status = await this.getDatabaseStatus();
+    const rowCounts = await this.debugGetTableRowCounts();
+    
+    console.log('=== DATABASE DEBUG INFO ===');
+    console.log('Initialized:', status.isInitialized);
+    console.log('Tables:', status.tables);
+    console.log('Row Counts:', rowCounts);
+    console.log('===========================');
+  }
+
+  // ================= PUBLIC METHODS =================
 
   // Database status check method
   async getDatabaseStatus(): Promise<{ isInitialized: boolean; tables: string[] }> {
@@ -532,14 +671,14 @@ class DatabaseService {
               resolve(categories);
             },
             (_, error) => {
-              console.error('Error getting categories:', error);
+              console.error('❌ Error getting categories:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting categories:', error);
+          console.error('❌ Transaction error getting categories:', error);
           resolve([]);
         }
       );
@@ -564,14 +703,14 @@ class DatabaseService {
               resolve(category || null);
             },
             (_, error) => {
-              console.error('Error getting category by id:', error);
+              console.error('❌ Error getting category by id:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting category by id:', error);
+          console.error('❌ Transaction error getting category by id:', error);
           resolve(null);
         }
       );
@@ -597,14 +736,14 @@ class DatabaseService {
               resolve(duas);
             },
             (_, error) => {
-              console.error('Error getting duas:', error);
+              console.error('❌ Error getting duas:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting duas:', error);
+          console.error('❌ Transaction error getting duas:', error);
           resolve([]);
         }
       );
@@ -629,14 +768,14 @@ class DatabaseService {
               resolve(duas);
             },
             (_, error) => {
-              console.error('Error getting duas by category:', error);
+              console.error('❌ Error getting duas by category:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting duas by category:', error);
+          console.error('❌ Transaction error getting duas by category:', error);
           resolve([]);
         }
       );
@@ -661,14 +800,14 @@ class DatabaseService {
               resolve(dua ? { ...dua, is_favorited: !!dua.is_favorited } : null);
             },
             (_, error) => {
-              console.error('Error getting dua by id:', error);
+              console.error('❌ Error getting dua by id:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting dua by id:', error);
+          console.error('❌ Transaction error getting dua by id:', error);
           resolve(null);
         }
       );
@@ -693,14 +832,14 @@ class DatabaseService {
               resolve(duas);
             },
             (_, error) => {
-              console.error('Error getting favorite duas:', error);
+              console.error('❌ Error getting favorite duas:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting favorite duas:', error);
+          console.error('❌ Transaction error getting favorite duas:', error);
           resolve([]);
         }
       );
@@ -729,14 +868,14 @@ class DatabaseService {
               resolve(duas);
             },
             (_, error) => {
-              console.error('Error searching duas:', error);
+              console.error('❌ Error searching duas:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error searching duas:', error);
+          console.error('❌ Transaction error searching duas:', error);
           resolve([]);
         }
       );
@@ -762,14 +901,14 @@ class DatabaseService {
               resolve(pairs);
             },
             (_, error) => {
-              console.error('Error getting word audio pairs:', error);
+              console.error('❌ Error getting word audio pairs:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting word audio pairs:', error);
+          console.error('❌ Transaction error getting word audio pairs:', error);
           resolve([]);
         }
       );
@@ -792,14 +931,14 @@ class DatabaseService {
             [isFavorited ? 1 : 0, id],
             () => resolve(),
             (_, error) => {
-              console.error('Error updating favorite:', error);
+              console.error('❌ Error updating favorite:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error updating favorite:', error);
+          console.error('❌ Transaction error updating favorite:', error);
           resolve();
         }
       );
@@ -821,14 +960,14 @@ class DatabaseService {
             [status, id],
             () => resolve(),
             (_, error) => {
-              console.error('Error updating memorization status:', error);
+              console.error('❌ Error updating memorization status:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error updating memorization status:', error);
+          console.error('❌ Transaction error updating memorization status:', error);
           resolve();
         }
       );
@@ -871,14 +1010,14 @@ class DatabaseService {
               resolve(counts);
             },
             (_, error) => {
-              console.error('Error getting duas count:', error);
+              console.error('❌ Error getting duas count:', error);
               reject(error);
               return false;
             }
           );
         },
         (error) => {
-          console.error('Transaction error getting duas count:', error);
+          console.error('❌ Transaction error getting duas count:', error);
           resolve({ total: 0, memorized: 0, learning: 0, notStarted: 0 });
         }
       );
@@ -893,7 +1032,7 @@ class DatabaseService {
     })) || [];
   }
 
-  // Close database connection (optional)
+  // Close database connection
   async close(): Promise<void> {
     if (this.db) {
       // Note: expo-sqlite doesn't have a close method in the legacy API
@@ -901,6 +1040,7 @@ class DatabaseService {
       this.db = null;
       this.isInitialized = false;
       this.initPromise = null;
+      console.log('🔒 Database connection closed');
     }
   }
 }
