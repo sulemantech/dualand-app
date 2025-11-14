@@ -16,12 +16,11 @@ import {
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, router } from 'expo-router';
 import { SearchIcon } from '../../Icons';
 import { databaseService, Category, Dua } from '../../lib/database/database';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenWrapper } from '@/components/common/ScreenWrapper';
-
 
 const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
@@ -320,8 +319,6 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
       <BouncingButton onPress={() => onPress(dua)} style={styles.card}>
         <Animated.View style={styles.cardInner}>
           <View style={styles.cardImageContainer}>
-            {/* REMOVED: Category color overlay - no more blur/shade on images */}
-
             <View style={styles.cardNumber}>
               <Text style={styles.cardNumberText}>
                 {dua.duaNumber || dua.order_index.toString().padStart(2, '0')}
@@ -376,6 +373,89 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
   );
 });
 
+// All Mode Grid Component (Based on HTML structure)
+const AllModeGrid = ({ onDuaPress, categories }) => {
+  const allCategories = [
+    { id: 'ummah', name: "Du'as for the Ummah", emoji: '🕌', color: '#F7E4A8' },
+    { id: 'morning', name: "Morning", emoji: '🌅', color: '#B2DFDB' },
+    { id: 'evening', name: "Evening", emoji: '🌇', color: '#FFCDD2' },
+    { id: 'sleep', name: "Before Sleep", emoji: '🌙', color: '#90CAF9' },
+    { id: 'salah', name: "Salah", emoji: '🕌', color: '#C8E6C9' },
+    { id: 'after-salah', name: "After Salah", emoji: '📖', color: '#B3E5FC' },
+    { id: 'waking-up', name: "Waking Up", emoji: '⏰', color: '#FCE4EC' },
+    { id: 'nightmares', name: "Nightmares", emoji: '😨', color: '#E0F7FA' },
+    { id: 'clothes', name: "Clothes", emoji: '👕', color: '#FFF3E0' },
+    { id: 'lavatory', name: "Lavatory & Wudu", emoji: '💧', color: '#E8F5E9' },
+    { id: 'food', name: "Food & Drink", emoji: '🍽️', color: '#FBEFF2' },
+    { id: 'home', name: "Home", emoji: '🏠', color: '#E3F2FD' },
+    { id: 'adhan', name: "Adhan & Masjid", emoji: '🕌', color: '#F9FBE7' },
+    { id: 'istikharah', name: "Istikharah", emoji: '🛣️', color: '#F3E5F5' },
+    { id: 'gatherings', name: "Gatherings", emoji: '🤝', color: '#EAF7F8' },
+    { id: 'difficulties', name: "Difficulties & Happiness", emoji: '🎈', color: '#FFEEF4' },
+  ];
+
+  return (
+    <View style={styles.allModeContainer}>
+      {/* Main Cards */}
+      <View style={styles.mainCardsContainer}>
+        {allCategories.slice(0, 4).map((category, index) => (
+          <BouncingButton 
+            key={category.id} 
+            style={[styles.mainCard, { backgroundColor: category.color }]}
+            onPress={() => {
+              console.log('Category pressed:', category.name);
+              router.push({
+                pathname: '/allduas-detail',
+                params: {
+                  categoryId: category.id,
+                  categoryName: category.name,
+                }
+              });
+            }}
+          >
+            <View style={styles.mainCardContent}>
+              <Text style={styles.mainCardText}>{category.name}</Text>
+              <Text style={styles.mainCardEmoji}>{category.emoji}</Text>
+            </View>
+          </BouncingButton>
+        ))}
+      </View>
+
+      {/* Salah Cards - FIXED LAYOUT */}
+      <View style={styles.salahCardsContainer}>
+        {allCategories.slice(4, 6).map((category, index) => (
+          <BouncingButton 
+            key={category.id} 
+            style={[styles.salahCard, { backgroundColor: category.color }]}
+            onPress={() => console.log('Category pressed:', category.name)}
+          >
+            <View style={styles.salahCardContent}>
+              <Text style={styles.salahCardText}>{category.name}</Text>
+              <Text style={styles.salahCardEmoji}>{category.emoji}</Text>
+            </View>
+          </BouncingButton>
+        ))}
+      </View>
+
+      {/* Other Cards Grid */}
+      <View style={styles.otherGridContainer}>
+        {allCategories.slice(6).map((category, index) => (
+          <BouncingButton 
+            key={category.id} 
+            style={[styles.otherCard, { backgroundColor: category.color }]}
+            onPress={() => console.log('Category pressed:', category.name)}
+          >
+            <View style={styles.otherCardContent}>
+              <Text style={styles.otherCardEmoji}>{category.emoji}</Text>
+              <Text style={styles.otherCardText}>{category.name}</Text>
+            </View>
+          </BouncingButton>
+        ))}
+      </View>
+    </View>
+  );
+};
+
 export default function DashboardScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -384,6 +464,7 @@ export default function DashboardScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'kids' | 'all'>('kids'); // 'kids' or 'all'
 
   const searchOpacityAnim = useRef(new Animated.Value(0)).current;
   const searchScaleAnim = useRef(new Animated.Value(0)).current;
@@ -596,7 +677,9 @@ export default function DashboardScreen() {
                   />
                   <View>
                     <Text style={styles.title}>DUALAND 🎨</Text>
-                    <Text style={styles.subtitle}>{filteredDuas.length} Beautiful Duas to Explore!</Text>
+                    <Text style={styles.subtitle}>
+                      {mode === 'kids' ? `${filteredDuas.length} Beautiful Duas to Explore!` : 'All Duas for Everyone'}
+                    </Text>
                   </View>
                 </View>
 
@@ -612,6 +695,40 @@ export default function DashboardScreen() {
                 </BouncingButton>
               </View>
             </LinearGradient>
+          </View>
+
+          {/* Mode Toggle */}
+          <View style={styles.modeToggleContainer}>
+            <View style={styles.modeToggle}>
+              <TouchableOpacity
+                style={[
+                  styles.modeButton,
+                  mode === 'kids' && styles.modeButtonActive
+                ]}
+                onPress={() => setMode('kids')}
+              >
+                <Text style={[
+                  styles.modeButtonText,
+                  mode === 'kids' && styles.modeButtonTextActive
+                ]}>
+                  👶 Kids
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modeButton,
+                  mode === 'all' && styles.modeButtonActive
+                ]}
+                onPress={() => setMode('all')}
+              >
+                <Text style={[
+                  styles.modeButtonText,
+                  mode === 'all' && styles.modeButtonTextActive
+                ]}>
+                  🌍 All
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {isSearchExpanded && (
@@ -655,39 +772,47 @@ export default function DashboardScreen() {
             ]}
             keyboardShouldPersistTaps="handled"
           >
-            {!searchQuery && (
-              <View style={styles.welcomeSection}>
-                <Text style={styles.welcomeText}>
-                  Discover {duas.length} Beautiful Duas 🌟
-                </Text>
-                <Text style={styles.welcomeSubtext}>
-                  From {categories.length} categories • Tap to explore and learn! 📚
-                </Text>
-              </View>
-            )}
+            {mode === 'kids' ? (
+              // Kids Mode - Original dua cards
+              <>
+                {!searchQuery && (
+                  <View style={styles.welcomeSection}>
+                    <Text style={styles.welcomeText}>
+                      Discover {duas.length} Beautiful Duas 🌟
+                    </Text>
+                    <Text style={styles.welcomeSubtext}>
+                      From {categories.length} categories • Tap to explore and learn! 📚
+                    </Text>
+                  </View>
+                )}
 
-            {filteredDuas.length === 0 && searchQuery && (
-              <View style={styles.noResultsContainer}>
-                <Text style={styles.noResultsEmoji}>🔍</Text>
-                <Text style={styles.noResultsText}>No Duas found for "{searchQuery}"</Text>
-                <Text style={styles.noResultsSubtext}>
-                  Try different words or explore all Duas! 🌈
-                </Text>
-              </View>
-            )}
+                {filteredDuas.length === 0 && searchQuery && (
+                  <View style={styles.noResultsContainer}>
+                    <Text style={styles.noResultsEmoji}>🔍</Text>
+                    <Text style={styles.noResultsText}>No Duas found for "{searchQuery}"</Text>
+                    <Text style={styles.noResultsSubtext}>
+                      Try different words or explore all Duas! 🌈
+                    </Text>
+                  </View>
+                )}
 
-            {filteredDuas.length > 0 && (
-              <View style={styles.gridContainer}>
-                {filteredDuas.map((dua, index) => (
-                  <DuaCard
-                    key={dua.id}
-                    dua={dua}
-                    index={index}
-                    onPress={handleDuaPress}
-                    categories={categories}
-                  />
-                ))}
-              </View>
+                {filteredDuas.length > 0 && (
+                  <View style={styles.gridContainer}>
+                    {filteredDuas.map((dua, index) => (
+                      <DuaCard
+                        key={dua.id}
+                        dua={dua}
+                        index={index}
+                        onPress={handleDuaPress}
+                        categories={categories}
+                      />
+                    ))}
+                  </View>
+                )}
+              </>
+            ) : (
+              // All Mode - New grid layout
+              <AllModeGrid onDuaPress={handleDuaPress} categories={categories} />
             )}
 
             <View style={styles.bottomPadding} />
@@ -713,7 +838,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     fontWeight: '600',
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
   },
   errorContainer: {
     flex: 1,
@@ -728,7 +853,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 24,
@@ -785,9 +910,48 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    color: THEME.text.primary, // Better contrast
-    fontWeight: '600', // Bolder for better readability
+    color: THEME.text.primary,
+    fontWeight: '600',
     marginTop: 2,
+  },
+  // Mode Toggle Styles
+  modeToggleContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  modeToggle: {
+    flexDirection: 'row',
+    backgroundColor: THEME.neutral,
+    borderRadius: 25,
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  modeButtonActive: {
+    backgroundColor: THEME.primary,
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  modeButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: THEME.text.secondary,
+  },
+  modeButtonTextActive: {
+    color: THEME.text.light,
   },
   searchToggleButton: {
     borderRadius: 20,
@@ -828,7 +992,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
     fontWeight: '600',
     paddingVertical: 2,
   },
@@ -861,13 +1025,13 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
     textAlign: 'center',
     marginBottom: 4,
   },
   welcomeSubtext: {
     fontSize: 14,
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -884,13 +1048,13 @@ const styles = StyleSheet.create({
   noResultsText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
   noResultsSubtext: {
     fontSize: 16,
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
     textAlign: 'center',
     lineHeight: 22,
     fontWeight: '500',
@@ -901,6 +1065,102 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
+  // All Mode Styles
+  // All Mode Styles
+allModeContainer: {
+  paddingHorizontal: 16,
+  gap: 16,
+},
+mainCardsContainer: {
+  gap: 12,
+},
+mainCard: {
+  height: 120,
+  borderRadius: 16,
+  padding: 16,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 8,
+  elevation: 4,
+},
+mainCardContent: {
+  flex: 1,
+  justifyContent: 'space-between',
+},
+mainCardText: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: THEME.text.dark,
+},
+mainCardEmoji: {
+  fontSize: 24,
+  alignSelf: 'flex-end',
+},
+salahCardsContainer: {
+  flexDirection: 'row',
+  gap: 12,
+  // Ensure the container takes full width
+  width: '100%',
+},
+salahCard: {
+  flex: 1, // This makes each card take equal space
+  height: 140,
+  borderRadius: 16,
+  padding: 16,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 8,
+  elevation: 4,
+  // Ensure the card takes the full available width minus gap
+  minWidth: 0, // Important for flex items to shrink properly
+},
+salahCardContent: {
+  flex: 1,
+  justifyContent: 'flex-end',
+},
+salahCardText: {
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: THEME.text.dark,
+},
+salahCardEmoji: {
+  fontSize: 20,
+},
+otherGridContainer: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  gap: 12,
+},
+otherCard: {
+  width: (width - 32 - 12) / 2, // Calculate width considering padding and gap
+  height: 140,
+  borderRadius: 16,
+  padding: 16,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 8,
+  elevation: 4,
+},
+otherCardContent: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+otherCardEmoji: {
+  fontSize: 32,
+  marginBottom: 8,
+},
+otherCardText: {
+  fontSize: 14,
+  fontWeight: 'bold',
+  color: THEME.text.dark,
+  textAlign: 'center',
+},
+  // Original DuaCard Styles
   card: {
     width: CARD_WIDTH,
     marginBottom: 16,
@@ -922,7 +1182,6 @@ const styles = StyleSheet.create({
     height: 100,
     overflow: 'hidden',
   },
-  // REMOVED: cardOverlay style - no more image overlays
   cardNumber: {
     position: 'absolute',
     top: 8,
@@ -989,7 +1248,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   cardBanner: {
-
     padding: 12,
     minHeight: 60,
     justifyContent: 'center',
@@ -999,7 +1257,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: THEME.text.primary, // Better contrast
+    color: THEME.text.primary,
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: 4,
@@ -1007,7 +1265,6 @@ const styles = StyleSheet.create({
   cardMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-
   },
   categoryText: {
     fontSize: 10,
