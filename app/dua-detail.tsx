@@ -387,6 +387,93 @@ const MashaAllahCelebration = ({ visible, onHide }: { visible: boolean; onHide: 
   );
 };
 
+// Repeat Badge Component
+const RepeatBadge = ({ mode, isVisible }: { mode: string; isVisible: boolean }) => {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isVisible) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 150,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        })
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.spring(scaleAnim, {
+            toValue: 0,
+            tension: 150,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          })
+        ]).start();
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, mode]);
+
+  if (!isVisible) return null;
+
+  const getBadgeColors = () => {
+    switch (mode) {
+      case '1': return ['#4ECDC4', '#26C6DA'];
+      case '2': return ['#FFD166', '#FFB347'];
+      case '3': return ['#FF6B6B', '#FF8E8E'];
+      case 'infinite': return ['#7E57C2', '#9C77D9'];
+      default: return [THEME.primary, THEME.accent];
+    }
+  };
+
+  const getBadgeText = () => {
+    switch (mode) {
+      case '1': return 'Repeat 1x';
+      case '2': return 'Repeat 2x';
+      case '3': return 'Repeat 3x';
+      case 'infinite': return 'Repeat ∞';
+      default: return 'Repeat';
+    }
+  };
+
+  return (
+    <Animated.View 
+      style={[
+        styles.repeatBadge,
+        {
+          opacity: opacityAnim,
+          transform: [{ scale: scaleAnim }]
+        }
+      ]}
+    >
+      <LinearGradient
+        colors={getBadgeColors()}
+        style={styles.repeatBadgeGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Text style={styles.repeatBadgeText}>{getBadgeText()}</Text>
+      </LinearGradient>
+    </Animated.View>
+  );
+};
+
 export default function DuaDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -417,12 +504,15 @@ export default function DuaDetailScreen() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'empty' | '1' | '2' | '3' | 'infinite'>('empty');
+  const [showRepeatBadge, setShowRepeatBadge] = useState(false);
   const totalDuas = 15;
 
   const playButtonScale = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const favoriteScale = useRef(new Animated.Value(1)).current;
   const imageScale = useRef(new Animated.Value(0.9)).current;
+  const repeatScale = useRef(new Animated.Value(1)).current;
 
   // Use the dynamic Arabic text from params or fallback
   const duaArabic = arabic as string || "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ، وَقَهْرِ الرِّجَالِ";
@@ -501,10 +591,61 @@ export default function DuaDetailScreen() {
     ]).start();
   };
 
-  const handleRestart = () => {
+  const handleRepeat = () => {
     Vibration.vibrate(30);
-    setIsPlaying(false);
-    setCurrentWordIndex(0);
+    
+    // Cycle through repeat modes: empty → 1 → 2 → 3 → infinite → empty
+    const modes: Array<'empty' | '1' | '2' | '3' | 'infinite'> = ['empty', '1', '2', '3', 'infinite'];
+    const currentIndex = modes.indexOf(repeatMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    const nextMode = modes[nextIndex];
+    
+    setRepeatMode(nextMode);
+    setShowRepeatBadge(true);
+
+    // Button animation
+    Animated.sequence([
+      Animated.spring(repeatScale, {
+        toValue: 1.2,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.spring(repeatScale, {
+        toValue: 1,
+        tension: 100,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Hide badge after delay
+    setTimeout(() => {
+      setShowRepeatBadge(false);
+    }, 1500);
+  };
+
+  // Get repeat button emoji based on mode
+  const getRepeatEmoji = () => {
+    switch (repeatMode) {
+      case '1': return '🔂';
+      case '2': return '🔂';
+      case '3': return '🔂';
+      case 'infinite': return '🔁';
+      case 'empty':
+      default: return '🔄';
+    }
+  };
+
+  // Get badge text for current mode
+  const getCurrentRepeatMode = () => {
+    switch (repeatMode) {
+      case '1': return '1';
+      case '2': return '2';
+      case '3': return '3';
+      case 'infinite': return 'infinite';
+      default: return 'empty';
+    }
   };
 
   // Word-by-word progression
@@ -584,7 +725,10 @@ export default function DuaDetailScreen() {
         onHide={() => setShowCelebration(false)} 
       />
 
-      {/* Header - With Better Matching Colors */}
+      {/* Repeat Mode Badge */}
+      <RepeatBadge mode={getCurrentRepeatMode()} isVisible={showRepeatBadge} />
+
+      {/* Header */}
       <View style={styles.header}>
         <LinearGradient
           colors={[THEME.header, '#fef9c3']}
@@ -638,7 +782,7 @@ export default function DuaDetailScreen() {
             resizeMode="cover"
           />
           
-          {/* FAVORITE BUTTON - MOVED HERE from footer */}
+          {/* Favorite Button */}
           <Animated.View 
             style={[
               styles.favoriteButtonContainer,
@@ -776,7 +920,7 @@ export default function DuaDetailScreen() {
         <View style={styles.bottomPadding} />
       </ScrollView>
 
-      {/* CLEANED UP FOOTER - No more favorite button */}
+      {/* Footer with Fixed Repeat Button */}
       <View style={styles.footer}>
         {/* Previous Button */}
         <BouncingButton 
@@ -789,17 +933,35 @@ export default function DuaDetailScreen() {
           </View>
         </BouncingButton>
 
-        {/* Main Controls - Only Repeat and Play/Pause */}
+        {/* Main Controls */}
         <View style={styles.mainControls}>
-          {/* Restart Button */}
-          <BouncingButton 
-            style={styles.controlButton}
-            onPress={handleRestart}
-          >
-            <View style={styles.controlButtonInner}>
-              <Text style={styles.controlButtonEmoji}>🔄</Text>
-            </View>
-          </BouncingButton>
+          {/* Repeat Button with Badge */}
+          <View style={styles.repeatButtonContainer}>
+            <Animated.View style={{ transform: [{ scale: repeatScale }] }}>
+              <BouncingButton 
+                style={styles.controlButton}
+                onPress={handleRepeat}
+              >
+                <View style={styles.controlButtonInner}>
+                  <Text style={styles.controlButtonEmoji}>
+                    {getRepeatEmoji()}
+                  </Text>
+                </View>
+              </BouncingButton>
+            </Animated.View>
+            
+            {/* Badge showing current repeat count */}
+            {repeatMode !== 'empty' && (
+              <View style={[
+                styles.repeatBadgeSmall,
+                repeatMode === 'infinite' && styles.repeatBadgeInfinite
+              ]}>
+                <Text style={styles.repeatBadgeSmallText}>
+                  {repeatMode === 'infinite' ? '∞' : repeatMode}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Main Play/Pause Button */}
           <Animated.View style={{ 
@@ -858,28 +1020,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
   },
-  // UPDATED: Header buttons with colors that match the header background
   headerButton: {
     padding: 10,
     borderRadius: 20,
-    backgroundColor: '#FFEAA7', // Soft yellow that matches header
+    backgroundColor: '#FFEAA7',
     shadowColor: '#D4B300',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 2,
-    borderColor: '#FFD93D', // Golden border
+    borderColor: '#FFD93D',
   },
   iconButton: {
     padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // UPDATED: Header button text color
   headerButtonText: {
     fontSize: 18,
-    color: '#8B7500', // Dark golden text for better contrast on yellow
+    color: '#8B7500',
     fontWeight: 'bold',
   },
   headerTitleContainer: {
@@ -901,19 +1061,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-  // UPDATED: Illustration Container with favorite button
   illustrationContainer: {
     width: '100%',
     height: 250,
     overflow: 'hidden',
     backgroundColor: THEME.tertiary,
-    position: 'relative', // For absolute positioning of favorite button
+    position: 'relative',
   },
   illustration: {
     width: '100%',
     height: '100%',
   },
-  // NEW: Favorite button positioned on top of illustration
   favoriteButtonContainer: {
     position: 'absolute',
     top: 16,
@@ -940,7 +1098,6 @@ const styles = StyleSheet.create({
   favoriteButtonEmojiActive: {
     fontSize: 24,
   },
-  // Mode Selection
   modeContainer: {
     marginTop: 0,
     marginHorizontal: 10,
@@ -980,7 +1137,6 @@ const styles = StyleSheet.create({
   modePillTextActive: {
     color: THEME.text.light,
   },
-  // Dua Text
   duaTextContainer: {
     margin: 16,
     marginTop: 16,
@@ -1044,7 +1200,6 @@ const styles = StyleSheet.create({
     color: THEME.success,
     fontWeight: '600',
   },
-  // Progress
   wordProgress: {
     alignItems: 'center',
     marginHorizontal: 16,
@@ -1068,7 +1223,6 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.success,
     borderRadius: 3,
   },
-  // Info Sections
   infoContainer: {
     margin: 16,
     gap: 12,
@@ -1094,13 +1248,74 @@ const styles = StyleSheet.create({
     color: THEME.text.primary,
     lineHeight: 20,
   },
-  // CLEANED UP FOOTER - More space between buttons
+  // Repeat Badge Styles
+  repeatBadge: {
+    position: 'absolute',
+    top: '40%',
+    alignSelf: 'center',
+    zIndex: 1000,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  repeatBadgeGradient: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  repeatBadgeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: THEME.text.light,
+  },
+  // Small badge on repeat button
+  repeatBadgeSmall: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: THEME.accent,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: THEME.neutral,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  repeatBadgeInfinite: {
+    backgroundColor: THEME.primary,
+  },
+  repeatBadgeSmallText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: THEME.text.light,
+  },
+  repeatButtonContainer: {
+    position: 'relative',
+  },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16, // Increased padding
+    paddingVertical: 16,
     backgroundColor: THEME.neutral,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
@@ -1112,10 +1327,10 @@ const styles = StyleSheet.create({
   },
   navButton: {
     backgroundColor: THEME.primary,
-    paddingHorizontal: 20, // Increased padding
-    paddingVertical: 14, // Increased padding
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderRadius: 20,
-    minWidth: 90, // Increased minimum width
+    minWidth: 90,
     shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -1133,22 +1348,21 @@ const styles = StyleSheet.create({
   },
   navButtonEmoji: {
     fontSize: 16,
-    marginHorizontal: 6, // Increased spacing
+    marginHorizontal: 6,
   },
   navButtonText: {
     color: THEME.text.light,
     fontWeight: 'bold',
     fontSize: 14,
   },
-  // Main Controls Container - More spacing
   mainControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20, // Increased gap
+    gap: 20,
   },
   controlButton: {
     backgroundColor: THEME.neutral,
-    padding: 14, // Increased padding
+    padding: 14,
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1163,11 +1377,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   controlButtonEmoji: {
-    fontSize: 22, // Slightly larger
+    fontSize: 22,
   },
   playButton: {
     backgroundColor: THEME.primary,
-    padding: 20, // Increased padding
+    padding: 20,
     borderRadius: 30,
     shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 6 },
@@ -1186,7 +1400,6 @@ const styles = StyleSheet.create({
   playButtonEmoji: {
     fontSize: 28,
   },
-  // Celebration Popup
   celebrationContainer: {
     position: 'absolute',
     top: '30%',
