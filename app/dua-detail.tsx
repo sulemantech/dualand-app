@@ -17,6 +17,7 @@ import {
   UIManager,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -82,7 +83,16 @@ const localImages = {
 };
 
 // Helper function to get local image
-const getLocalImage = (duaId: string, duaNumber?: string) => {
+const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: string) => {
+  // First try to use the specific localImageIndex from params
+  if (localImageIndex) {
+    const imageKey = `dua_${localImageIndex}` as keyof typeof localImages;
+    if (localImages[imageKey]) {
+      return localImages[imageKey];
+    }
+  }
+  
+  // Then try duaNumber
   if (duaNumber) {
     const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
     if (localImages[imageKey]) {
@@ -90,6 +100,7 @@ const getLocalImage = (duaId: string, duaNumber?: string) => {
     }
   }
   
+  // Fallback to modulo of duaId
   const imageIndex = (parseInt(duaId) % 32) + 1;
   const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
   return localImages[fallbackImageKey] || localImages.dua_1;
@@ -303,7 +314,7 @@ const WordByWordDisplay = ({
 };
 
 // Masha Allah Celebration Popup Component
-const MashaAllahCelebration = ({ visible, onHide }) => {
+const MashaAllahCelebration = ({ visible, onHide }: { visible: boolean; onHide: () => void }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -377,9 +388,32 @@ const MashaAllahCelebration = ({ visible, onHide }) => {
 };
 
 export default function DuaDetailScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Extract dynamic data from route params
+  const {
+    id,
+    title = 'Dua for Anxiety',
+    arabic,
+    translation,
+    reference,
+    transliteration,
+    urdu,
+    hinditranslation,
+    textheading,
+    steps,
+    duaNumber,
+    audio_full,
+    titleAudioResId,
+    wordAudioPairs,
+    useLocalImage,
+    localImageIndex
+  } = params;
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMode, setCurrentMode] = useState<'full' | 'word'>('word');
-  const [currentDuaIndex, setCurrentDuaIndex] = useState(1);
+  const [currentDuaIndex, setCurrentDuaIndex] = useState(parseInt(duaNumber as string) || 1);
   const [showCelebration, setShowCelebration] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -390,11 +424,16 @@ export default function DuaDetailScreen() {
   const favoriteScale = useRef(new Animated.Value(1)).current;
   const imageScale = useRef(new Animated.Value(0.9)).current;
 
-  const duaArabic = "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ، وَقَهْرِ الرِّجَالِ";
+  // Use the dynamic Arabic text from params or fallback
+  const duaArabic = arabic as string || "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ، وَقَهْرِ الرِّجَالِ";
   const words = duaArabic.split(' ');
 
-  // Get illustration image based on current dua
-  const illustrationImage = getLocalImage(currentDuaIndex.toString(), currentDuaIndex.toString());
+  // Get illustration image dynamically based on incoming params
+  const illustrationImage = getLocalImage(
+    id as string, 
+    duaNumber as string, 
+    localImageIndex as string
+  );
 
   useEffect(() => {
     // Animate image when dua changes
@@ -529,6 +568,10 @@ export default function DuaDetailScreen() {
     }
   }, [isPlaying]);
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
@@ -541,7 +584,7 @@ export default function DuaDetailScreen() {
         onHide={() => setShowCelebration(false)} 
       />
 
-      {/* Header - Minimal */}
+      {/* Header - With Better Matching Colors */}
       <View style={styles.header}>
         <LinearGradient
           colors={[THEME.header, '#fef9c3']}
@@ -550,15 +593,15 @@ export default function DuaDetailScreen() {
           <View style={styles.headerContent}>
             <BouncingButton 
               style={styles.headerButton}
-              onPress={() => console.log('Back pressed')}
+              onPress={handleBack}
             >
               <View style={styles.iconButton}>
-                <Text style={styles.iconText}>←</Text>
+                <Text style={styles.headerButtonText}>←</Text>
               </View>
             </BouncingButton>
 
             <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>Dua for Anxiety</Text>
+              <Text style={styles.headerTitle}>{title as string}</Text>
               <Text style={styles.headerSubtitle}>Dua {currentDuaIndex} of {totalDuas}</Text>
             </View>
 
@@ -567,24 +610,26 @@ export default function DuaDetailScreen() {
               onPress={() => console.log('Share pressed')}
             >
               <View style={styles.iconButton}>
-                <Text style={styles.iconText}>📤</Text>
+                <Text style={styles.headerButtonText}>📤</Text>
               </View>
             </BouncingButton>
           </View>
         </LinearGradient>
       </View>
 
-      {/* Main Content - Focus on Dua Text */}
+      {/* Main Content */}
       <ScrollView 
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* ILLUSTRATION IMAGE - Full width, no borders, touching header */}
+        {/* Illustration Image */}
         <Animated.View 
           style={[
             styles.illustrationContainer,
-            { transform: [{ scale: imageScale }] }
+            { 
+              transform: [{ scale: imageScale }],
+            }
           ]}
         >
           <Image
@@ -592,9 +637,33 @@ export default function DuaDetailScreen() {
             style={styles.illustration}
             resizeMode="cover"
           />
+          
+          {/* FAVORITE BUTTON - MOVED HERE from footer */}
+          <Animated.View 
+            style={[
+              styles.favoriteButtonContainer,
+              { transform: [{ scale: favoriteScale }] }
+            ]}
+          >
+            <BouncingButton onPress={handleFavorite}>
+              <LinearGradient
+                colors={isFavorite ? ['#FF6B6B', '#FF8E8E'] : ['#FFFFFF', '#F8F9FA']}
+                style={styles.favoriteButton}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={[
+                  styles.favoriteButtonEmoji,
+                  isFavorite && styles.favoriteButtonEmojiActive
+                ]}>
+                  {isFavorite ? '❤️' : '🤍'}
+                </Text>
+              </LinearGradient>
+            </BouncingButton>
+          </Animated.View>
         </Animated.View>
 
-        {/* Mode Selection - Adjacent to bottom corner of illustration */}
+        {/* Mode Selection */}
         <View style={styles.modeContainer}>
           <View style={styles.modePills}>
             <TouchableOpacity
@@ -636,7 +705,7 @@ export default function DuaDetailScreen() {
           </View>
         </View>
 
-        {/* Dua Text - FOCAL POINT */}
+        {/* Dua Text */}
         <View style={styles.duaTextContainer}>
           {currentMode === 'word' ? (
             <WordByWordDisplay 
@@ -678,9 +747,16 @@ export default function DuaDetailScreen() {
           <View style={styles.infoSection}>
             <Text style={styles.infoTitle}>📖 Translation</Text>
             <Text style={styles.infoText}>
-              "O Allah, I seek refuge in You from anxiety and sorrow, from incapacity and laziness, from cowardice and miserliness, from being overcome by debt and from being overpowered by men."
+              {translation as string || "Translation not available"}
             </Text>
           </View>
+
+          {reference && (
+            <View style={styles.infoSection}>
+              <Text style={styles.infoTitle}>📚 Reference</Text>
+              <Text style={styles.infoText}>{reference as string}</Text>
+            </View>
+          )}
 
           <View style={styles.infoSection}>
             <Text style={styles.infoTitle}>💡 Meaning for Kids</Text>
@@ -700,7 +776,7 @@ export default function DuaDetailScreen() {
         <View style={styles.bottomPadding} />
       </ScrollView>
 
-      {/* ENHANCED FOOTER - All Controls Together */}
+      {/* CLEANED UP FOOTER - No more favorite button */}
       <View style={styles.footer}>
         {/* Previous Button */}
         <BouncingButton 
@@ -713,7 +789,7 @@ export default function DuaDetailScreen() {
           </View>
         </BouncingButton>
 
-        {/* Main Controls - Repeat, Play/Pause, Favorite */}
+        {/* Main Controls - Only Repeat and Play/Pause */}
         <View style={styles.mainControls}>
           {/* Restart Button */}
           <BouncingButton 
@@ -739,20 +815,6 @@ export default function DuaDetailScreen() {
               <View style={styles.playButtonInner}>
                 <Text style={styles.playButtonEmoji}>
                   {isPlaying ? '⏸️' : '▶️'}
-                </Text>
-              </View>
-            </BouncingButton>
-          </Animated.View>
-
-          {/* Favorite Button */}
-          <Animated.View style={{ transform: [{ scale: favoriteScale }] }}>
-            <BouncingButton 
-              style={styles.controlButton}
-              onPress={handleFavorite}
-            >
-              <View style={styles.controlButtonInner}>
-                <Text style={styles.controlButtonEmoji}>
-                  {isFavorite ? '❤️' : '🤍'}
                 </Text>
               </View>
             </BouncingButton>
@@ -788,25 +850,37 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     paddingTop: 50,
-    paddingBottom: 12,
+    paddingBottom: 5,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
+  // UPDATED: Header buttons with colors that match the header background
   headerButton: {
-    padding: 8,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    padding: 10,
+    borderRadius: 20,
+    backgroundColor: '#FFEAA7', // Soft yellow that matches header
+    shadowColor: '#D4B300',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: '#FFD93D', // Golden border
   },
   iconButton: {
-    padding: 8,
+    padding: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  iconText: {
+  // UPDATED: Header button text color
+  headerButtonText: {
     fontSize: 18,
-    color: THEME.text.dark,
+    color: '#8B7500', // Dark golden text for better contrast on yellow
+    fontWeight: 'bold',
   },
   headerTitleContainer: {
     alignItems: 'center',
@@ -827,22 +901,50 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-  // UPDATED: Illustration Container - Full width, no borders
+  // UPDATED: Illustration Container with favorite button
   illustrationContainer: {
     width: '100%',
-    height: 160, // Optimal height for visibility
+    height: 250,
     overflow: 'hidden',
-    backgroundColor: THEME.tertiary, // Match background for seamless look
+    backgroundColor: THEME.tertiary,
+    position: 'relative', // For absolute positioning of favorite button
   },
   illustration: {
     width: '100%',
     height: '100%',
   },
-  // UPDATED: Mode Selection - Compact and adjacent to illustration
+  // NEW: Favorite button positioned on top of illustration
+  favoriteButtonContainer: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
+  },
+  favoriteButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 3,
+    borderColor: THEME.accent,
+  },
+  favoriteButtonEmoji: {
+    fontSize: 22,
+  },
+  favoriteButtonEmojiActive: {
+    fontSize: 24,
+  },
+  // Mode Selection
   modeContainer: {
-    marginTop: -24, // Pull up to overlap with illustration bottom
-    marginHorizontal: 16,
-    zIndex: 10, // Ensure it's above other content
+    marginTop: 0,
+    marginHorizontal: 10,
+    zIndex: 10,
   },
   modePills: {
     flexDirection: 'row',
@@ -878,20 +980,20 @@ const styles = StyleSheet.create({
   modePillTextActive: {
     color: THEME.text.light,
   },
-  // Dua Text - FOCAL POINT
+  // Dua Text
   duaTextContainer: {
     margin: 16,
     marginTop: 16,
     marginBottom: 24,
   },
   wordByWordContainer: {
-    minHeight: 200,
+     minHeight: 50,
     justifyContent: 'center',
   },
   arabicTextContainer: {
     backgroundColor: THEME.neutral,
     borderRadius: 20,
-    padding: 24,
+    padding: 18,
     shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -927,7 +1029,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   fullDuaContainer: {
-    minHeight: 200,
+    minHeight: 50,
     justifyContent: 'center',
   },
   fullDuaHint: {
@@ -992,12 +1094,13 @@ const styles = StyleSheet.create({
     color: THEME.text.primary,
     lineHeight: 20,
   },
-  // ENHANCED FOOTER
+  // CLEANED UP FOOTER - More space between buttons
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16, // Increased padding
     backgroundColor: THEME.neutral,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
@@ -1008,14 +1111,20 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   navButton: {
-    backgroundColor: THEME.secondary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    backgroundColor: THEME.primary,
+    paddingHorizontal: 20, // Increased padding
+    paddingVertical: 14, // Increased padding
     borderRadius: 20,
-    minWidth: 80,
+    minWidth: 90, // Increased minimum width
+    shadowColor: THEME.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   nextButton: {
     backgroundColor: THEME.accent,
+    shadowColor: THEME.accent,
   },
   navButtonInner: {
     flexDirection: 'row',
@@ -1024,52 +1133,58 @@ const styles = StyleSheet.create({
   },
   navButtonEmoji: {
     fontSize: 16,
-    marginHorizontal: 4,
+    marginHorizontal: 6, // Increased spacing
   },
   navButtonText: {
-    color: THEME.text.dark,
+    color: THEME.text.light,
     fontWeight: 'bold',
     fontSize: 14,
   },
-  // Main Controls Container
+  // Main Controls Container - More spacing
   mainControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 20, // Increased gap
   },
   controlButton: {
     backgroundColor: THEME.neutral,
-    padding: 12,
+    padding: 14, // Increased padding
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 2,
+    borderColor: THEME.primary + '20',
   },
   controlButtonInner: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   controlButtonEmoji: {
-    fontSize: 20,
+    fontSize: 22, // Slightly larger
   },
   playButton: {
     backgroundColor: THEME.primary,
-    padding: 16,
+    padding: 20, // Increased padding
     borderRadius: 30,
     shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: THEME.accent,
   },
   playButtonInner: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: 40,
+    height: 40,
   },
   playButtonEmoji: {
-    fontSize: 24,
+    fontSize: 28,
   },
   // Celebration Popup
   celebrationContainer: {
