@@ -18,9 +18,19 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect, router } from 'expo-router';
 import { SearchIcon } from '../../Icons';
-import { databaseService, Category, Dua } from '../../lib/database/database';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenWrapper } from '@/components/common/ScreenWrapper';
+
+// Import the new in-memory data structure
+import { 
+  categories, 
+  duas, 
+  getAllCategories, 
+  getDuasByCategory, 
+  getWordAudioPairsByDua,
+  Category,
+  Dua 
+} from '../../lib/data/duas'; // Update this path as needed
 
 const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
@@ -44,42 +54,6 @@ const THEME = {
     dark: '#4A5C6B',       // Soft Charcoal - Not too dark
     accent: '#E53E3E',     // Red accent for important text
   }
-};
-
-// Import local images
-const localImages = {
-  dua_1: require('../../assets/images/dua_31.png'),
-  dua_2: require('../../assets/images/dua_2.png'),
-  dua_3: require('../../assets/images/dua_3.png'),
-  dua_4: require('../../assets/images/dua_4.png'),
-  dua_5: require('../../assets/images/dua_5.png'),
-  dua_6: require('../../assets/images/dua_6.png'),
-  dua_7: require('../../assets/images/dua_7.png'),
-  dua_8: require('../../assets/images/dua_8.png'),
-  dua_9: require('../../assets/images/dua_9.png'),
-  dua_10: require('../../assets/images/dua_10.png'),
-  dua_11: require('../../assets/images/dua_11.png'),
-  dua_12: require('../../assets/images/dua_12.png'),
-  dua_13: require('../../assets/images/dua_13.png'),
-  dua_14: require('../../assets/images/dua_14.png'),
-  dua_15: require('../../assets/images/dua_15.png'),
-  dua_16: require('../../assets/images/dua_16.png'),
-  dua_17: require('../../assets/images/dua_17.png'),
-  dua_18: require('../../assets/images/dua_18.png'),
-  dua_19: require('../../assets/images/dua_19.png'),
-  dua_20: require('../../assets/images/dua_20.png'),
-  dua_21: require('../../assets/images/dua_21.png'),
-  dua_22: require('../../assets/images/dua_22.png'),
-  dua_23: require('../../assets/images/dua_23.png'),
-  dua_24: require('../../assets/images/dua_24.png'),
-  dua_25: require('../../assets/images/dua_25.png'),
-  dua_26: require('../../assets/images/dua_26.png'),
-  dua_27: require('../../assets/images/dua_27.png'),
-  dua_28: require('../../assets/images/dua_28.png'),
-  dua_29: require('../../assets/images/dua_29.png'),
-  dua_30: require('../../assets/images/dua_30.png'),
-  dua_31: require('../../assets/images/dua_31.png'),
-  dua_32: require('../../assets/images/dua_32.png'),
 };
 
 // Enhanced Floating Particles
@@ -160,18 +134,60 @@ const FloatingParticles = React.memo(({ count = 8 }) => {
   );
 });
 
-// Function to get local image for dua
-const getLocalImage = (duaId: string, duaNumber?: string) => {
-  if (duaNumber) {
-    const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
-    if (localImages[imageKey]) {
-      return localImages[imageKey];
-    }
+// Function to get image source from image_path
+const getImageSource = (imagePath: string | undefined) => {
+  if (!imagePath) {
+    // Fallback to a default image if no path is provided
+    return require('../../assets/images/kaaba.png');
   }
 
-  const imageIndex = (parseInt(duaId) % 32) + 1;
-  const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
-  return localImages[fallbackImageKey] || localImages.dua_1;
+  try {
+    // Since we can't dynamically require with variables in React Native,
+    // we'll use a mapping approach based on the image name
+    const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
+    
+    // Map image names to require statements
+    const imageMap = {
+      'kaaba': require('../../assets/images/kaaba.png'),
+      'dua_2': require('../../assets/images/dua_2.png'),
+      'dua_3': require('../../assets/images/dua_3.png'),
+      'dua_4': require('../../assets/images/dua_4.png'),
+      'dua_5': require('../../assets/images/dua_5.png'),
+      'dua_6': require('../../assets/images/dua_6.png'),
+      'dua_7': require('../../assets/images/dua_7.png'),
+      'dua_8': require('../../assets/images/dua_8.png'),
+      'dua_9': require('../../assets/images/dua_9.png'),
+      'dua_10': require('../../assets/images/dua_10.png'),
+      'dua_11': require('../../assets/images/dua_11.png'),
+      'dua_12': require('../../assets/images/dua_12.png'),
+      'dua_13': require('../../assets/images/dua_13.png'),
+      'dua_14': require('../../assets/images/dua_14.png'),
+      'dua_15': require('../../assets/images/dua_15.png'),
+      'dua_16': require('../../assets/images/dua_16.png'),
+      'dua_17': require('../../assets/images/dua_17.png'),
+      'dua_18': require('../../assets/images/dua_18.png'),
+      'dua_19': require('../../assets/images/dua_19.png'),
+      'dua_20': require('../../assets/images/dua_20.png'),
+      'dua_21': require('../../assets/images/dua_21.png'),
+      'dua_22': require('../../assets/images/dua_22.png'),
+      'dua_23': require('../../assets/images/dua_23.png'),
+      'dua_24': require('../../assets/images/dua_24.png'),
+      'dua_25': require('../../assets/images/dua_25.png'),
+      'dua_26': require('../../assets/images/dua_26.png'),
+      'dua_27': require('../../assets/images/dua_27.png'),
+      'dua_28': require('../../assets/images/dua_28.png'),
+      'dua_29': require('../../assets/images/dua_29.png'),
+      'dua_30': require('../../assets/images/dua_30.png'),
+      'dua_31': require('../../assets/images/dua_31.png'),
+      'dua_32': require('../../assets/images/dua_32.png'),
+      'dua_33': require('../../assets/images/dua_33.png'),
+    };
+
+    return imageMap[imageName as keyof typeof imageMap] || require('../../assets/images/kaaba.png');
+  } catch (error) {
+    console.log('Error loading image:', error);
+    return require('../../assets/images/kaaba.png');
+  }
 };
 
 // Bouncing Button Component
@@ -218,12 +234,11 @@ const ProgressStar = ({ filled, size = 16 }) => (
   </Text>
 );
 
-// Optimized DuaCard component - REMOVED OVERLAYS
-const DuaCard = React.memo(({ dua, index, onPress, categories }: {
-  dua: Dua;
+// CategoryCard component - One card per category
+const CategoryCard = React.memo(({ category, index, onPress }: {
+  category: Category;
   index: number;
-  onPress: (dua: Dua) => void;
-  categories: Category[];
+  onPress: (category: Category) => void;
 }) => {
   const cardAnim = useRef(new Animated.Value(0)).current;
   const pressAnim = useRef(new Animated.Value(0)).current;
@@ -269,31 +284,7 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
     outputRange: [1, 0.96],
   });
 
-  const getCategoryColor = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.color || THEME.primary;
-  };
-
-  const getCategoryName = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.name || `Category ${categoryId}`;
-  };
-
-  const categoryColor = getCategoryColor(dua.category_id);
-  const localImage = getLocalImage(dua.id, dua.duaNumber);
-
-  const getProgressStars = () => {
-    switch (dua.memorization_status) {
-      case 'memorized':
-        return [true, true, true, true, true];
-      case 'learning':
-        return [true, true, true, false, false];
-      default:
-        return [true, false, false, false, false];
-    }
-  };
-
-  const progressStars = getProgressStars();
+  const categoryImageSource = getImageSource(category.image_path);
 
   return (
     <Animated.View
@@ -316,35 +307,21 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
         ],
       }}
     >
-      <BouncingButton onPress={() => onPress(dua)} style={styles.card}>
+      <BouncingButton onPress={() => onPress(category)} style={styles.card}>
         <Animated.View style={styles.cardInner}>
           <View style={styles.cardImageContainer}>
             <View style={styles.cardNumber}>
               <Text style={styles.cardNumberText}>
-                {dua.duaNumber || dua.order_index.toString().padStart(2, '0')}
+                {category.id.toString().padStart(2, '0')}
               </Text>
             </View>
 
             {/* Clean image without overlays */}
             <Image
-              source={localImage}
+              source={categoryImageSource}
               style={styles.cardImage}
               resizeMode="cover"
             />
-
-            {/* Favorite indicator */}
-            {dua.is_favorited && (
-              <View style={styles.favoriteIndicator}>
-                <Text style={styles.favoriteText}>❤️</Text>
-              </View>
-            )}
-
-            {/* Progress Stars */}
-            <View style={styles.progressContainer}>
-              {progressStars.map((filled, index) => (
-                <ProgressStar key={index} filled={filled} size={12} />
-              ))}
-            </View>
 
             {/* Floating Elements */}
             <View style={styles.floatingStars}>
@@ -356,11 +333,11 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
           {/* Card banner with better text contrast */}
           <View style={[styles.cardBanner, { backgroundColor: '#ede77bff' }]}>
             <Text style={styles.cardTitle} numberOfLines={2}>
-              {dua.title}
+              {category.name}
             </Text>
             <View style={styles.cardMeta}>
-              <Text style={[styles.categoryText, { color: categoryColor }]}>
-                {getCategoryName(dua.category_id)}
+              <Text style={[styles.categoryText, { color: category.color }]}>
+                {category.icon} Category
               </Text>
             </View>
             <View style={styles.cardSparkle}>
@@ -373,83 +350,18 @@ const DuaCard = React.memo(({ dua, index, onPress, categories }: {
   );
 });
 
-// All Mode Grid Component (Based on HTML structure)
-const AllModeGrid = ({ onDuaPress, categories }) => {
-  const allCategories = [
-    { id: 'ummah', name: "Du'as for the Ummah", emoji: '🕌', color: '#F7E4A8' },
-    { id: 'morning', name: "Morning", emoji: '🌅', color: '#B2DFDB' },
-    { id: 'evening', name: "Evening", emoji: '🌇', color: '#FFCDD2' },
-    { id: 'sleep', name: "Before Sleep", emoji: '🌙', color: '#90CAF9' },
-    { id: 'salah', name: "Salah", emoji: '🕌', color: '#C8E6C9' },
-    { id: 'after-salah', name: "After Salah", emoji: '📖', color: '#B3E5FC' },
-    { id: 'waking-up', name: "Waking Up", emoji: '⏰', color: '#FCE4EC' },
-    { id: 'nightmares', name: "Nightmares", emoji: '😨', color: '#E0F7FA' },
-    { id: 'clothes', name: "Clothes", emoji: '👕', color: '#FFF3E0' },
-    { id: 'lavatory', name: "Lavatory & Wudu", emoji: '💧', color: '#E8F5E9' },
-    { id: 'food', name: "Food & Drink", emoji: '🍽️', color: '#FBEFF2' },
-    { id: 'home', name: "Home", emoji: '🏠', color: '#E3F2FD' },
-    { id: 'adhan', name: "Adhan & Masjid", emoji: '🕌', color: '#F9FBE7' },
-    { id: 'istikharah', name: "Istikharah", emoji: '🛣️', color: '#F3E5F5' },
-    { id: 'gatherings', name: "Gatherings", emoji: '🤝', color: '#EAF7F8' },
-    { id: 'difficulties', name: "Difficulties & Happiness", emoji: '🎈', color: '#FFEEF4' },
-  ];
-
+// All Mode Grid Component
+const AllModeGrid = ({ onCategoryPress, categories }) => {
   return (
     <View style={styles.allModeContainer}>
-      {/* Main Cards */}
-      <View style={styles.mainCardsContainer}>
-        {allCategories.slice(0, 4).map((category, index) => (
-          <BouncingButton 
-            key={category.id} 
-            style={[styles.mainCard, { backgroundColor: category.color }]}
-            onPress={() => {
-              console.log('Category pressed:', category.name);
-              router.push({
-                pathname: '/allduas-detail',
-                params: {
-                  categoryId: category.id,
-                  categoryName: category.name,
-                }
-              });
-            }}
-          >
-            <View style={styles.mainCardContent}>
-              <Text style={styles.mainCardText}>{category.name}</Text>
-              <Text style={styles.mainCardEmoji}>{category.emoji}</Text>
-            </View>
-          </BouncingButton>
-        ))}
-      </View>
-
-      {/* Salah Cards - FIXED LAYOUT */}
-      <View style={styles.salahCardsContainer}>
-        {allCategories.slice(4, 6).map((category, index) => (
-          <BouncingButton 
-            key={category.id} 
-            style={[styles.salahCard, { backgroundColor: category.color }]}
-            onPress={() => console.log('Category pressed:', category.name)}
-          >
-            <View style={styles.salahCardContent}>
-              <Text style={styles.salahCardText}>{category.name}</Text>
-              <Text style={styles.salahCardEmoji}>{category.emoji}</Text>
-            </View>
-          </BouncingButton>
-        ))}
-      </View>
-
-      {/* Other Cards Grid */}
-      <View style={styles.otherGridContainer}>
-        {allCategories.slice(6).map((category, index) => (
-          <BouncingButton 
-            key={category.id} 
-            style={[styles.otherCard, { backgroundColor: category.color }]}
-            onPress={() => console.log('Category pressed:', category.name)}
-          >
-            <View style={styles.otherCardContent}>
-              <Text style={styles.otherCardEmoji}>{category.emoji}</Text>
-              <Text style={styles.otherCardText}>{category.name}</Text>
-            </View>
-          </BouncingButton>
+      <View style={styles.gridContainer}>
+        {categories.map((category, index) => (
+          <CategoryCard
+            key={category.id}
+            category={category}
+            index={index}
+            onPress={onCategoryPress}
+          />
         ))}
       </View>
     </View>
@@ -460,110 +372,102 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [duas, setDuas] = useState<Dua[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No loading needed for in-memory data
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'kids' | 'all'>('kids'); // 'kids' or 'all'
+  const [mode, setMode] = useState<'kids' | 'all'>('kids');
 
   const searchOpacityAnim = useRef(new Animated.Value(0)).current;
   const searchScaleAnim = useRef(new Animated.Value(0)).current;
-  const dataLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (dataLoadedRef.current) return;
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        console.log('Starting database initialization...');
-        await databaseService.init();
-
-        console.log('Database initialized, loading data...');
-
-        const [allDuas, allCategories] = await Promise.all([
-          databaseService.getAllDuas(),
-          databaseService.getAllCategories()
-        ]);
-
-        console.log(`Successfully loaded ${allDuas.length} duas and ${allCategories.length} categories`);
-
-        setDuas(allDuas);
-        setCategories(allCategories);
-        dataLoadedRef.current = true;
-
-      } catch (err) {
-        console.error('Error in loadData:', err);
-        setError('Failed to load duas. Please restart the app.');
-        setDuas([]);
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    // Load data from in-memory structure
+    try {
+      console.log('Loading categories from in-memory data...');
+      const allCategories = getAllCategories();
+      setCategories(allCategories);
+      console.log(`Successfully loaded ${allCategories.length} categories`);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Failed to load categories. Please restart the app.');
+    }
   }, []);
 
-  const filteredDuas = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return duas;
+  const filteredCategories = useMemo(() => {
+    let result = categories;
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = categories.filter(category =>
+        category.name.toLowerCase().includes(query)
+      );
     }
 
-    const query = searchQuery.toLowerCase().trim();
-    return duas.filter(dua =>
-      dua.title.toLowerCase().includes(query) ||
-      dua.translation.toLowerCase().includes(query) ||
-      dua.arabic_text.toLowerCase().includes(query) ||
-      (dua.transliteration && dua.transliteration.toLowerCase().includes(query)) ||
-      (dua.urdu && dua.urdu.toLowerCase().includes(query)) ||
-      (dua.hinditranslation && dua.hinditranslation.toLowerCase().includes(query))
-    );
-  }, [searchQuery, duas]);
+    // Sort by category ID in ascending order (1 to 32)
+    return result.sort((a, b) => a.id - b.id);
+  }, [searchQuery, categories]);
 
-  const handleDuaPress = useCallback(async (dua: Dua) => {
+  const handleCategoryPress = useCallback((category: Category) => {
     Keyboard.dismiss();
 
-    try {
-      const wordAudioPairs = await databaseService.getWordAudioPairsByDua(dua.id);
+    console.log('📋 Category pressed:', {
+      id: category.id,
+      name: category.name,
+      image_path: category.image_path
+    });
 
+    try {
+      // Get the first dua from this category using in-memory data
+      const categoryDuas = getDuasByCategory(category.id);
+      
+      if (categoryDuas.length === 0) {
+        console.error('❌ No duas found in category:', category.id);
+        alert(`No duas found in ${category.name} category.`);
+        return;
+      }
+
+      // Get the first dua in the category (lowest order_index)
+      const firstDua = categoryDuas.sort((a, b) => a.order_index - b.order_index)[0];
+
+      console.log('🎯 First dua in category:', {
+        id: firstDua.id,
+        title: firstDua.title,
+        order_index: firstDua.order_index,
+        image_path: firstDua.image_path
+      });
+
+      // Get word audio pairs for the dua using in-memory data
+      const wordAudioPairs = getWordAudioPairsByDua(firstDua.id);
+
+      // Get the dua image using image_path
+      const duaImageSource = getImageSource(firstDua.image_path);
+
+      // Prepare the params for dua-detail screen
+      const navigationParams = {
+        id: firstDua.id,
+        title: firstDua.title || 'Dua',
+        arabic: firstDua.arabic_text || 'Arabic text not available',
+        translation: firstDua.translation || 'Translation not available',
+        reference: firstDua.reference || 'Reference not available',
+        textheading: firstDua.textheading || '',
+        duaNumber: firstDua.duaNumber || firstDua.order_index?.toString() || '1',
+        categoryName: category.name,
+        useLocalImage: 'true',
+        localImageIndex: ((parseInt(firstDua.id) || 1) % 32) + 1,
+        imagePath: firstDua.image_path || category.image_path // Pass image path for reference
+      };
+
+      console.log('🚀 Navigating to dua-detail with params:', navigationParams);
+
+      // Navigate to dua-detail screen
       router.push({
         pathname: '/dua-detail',
-        params: {
-          id: dua.id,
-          title: dua.title,
-          arabic: dua.arabic_text,
-          translation: dua.translation,
-          reference: dua.reference,
-          transliteration: dua.transliteration || '',
-          urdu: dua.urdu || '',
-          hinditranslation: dua.hinditranslation || '',
-          textheading: dua.textheading || '',
-          steps: dua.steps || '',
-          duaNumber: dua.duaNumber || '',
-          audio_full: dua.audio_full || '',
-          titleAudioResId: dua.titleAudioResId || '',
-          wordAudioPairs: JSON.stringify(wordAudioPairs),
-          useLocalImage: 'true',
-          localImageIndex: (parseInt(dua.id) % 32) + 1
-        }
+        params: navigationParams
       });
+
     } catch (error) {
-      console.error('Error navigating to dua detail:', error);
-      router.push({
-        pathname: '/dua-detail',
-        params: {
-          id: dua.id,
-          title: dua.title,
-          arabic: dua.arabic_text,
-          translation: dua.translation,
-          reference: dua.reference,
-          useLocalImage: 'true',
-          localImageIndex: (parseInt(dua.id) % 32) + 1
-        }
-      });
+      console.error('❌ Error navigating to dua detail:', error);
+      alert('Error loading dua. Please try again.');
     }
   }, [router]);
 
@@ -615,17 +519,6 @@ export default function DashboardScreen() {
     outputRange: [0.8, 1],
   });
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={THEME.primary} />
-          <Text style={styles.loadingText}>Loading Beautiful Duas... 🌟</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   if (error) {
     return (
       <SafeAreaView style={styles.container}>
@@ -634,10 +527,14 @@ export default function DashboardScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <BouncingButton>
             <TouchableOpacity style={styles.retryButton} onPress={() => {
-              dataLoadedRef.current = false;
-              setLoading(true);
               setError(null);
-              loadData();
+              // Reload data
+              try {
+                const allCategories = getAllCategories();
+                setCategories(allCategories);
+              } catch (err) {
+                setError('Failed to load data. Please restart the app.');
+              }
             }}>
               <Text style={styles.retryButtonText}>Try Again 🔄</Text>
             </TouchableOpacity>
@@ -678,7 +575,7 @@ export default function DashboardScreen() {
                   <View>
                     <Text style={styles.title}>DUALAND 🎨</Text>
                     <Text style={styles.subtitle}>
-                      {mode === 'kids' ? `${filteredDuas.length} Beautiful Duas to Explore!` : 'All Duas for Everyone'}
+                      {mode === 'kids' ? `${filteredCategories.length} Beautiful Categories to Explore!` : 'All Categories for Everyone'}
                     </Text>
                   </View>
                 </View>
@@ -745,7 +642,7 @@ export default function DashboardScreen() {
                 <SearchIcon size={20} color={THEME.primary} />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search for beautiful Duas... 🔍"
+                  placeholder="Search for categories... 🔍"
                   placeholderTextColor={THEME.text.secondary}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
@@ -773,46 +670,45 @@ export default function DashboardScreen() {
             keyboardShouldPersistTaps="handled"
           >
             {mode === 'kids' ? (
-              // Kids Mode - Original dua cards
+              // Kids Mode - Category cards
               <>
                 {!searchQuery && (
                   <View style={styles.welcomeSection}>
                     <Text style={styles.welcomeText}>
-                      Discover {duas.length} Beautiful Duas 🌟
+                      Discover {categories.length} Beautiful Categories 🌟
                     </Text>
                     <Text style={styles.welcomeSubtext}>
-                      From {categories.length} categories • Tap to explore and learn! 📚
+                      Each category contains special Duas • Tap to explore! 📚
                     </Text>
                   </View>
                 )}
 
-                {filteredDuas.length === 0 && searchQuery && (
+                {filteredCategories.length === 0 && searchQuery && (
                   <View style={styles.noResultsContainer}>
                     <Text style={styles.noResultsEmoji}>🔍</Text>
-                    <Text style={styles.noResultsText}>No Duas found for "{searchQuery}"</Text>
+                    <Text style={styles.noResultsText}>No categories found for "{searchQuery}"</Text>
                     <Text style={styles.noResultsSubtext}>
-                      Try different words or explore all Duas! 🌈
+                      Try different words or explore all categories! 🌈
                     </Text>
                   </View>
                 )}
 
-                {filteredDuas.length > 0 && (
+                {filteredCategories.length > 0 && (
                   <View style={styles.gridContainer}>
-                    {filteredDuas.map((dua, index) => (
-                      <DuaCard
-                        key={dua.id}
-                        dua={dua}
+                    {filteredCategories.map((category, index) => (
+                      <CategoryCard
+                        key={category.id}
+                        category={category}
                         index={index}
-                        onPress={handleDuaPress}
-                        categories={categories}
+                        onPress={handleCategoryPress}
                       />
                     ))}
                   </View>
                 )}
               </>
             ) : (
-              // All Mode - New grid layout
-              <AllModeGrid onDuaPress={handleDuaPress} categories={categories} />
+              // All Mode - Category cards in grid layout
+              <AllModeGrid onCategoryPress={handleCategoryPress} categories={filteredCategories} />
             )}
 
             <View style={styles.bottomPadding} />
@@ -1066,101 +962,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   // All Mode Styles
-  // All Mode Styles
-allModeContainer: {
-  paddingHorizontal: 16,
-  gap: 16,
-},
-mainCardsContainer: {
-  gap: 12,
-},
-mainCard: {
-  height: 120,
-  borderRadius: 16,
-  padding: 16,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 8,
-  elevation: 4,
-},
-mainCardContent: {
-  flex: 1,
-  justifyContent: 'space-between',
-},
-mainCardText: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  color: THEME.text.dark,
-},
-mainCardEmoji: {
-  fontSize: 24,
-  alignSelf: 'flex-end',
-},
-salahCardsContainer: {
-  flexDirection: 'row',
-  gap: 12,
-  // Ensure the container takes full width
-  width: '100%',
-},
-salahCard: {
-  flex: 1, // This makes each card take equal space
-  height: 140,
-  borderRadius: 16,
-  padding: 16,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 8,
-  elevation: 4,
-  // Ensure the card takes the full available width minus gap
-  minWidth: 0, // Important for flex items to shrink properly
-},
-salahCardContent: {
-  flex: 1,
-  justifyContent: 'flex-end',
-},
-salahCardText: {
-  fontSize: 16,
-  fontWeight: 'bold',
-  color: THEME.text.dark,
-},
-salahCardEmoji: {
-  fontSize: 20,
-},
-otherGridContainer: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  justifyContent: 'space-between',
-  gap: 12,
-},
-otherCard: {
-  width: (width - 32 - 12) / 2, // Calculate width considering padding and gap
-  height: 140,
-  borderRadius: 16,
-  padding: 16,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 8,
-  elevation: 4,
-},
-otherCardContent: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-otherCardEmoji: {
-  fontSize: 32,
-  marginBottom: 8,
-},
-otherCardText: {
-  fontSize: 14,
-  fontWeight: 'bold',
-  color: THEME.text.dark,
-  textAlign: 'center',
-},
-  // Original DuaCard Styles
+  allModeContainer: {
+    paddingHorizontal: 16,
+  },
+  // Category Card Styles
   card: {
     width: CARD_WIDTH,
     marginBottom: 16,
@@ -1200,33 +1005,6 @@ otherCardText: {
     color: THEME.primary,
     fontSize: 12,
     fontWeight: 'bold',
-  },
-  favoriteIndicator: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-    borderWidth: 1,
-    borderColor: THEME.text.accent,
-  },
-  favoriteText: {
-    fontSize: 10,
-  },
-  progressContainer: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
   },
   cardImage: {
     width: '100%',

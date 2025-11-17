@@ -15,9 +15,20 @@ import {
   Platform,
   LayoutAnimation,
   UIManager,
+  PanResponder,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { getAllDuas, getDuaById, getWordAudioPairsByDua, Dua } from '../lib/data/duas'; // Updated import path
+
+// Import PNG images for buttons
+const BtnPrevious = require('../assets/btns/btn_back.png');
+const BtnNext = require('../assets/btns/btn_next.png');
+const BtnPause = require('../assets/btns/btn_pause.png');
+const BtnPlay = require('../assets/btns/btn_play.png');
+const BtnRepeat = require('../assets/btns/btn_repeat.png');
+const BtnHome = require('../assets/btns/btn_setting.png');
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -46,9 +57,10 @@ const THEME = {
   }
 };
 
-// Import local images from your assets - using the same ones from your index
+// Import local images from your assets - COMPLETE SET
 const localImages = {
-  dua_1: require('../assets/images/dua_31.png'),
+  kaaba: require('../assets/images/kaaba.png'),
+  dua_1: require('../assets/images/kaaba.png'),
   dua_2: require('../assets/images/dua_2.png'),
   dua_3: require('../assets/images/dua_3.png'),
   dua_4: require('../assets/images/dua_4.png'),
@@ -82,28 +94,41 @@ const localImages = {
   dua_32: require('../assets/images/dua_32.png'),
 };
 
-// Helper function to get local image
-const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: string) => {
-  // First try to use the specific localImageIndex from params
+// Enhanced helper function to get local image
+const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: string, imagePath?: string) => {
+  // First try: Use imagePath if provided
+  if (imagePath) {
+    const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
+    const imageKey = imageName as keyof typeof localImages;
+    if (localImages[imageKey]) {
+      console.log(`🖼️ Using image from path: ${imageName}`);
+      return localImages[imageKey];
+    }
+  }
+  
+  // Second try: Use localImageIndex
   if (localImageIndex) {
     const imageKey = `dua_${localImageIndex}` as keyof typeof localImages;
     if (localImages[imageKey]) {
+      console.log(`🖼️ Using image from localImageIndex: dua_${localImageIndex}`);
       return localImages[imageKey];
     }
   }
   
-  // Then try duaNumber
+  // Third try: Use duaNumber
   if (duaNumber) {
     const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
     if (localImages[imageKey]) {
+      console.log(`🖼️ Using image from duaNumber: dua_${duaNumber}`);
       return localImages[imageKey];
     }
   }
   
-  // Fallback to modulo of duaId
-  const imageIndex = (parseInt(duaId) % 32) + 1;
+  // Fallback: Use duaId modulo 32
+  const imageIndex = (parseInt(duaId) % 32) || 1;
   const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
-  return localImages[fallbackImageKey] || localImages.dua_1;
+  console.log(`🖼️ Using fallback image: dua_${imageIndex}`);
+  return localImages[fallbackImageKey] || localImages.kaaba;
 };
 
 // Floating Particles Component
@@ -186,7 +211,7 @@ const FloatingParticles = React.memo(({ count = 8 }) => {
 
 // Bouncing Button Component
 const BouncingButton = ({ children, onPress, style = {} }: { 
-  children: any; 
+  children: React.ReactNode; 
   onPress?: () => void;
   style?: any; 
 }) => {
@@ -226,80 +251,115 @@ const BouncingButton = ({ children, onPress, style = {} }: {
   );
 };
 
-// Word Highlight Component for Word-by-Word Mode
+// Word Highlight Component for Word-by-Word Mode - FIXED VERSION
 const WordByWordDisplay = ({ 
   arabicText, 
   currentWordIndex, 
-  isPlaying 
+  isPlaying,
+  translationText,
+  referenceText
 }: { 
   arabicText: string; 
   currentWordIndex: number; 
   isPlaying: boolean;
+  translationText: string;
+  referenceText: string;
 }) => {
-  const words = arabicText.split(' ');
-  const wordAnimations = useRef(words.map(() => new Animated.Value(0))).current;
+  // Ensure arabicText is never empty and split into words
+  const words = (arabicText || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
+  
+  // Use state to manage animations to ensure re-renders
+  const [animations] = useState(() => 
+    words.map(() => new Animated.Value(0))
+  );
 
   useEffect(() => {
-    if (isPlaying && currentWordIndex < words.length) {
-      // Reset previous word
-      if (currentWordIndex > 0) {
-        Animated.timing(wordAnimations[currentWordIndex - 1], {
+    if (isPlaying && currentWordIndex < words.length && animations[currentWordIndex]) {
+      if (currentWordIndex > 0 && animations[currentWordIndex - 1]) {
+        Animated.timing(animations[currentWordIndex - 1], {
           toValue: 0,
           duration: 300,
           useNativeDriver: true,
         }).start();
       }
 
-      // Highlight current word with animation
-      Animated.sequence([
-        Animated.timing(wordAnimations[currentWordIndex], {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(wordAnimations[currentWordIndex], {
-          toValue: 0.8,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (animations[currentWordIndex]) {
+        Animated.sequence([
+          Animated.timing(animations[currentWordIndex], {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(animations[currentWordIndex], {
+            toValue: 0.8,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
     }
-  }, [currentWordIndex, isPlaying]);
+  }, [currentWordIndex, isPlaying, words.length]);
+
+  // Safe interpolation function
+  const getWordAnimationStyle = (index: number) => {
+    if (!animations[index]) {
+      return {
+        transform: [{ scale: 1 }],
+        backgroundColor: 'transparent',
+      };
+    }
+
+    const scale = animations[index].interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 1.1],
+    });
+
+    const backgroundColor = animations[index].interpolate({
+      inputRange: [0, 1],
+      outputRange: ['transparent', THEME.primary + '40'],
+    });
+
+    return {
+      transform: [{ scale }],
+      backgroundColor,
+    };
+  };
 
   return (
     <View style={styles.wordByWordContainer}>
+      {/* Arabic Text Display */}
       <View style={styles.arabicTextContainer}>
         <Text style={styles.arabicText} dir="rtl">
-          {words.map((word, index) => {
-            const scale = wordAnimations[index].interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 1.1],
-            });
-
-            const backgroundColor = wordAnimations[index].interpolate({
-              inputRange: [0, 1],
-              outputRange: ['transparent', THEME.primary + '40'],
-            });
-
-            return (
-              <Animated.Text
-                key={index}
-                style={[
-                  styles.arabicWord,
-                  {
-                    transform: [{ scale }],
-                    backgroundColor,
-                  },
-                  index === currentWordIndex && styles.currentWord,
-                ]}
-              >
-                {word}{' '}
-              </Animated.Text>
-            );
-          })}
+          {words.map((word, index) => (
+            <Animated.Text
+              key={index}
+              style={[
+                styles.arabicWord,
+                getWordAnimationStyle(index),
+                index === currentWordIndex && styles.currentWord,
+              ]}
+            >
+              {word}{' '}
+            </Animated.Text>
+          ))}
         </Text>
+      </View>
+
+      {/* Translation Section */}
+      <View style={styles.translationSection}>
+        <Text style={styles.translationTitle}>Translation</Text>
+        <Text style={styles.translationText}>
+          {translationText}
+        </Text>
+        
+        {referenceText && referenceText !== 'Reference not available' && (
+          <>
+            <Text style={styles.referenceTitle}>Reference</Text>
+            <Text style={styles.referenceText}>{referenceText}</Text>
+          </>
+        )}
       </View>
       
       {isPlaying && (
@@ -474,56 +534,189 @@ const RepeatBadge = ({ mode, isVisible }: { mode: string; isVisible: boolean }) 
   );
 };
 
+// Swipe Navigation Component
+const SwipeNavigation = ({ 
+  onSwipeLeft, 
+  onSwipeRight, 
+  children 
+}: { 
+  onSwipeLeft: () => void;
+  onSwipeRight: () => void;
+  children: React.ReactNode;
+}) => {
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy * 2);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx } = gestureState;
+        const swipeThreshold = 50; // Minimum swipe distance
+        
+        if (dx > swipeThreshold) {
+          // Swipe right - go to previous dua
+          onSwipeRight();
+        } else if (dx < -swipeThreshold) {
+          // Swipe left - go to next dua
+          onSwipeLeft();
+        }
+      },
+    })
+  ).current;
+
+  return (
+    <View style={styles.swipeContainer} {...panResponder.panHandlers}>
+      {children}
+    </View>
+  );
+};
+
 export default function DuaDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  // Extract dynamic data from route params
-  const {
-    id,
-    title = 'Dua for Anxiety',
-    arabic,
-    translation,
-    reference,
-    transliteration,
-    urdu,
-    hinditranslation,
-    textheading,
-    steps,
-    duaNumber,
-    audio_full,
-    titleAudioResId,
-    wordAudioPairs,
-    useLocalImage,
-    localImageIndex
-  } = params;
+  // Enhanced helper function to handle parameter names properly
+  const getStringParam = (param: string | string[] | undefined): string => {
+    if (Array.isArray(param)) {
+      return param[0] || '';
+    }
+    return param || '';
+  };
+
+  // State for ALL duas and current position - using static data
+  const [allDuas, setAllDuas] = useState<Dua[]>([]);
+  const [currentDuaIndex, setCurrentDuaIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load ALL duas and find current position - using static data
+  useEffect(() => {
+    const loadAllDuasAndFindPosition = async () => {
+      try {
+        setIsLoading(true);
+        console.log('🔄 Loading ALL duas from static data...');
+        
+        // Load ALL duas from static data
+        const duas = getAllDuas();
+        console.log(`📚 Loaded ${duas.length} duas from static data`);
+        
+        setAllDuas(duas);
+
+        // Find current dua position in the complete list
+        const currentDuaId = getStringParam(params.id);
+        const foundIndex = duas.findIndex(dua => dua.id === currentDuaId);
+        
+        if (foundIndex !== -1) {
+          setCurrentDuaIndex(foundIndex);
+          console.log(`📍 Starting at dua ${foundIndex + 1} of ${duas.length}`);
+        } else {
+          console.log('❌ Current dua not found in list, using index 0');
+          setCurrentDuaIndex(0);
+        }
+      } catch (error) {
+        console.error('Error loading duas:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAllDuasAndFindPosition();
+  }, [params.id]);
+
+  // Get current dua data - using static data
+  const getDuaData = () => {
+    // Always use data from allDuas array
+    if (allDuas.length > 0 && currentDuaIndex < allDuas.length) {
+      const currentDua = allDuas[currentDuaIndex];
+      
+      return {
+        arabic: currentDua.arabic_text || "بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْمِ",
+        translation: currentDua.translation || "Translation not available",
+        reference: currentDua.reference || "Reference not available",
+        title: currentDua.title || "Beautiful Dua",
+        duaNumber: currentDua.duaNumber || currentDua.order_index?.toString() || "1",
+        id: currentDua.id,
+        categoryName: currentDua.textheading || '',
+        steps: currentDua.steps || '',
+        imagePath: currentDua.image_path || ''
+      };
+    }
+    
+    // Fallback for initial load
+    return {
+      arabic: getStringParam(params.arabic) || "بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْمِ",
+      translation: getStringParam(params.translation) || "Translation not available",
+      reference: getStringParam(params.reference) || "Reference not available",
+      title: getStringParam(params.title) || "Beautiful Dua",
+      duaNumber: getStringParam(params.duaNumber) || "1",
+      id: getStringParam(params.id),
+      categoryName: getStringParam(params.categoryName) || '',
+      steps: getStringParam(params.steps) || '',
+      imagePath: getStringParam(params.imagePath) || ''
+    };
+  };
+
+  const { arabic, translation, reference, title, duaNumber, id, categoryName, steps, imagePath } = getDuaData();
+
+  // Debug the actual values being used
+  useEffect(() => {
+    if (!isLoading && allDuas.length > 0) {
+      console.log('🔍 FINAL VALUES BEING USED:', {
+        title,
+        arabic: arabic.substring(0, 50) + '...',
+        translation,
+        reference,
+        duaNumber,
+        currentPosition: `${currentDuaIndex + 1} of ${allDuas.length}`,
+        categoryName,
+        imagePath
+      });
+    }
+  }, [arabic, translation, reference, title, duaNumber, currentDuaIndex, allDuas.length, isLoading, categoryName, imagePath]);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMode, setCurrentMode] = useState<'full' | 'word'>('word');
-  const [currentDuaIndex, setCurrentDuaIndex] = useState(parseInt(duaNumber as string) || 1);
   const [showCelebration, setShowCelebration] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'empty' | '1' | '2' | '3' | 'infinite'>('empty');
   const [showRepeatBadge, setShowRepeatBadge] = useState(false);
-  const totalDuas = 15;
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
 
   const playButtonScale = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const favoriteScale = useRef(new Animated.Value(1)).current;
   const imageScale = useRef(new Animated.Value(0.9)).current;
   const repeatScale = useRef(new Animated.Value(1)).current;
+  const swipeHintOpacity = useRef(new Animated.Value(1)).current;
 
-  // Use the dynamic Arabic text from params or fallback
-  const duaArabic = arabic as string || "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَأَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ، وَأَعُوذُ بِكَ مِنَ الْجُبْنِ وَالْبُخْلِ، وَأَعُوذُ بِكَ مِنْ غَلَبَةِ الدَّيْنِ، وَقَهْرِ الرِّجَالِ";
-  const words = duaArabic.split(' ');
-
-  // Get illustration image dynamically based on incoming params
+  // Get illustration image dynamically based on current dua - ENHANCED
   const illustrationImage = getLocalImage(
-    id as string, 
-    duaNumber as string, 
-    localImageIndex as string
+    id || '1', 
+    duaNumber, 
+    ((parseInt(id) || 1) % 32) + 1,
+    imagePath // Use the passed image path
   );
+
+  // Word-by-word progression
+  const words = (arabic || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
+
+  // Hide swipe hint after 3 seconds
+  useEffect(() => {
+    console.log('⏳ Swipe hint will hide after 3 seconds');
+    const timer = setTimeout(() => {
+      Animated.timing(swipeHintOpacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        setShowSwipeHint(false);
+      });
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // Animate image when dua changes
@@ -541,6 +734,54 @@ export default function DuaDetailScreen() {
       }),
     ]).start();
   }, [currentDuaIndex]);
+
+  // SIMPLE FUNCTION TO CHANGE DUA WITHOUT NAVIGATION
+  const changeCurrentDua = (index: number) => {
+    if (index < 0 || index >= allDuas.length || isLoading) return;
+    
+    // Prevent rapid navigation
+    if (index === currentDuaIndex) return;
+    
+    console.log(`🔄 Changing from dua ${currentDuaIndex + 1} to ${index + 1}`);
+    
+    // Reset player state
+    setIsPlaying(false);
+    setCurrentWordIndex(0);
+    
+    // Update current index - this will trigger re-render with new dua data
+    setCurrentDuaIndex(index);
+    
+    // Show celebration when moving to next dua
+    if (index > currentDuaIndex) {
+      setShowCelebration(true);
+    }
+  };
+
+  const navigateToNextDua = () => {
+    if (currentDuaIndex < allDuas.length - 1) {
+      changeCurrentDua(currentDuaIndex + 1);
+    } else {
+      console.log('🎉 Reached the last dua');
+      // Optional: Show completion message
+    }
+  };
+
+  const navigateToPrevDua = () => {
+    if (currentDuaIndex > 0) {
+      changeCurrentDua(currentDuaIndex - 1);
+    }
+  };
+
+  // Handle swipe gestures
+  const handleSwipeLeft = () => {
+    // Swipe left = next dua
+    navigateToNextDua();
+  };
+
+  const handleSwipeRight = () => {
+    // Swipe right = previous dua
+    navigateToPrevDua();
+  };
 
   const handlePlayPause = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -625,29 +866,6 @@ export default function DuaDetailScreen() {
     }, 1500);
   };
 
-  // Get repeat button emoji based on mode
-  const getRepeatEmoji = () => {
-    switch (repeatMode) {
-      case '1': return '🔂';
-      case '2': return '🔂';
-      case '3': return '🔂';
-      case 'infinite': return '🔁';
-      case 'empty':
-      default: return '🔄';
-    }
-  };
-
-  // Get badge text for current mode
-  const getCurrentRepeatMode = () => {
-    switch (repeatMode) {
-      case '1': return '1';
-      case '2': return '2';
-      case '3': return '3';
-      case 'infinite': return 'infinite';
-      default: return 'empty';
-    }
-  };
-
   // Word-by-word progression
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -671,17 +889,6 @@ export default function DuaDetailScreen() {
       if (interval) clearInterval(interval);
     };
   }, [isPlaying, currentMode, words.length]);
-
-  const navigateDua = (direction: 'prev' | 'next') => {
-    if (direction === 'next' && currentDuaIndex < totalDuas) {
-      setCurrentDuaIndex(currentDuaIndex + 1);
-      setShowCelebration(true);
-    } else if (direction === 'prev' && currentDuaIndex > 1) {
-      setCurrentDuaIndex(currentDuaIndex - 1);
-    }
-    setIsPlaying(false);
-    setCurrentWordIndex(0);
-  };
 
   // Pulsing animation for play button when playing
   useEffect(() => {
@@ -713,6 +920,85 @@ export default function DuaDetailScreen() {
     router.back();
   };
 
+  const handleHome = () => {
+    router.push('/');
+  };
+
+  // Update header to show category info
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <LinearGradient
+        colors={[THEME.header, '#fef9c3']}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerContent}>
+          {/* Back Button - PNG as ready-made button */}
+          <BouncingButton onPress={handleBack}>
+            <LinearGradient
+              colors={['#7E57C2', '#9C77D9']}
+              style={styles.gradientBorder}
+            >
+              <Image source={BtnPrevious} style={styles.headerButton} />
+            </LinearGradient>
+          </BouncingButton>
+
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>{title}</Text>
+            <Text style={styles.headerSubtitle}>
+              {categoryName ? `${categoryName} • ` : ''}Dua {currentDuaIndex + 1} of {allDuas.length}
+            </Text>
+          </View>
+
+          {/* Home Button - PNG as ready-made button */}
+          <BouncingButton onPress={handleHome}>
+            <LinearGradient
+              colors={['#FFD166', '#FFB347']}
+              style={styles.gradientBorder}
+            >
+              <Image source={BtnHome} style={styles.headerButton} />
+            </LinearGradient>
+          </BouncingButton>
+        </View>
+      </LinearGradient>
+    </View>
+  );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={THEME.primary} />
+          <Text style={styles.loadingText}>Loading Dua... 🌟</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show message if no duas found
+  if (allDuas.length === 0 && !isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
+        {renderHeader()}
+        <View style={styles.noDuasContainer}>
+          <Text style={styles.noDuasEmoji}>😔</Text>
+          <Text style={styles.noDuasText}>No Duas Found</Text>
+          <Text style={styles.noDuasSubtext}>
+            There are no duas available.
+          </Text>
+          <BouncingButton onPress={handleBack}>
+            <LinearGradient
+              colors={['#7E57C2', '#9C77D9']}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>Go Back ↩️</Text>
+            </LinearGradient>
+          </BouncingButton>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
@@ -726,227 +1012,219 @@ export default function DuaDetailScreen() {
       />
 
       {/* Repeat Mode Badge */}
-      <RepeatBadge mode={getCurrentRepeatMode()} isVisible={showRepeatBadge} />
+      <RepeatBadge mode={repeatMode} isVisible={showRepeatBadge} />
+
+      {/* Swipe Navigation Hint */}
+      {showSwipeHint && (
+        <Animated.View style={[styles.swipeHint, { opacity: swipeHintOpacity }]}>
+          <LinearGradient
+            colors={['rgba(126, 87, 194, 0.9)', 'rgba(156, 119, 217, 0.9)']}
+            style={styles.swipeHintGradient}
+          >
+            <Text style={styles.swipeHintText}>
+              💫 Swipe left for next dua • Swipe right for previous dua
+            </Text>
+          </LinearGradient>
+        </Animated.View>
+      )}
 
       {/* Header */}
-      <View style={styles.header}>
-        <LinearGradient
-          colors={[THEME.header, '#fef9c3']}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <BouncingButton 
-              style={styles.headerButton}
-              onPress={handleBack}
-            >
-              <View style={styles.iconButton}>
-                <Text style={styles.headerButtonText}>←</Text>
-              </View>
-            </BouncingButton>
+      {renderHeader()}
 
-            <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>{title as string}</Text>
-              <Text style={styles.headerSubtitle}>Dua {currentDuaIndex} of {totalDuas}</Text>
-            </View>
-
-            <BouncingButton 
-              style={styles.headerButton}
-              onPress={() => console.log('Share pressed')}
-            >
-              <View style={styles.iconButton}>
-                <Text style={styles.headerButtonText}>📤</Text>
-              </View>
-            </BouncingButton>
-          </View>
-        </LinearGradient>
-      </View>
-
-      {/* Main Content */}
-      <ScrollView 
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+      {/* Main Content with Swipe Navigation */}
+      <SwipeNavigation 
+        onSwipeLeft={handleSwipeLeft}
+        onSwipeRight={handleSwipeRight}
       >
-        {/* Illustration Image */}
-        <Animated.View 
-          style={[
-            styles.illustrationContainer,
-            { 
-              transform: [{ scale: imageScale }],
-            }
-          ]}
+        <ScrollView 
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Image
-            source={illustrationImage}
-            style={styles.illustration}
-            resizeMode="cover"
-          />
-          
-          {/* Favorite Button */}
+          {/* Illustration Image */}
           <Animated.View 
             style={[
-              styles.favoriteButtonContainer,
-              { transform: [{ scale: favoriteScale }] }
+              styles.illustrationContainer,
+              { 
+                transform: [{ scale: imageScale }],
+              }
             ]}
           >
-            <BouncingButton onPress={handleFavorite}>
-              <LinearGradient
-                colors={isFavorite ? ['#FF6B6B', '#FF8E8E'] : ['#FFFFFF', '#F8F9FA']}
-                style={styles.favoriteButton}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+            <Image
+              source={illustrationImage}
+              style={styles.illustration}
+              resizeMode="cover"
+            />
+            
+            {/* Favorite Button */}
+            <Animated.View 
+              style={[
+                styles.favoriteButtonContainer,
+                { transform: [{ scale: favoriteScale }] }
+              ]}
+            >
+              <BouncingButton onPress={handleFavorite}>
+                <LinearGradient
+                  colors={isFavorite ? ['#FF6B6B', '#FF8E8E'] : ['#FFFFFF', '#F8F9FA']}
+                  style={styles.favoriteButton}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={[
+                    styles.favoriteButtonEmoji,
+                    isFavorite && styles.favoriteButtonEmojiActive
+                  ]}>
+                    {isFavorite ? '❤️' : '🤍'}
+                  </Text>
+                </LinearGradient>
+              </BouncingButton>
+            </Animated.View>
+          </Animated.View>
+
+          {/* Steps Section (if available) */}
+          {steps && (
+            <View style={styles.stepsContainer}>
+              <Text style={styles.stepsTitle}>Steps:</Text>
+              <Text style={styles.stepsText}>{steps}</Text>
+            </View>
+          )}
+
+          {/* Mode Selection */}
+          <View style={styles.modeContainer}>
+            <View style={styles.modePills}>
+              <TouchableOpacity
+                style={[
+                  styles.modePill,
+                  currentMode === 'word' && styles.modePillActive
+                ]}
+                onPress={() => {
+                  setCurrentMode('word');
+                  setIsPlaying(false);
+                  setCurrentWordIndex(0);
+                }}
               >
                 <Text style={[
-                  styles.favoriteButtonEmoji,
-                  isFavorite && styles.favoriteButtonEmojiActive
+                  styles.modePillText,
+                  currentMode === 'word' && styles.modePillTextActive
                 ]}>
-                  {isFavorite ? '❤️' : '🤍'}
+                  🎯 Word by Word
                 </Text>
-              </LinearGradient>
-            </BouncingButton>
-          </Animated.View>
-        </Animated.View>
-
-        {/* Mode Selection */}
-        <View style={styles.modeContainer}>
-          <View style={styles.modePills}>
-            <TouchableOpacity
-              style={[
-                styles.modePill,
-                currentMode === 'word' && styles.modePillActive
-              ]}
-              onPress={() => {
-                setCurrentMode('word');
-                setIsPlaying(false);
-                setCurrentWordIndex(0);
-              }}
-            >
-              <Text style={[
-                styles.modePillText,
-                currentMode === 'word' && styles.modePillTextActive
-              ]}>
-                🎯 Word by Word
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.modePill,
-                currentMode === 'full' && styles.modePillActive
-              ]}
-              onPress={() => {
-                setCurrentMode('full');
-                setIsPlaying(false);
-              }}
-            >
-              <Text style={[
-                styles.modePillText,
-                currentMode === 'full' && styles.modePillTextActive
-              ]}>
-                📖 Full Dua
-              </Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.modePill,
+                  currentMode === 'full' && styles.modePillActive
+                ]}
+                onPress={() => {
+                  setCurrentMode('full');
+                  setIsPlaying(false);
+                }}
+              >
+                <Text style={[
+                  styles.modePillText,
+                  currentMode === 'full' && styles.modePillTextActive
+                ]}>
+                  📖 Full Dua
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
 
-        {/* Dua Text */}
-        <View style={styles.duaTextContainer}>
-          {currentMode === 'word' ? (
-            <WordByWordDisplay 
-              arabicText={duaArabic}
-              currentWordIndex={currentWordIndex}
-              isPlaying={isPlaying}
-            />
-          ) : (
-            <View style={styles.fullDuaContainer}>
-              <Text style={styles.arabicText} dir="rtl">
-                {duaArabic}
-              </Text>
+          {/* Dua Text Container */}
+          <View style={styles.duaTextContainer}>
+            {currentMode === 'word' ? (
+              <WordByWordDisplay 
+                arabicText={arabic}
+                currentWordIndex={currentWordIndex}
+                isPlaying={isPlaying}
+                translationText={translation}
+                referenceText={reference}
+              />
+            ) : (
+              <View style={styles.fullDuaContainer}>
+                {/* Arabic Text */}
+                <View style={styles.arabicTextContainer}>
+                  <Text style={styles.arabicText} dir="rtl">
+                    {arabic}
+                  </Text>
+                </View>
+                <View style={styles.translationSection}>
+                  <Text style={styles.translationTitle}>Translation</Text>
+                  <Text style={styles.translationText}>
+                    {translation}
+                  </Text>
+                  
+                  {reference && reference !== 'Reference not available' && (
+                    <>
+                      <Text style={styles.referenceTitle}>Reference</Text>
+                      <Text style={styles.referenceText}>{reference}</Text>
+                    </>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {currentMode === 'full' && (
               <View style={styles.fullDuaHint}>
                 <Text style={styles.hintText}>Tap play to listen to the full dua 🔊</Text>
               </View>
+            )}
+          </View>
+
+          {/* Progress Indicator */}
+          {isPlaying && currentMode === 'word' && (
+            <View style={styles.wordProgress}>
+              <Text style={styles.wordProgressText}>
+                Word {currentWordIndex + 1} of {words.length}
+              </Text>
+              <View style={styles.wordProgressBar}>
+                <View 
+                  style={[
+                    styles.wordProgressFill,
+                    { width: `${((currentWordIndex + 1) / words.length) * 100}%` }
+                  ]} 
+                />
+              </View>
             </View>
           )}
-        </View>
 
-        {/* Progress Indicator */}
-        {isPlaying && currentMode === 'word' && (
-          <View style={styles.wordProgress}>
-            <Text style={styles.wordProgressText}>
-              Word {currentWordIndex + 1} of {words.length}
-            </Text>
-            <View style={styles.wordProgressBar}>
-              <View 
+          <View style={styles.bottomPadding} />
+        </ScrollView>
+      </SwipeNavigation>
+
+      {/* Footer with Controls */}
+      <View style={styles.footer}>
+        <View style={styles.footerContent}>
+          {/* Previous Button */}
+          <BouncingButton 
+            onPress={navigateToPrevDua}
+            style={currentDuaIndex === 0 ? styles.disabledButton : {}}
+          >
+            <LinearGradient
+              colors={currentDuaIndex === 0 ? ['#CCCCCC', '#DDDDDD'] : ['#7E57C2', '#9C77D9']}
+              style={styles.gradientBorder}
+            >
+              <Image 
+                source={BtnPrevious} 
                 style={[
-                  styles.wordProgressFill,
-                  { width: `${((currentWordIndex + 1) / words.length) * 100}%` }
+                  styles.footerNavButton,
+                  currentDuaIndex === 0 && styles.disabledButtonImage
                 ]} 
               />
-            </View>
-          </View>
-        )}
+            </LinearGradient>
+          </BouncingButton>
 
-        {/* Translation & Meaning */}
-        <View style={styles.infoContainer}>
-          <View style={styles.infoSection}>
-            <Text style={styles.infoTitle}>📖 Translation</Text>
-            <Text style={styles.infoText}>
-              {translation as string || "Translation not available"}
-            </Text>
-          </View>
-
-          {reference && (
-            <View style={styles.infoSection}>
-              <Text style={styles.infoTitle}>📚 Reference</Text>
-              <Text style={styles.infoText}>{reference as string}</Text>
-            </View>
-          )}
-
-          <View style={styles.infoSection}>
-            <Text style={styles.infoTitle}>💡 Meaning for Kids</Text>
-            <Text style={styles.infoText}>
-              This special prayer asks Allah to protect us from worries, sadness, and feeling too tired to do good things. It's like a superhero shield for your heart! 🛡️
-            </Text>
-          </View>
-
-          <View style={styles.infoSection}>
-            <Text style={styles.infoTitle}>🌟 Fun Fact</Text>
-            <Text style={styles.infoText}>
-              Prophet Muhammad (PBUH) taught this dua to help us feel brave and strong when we're worried or sad!
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {/* Footer with Fixed Repeat Button */}
-      <View style={styles.footer}>
-        {/* Previous Button */}
-        <BouncingButton 
-          style={styles.navButton}
-          onPress={() => navigateDua('prev')}
-        >
-          <View style={styles.navButtonInner}>
-            <Text style={styles.navButtonEmoji}>⬅️</Text>
-            <Text style={styles.navButtonText}>Prev</Text>
-          </View>
-        </BouncingButton>
-
-        {/* Main Controls */}
-        <View style={styles.mainControls}>
           {/* Repeat Button with Badge */}
           <View style={styles.repeatButtonContainer}>
             <Animated.View style={{ transform: [{ scale: repeatScale }] }}>
-              <BouncingButton 
-                style={styles.controlButton}
-                onPress={handleRepeat}
-              >
-                <View style={styles.controlButtonInner}>
-                  <Text style={styles.controlButtonEmoji}>
-                    {getRepeatEmoji()}
-                  </Text>
-                </View>
+              <BouncingButton onPress={handleRepeat}>
+                <LinearGradient
+                  colors={['#FFD166', '#FFB347']}
+                  style={styles.gradientBorder}
+                >
+                  <Image source={BtnRepeat} style={styles.controlButton} />
+                </LinearGradient>
               </BouncingButton>
             </Animated.View>
             
@@ -970,29 +1248,38 @@ export default function DuaDetailScreen() {
               { scale: isPlaying ? pulseAnim : 1 }
             ] 
           }}>
-            <BouncingButton 
-              style={styles.playButton}
-              onPress={handlePlayPause}
-            >
-              <View style={styles.playButtonInner}>
-                <Text style={styles.playButtonEmoji}>
-                  {isPlaying ? '⏸️' : '▶️'}
-                </Text>
-              </View>
+            <BouncingButton onPress={handlePlayPause}>
+              <LinearGradient
+                colors={['#4ECDC4', '#26C6DA']}
+                style={styles.gradientBorder}
+              >
+                <Image 
+                  source={isPlaying ? BtnPause : BtnPlay} 
+                  style={styles.playButton} 
+                />
+              </LinearGradient>
             </BouncingButton>
           </Animated.View>
-        </View>
 
-        {/* Next Button */}
-        <BouncingButton 
-          style={[styles.navButton, styles.nextButton]}
-          onPress={() => navigateDua('next')}
-        >
-          <View style={styles.navButtonInner}>
-            <Text style={styles.navButtonText}>Next</Text>
-            <Text style={styles.navButtonEmoji}>➡️</Text>
-          </View>
-        </BouncingButton>
+          {/* Next Button */}
+          <BouncingButton 
+            onPress={navigateToNextDua}
+            style={currentDuaIndex === allDuas.length - 1 ? styles.disabledButton : {}}
+          >
+            <LinearGradient
+              colors={currentDuaIndex === allDuas.length - 1 ? ['#CCCCCC', '#DDDDDD'] : ['#7E57C2', '#9C77D9']}
+              style={styles.gradientBorder}
+            >
+              <Image 
+                source={BtnNext} 
+                style={[
+                  styles.footerNavButton,
+                  currentDuaIndex === allDuas.length - 1 && styles.disabledButtonImage
+                ]} 
+              />
+            </LinearGradient>
+          </BouncingButton>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -1002,6 +1289,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME.tertiary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: THEME.tertiary,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: THEME.text.primary,
+    marginTop: 16,
+  },
+  noDuasContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  noDuasEmoji: {
+    fontSize: 64,
+    marginBottom: 20,
+  },
+  noDuasText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: THEME.text.primary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  noDuasSubtext: {
+    fontSize: 16,
+    color: THEME.text.secondary,
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 22,
+  },
+  backButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButtonText: {
+    color: THEME.text.light,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   header: {
     shadowColor: '#000',
@@ -1021,26 +1356,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   headerButton: {
-    padding: 10,
-    borderRadius: 20,
-    backgroundColor: '#FFEAA7',
-    shadowColor: '#D4B300',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 2,
-    borderColor: '#FFD93D',
-  },
-  iconButton: {
-    padding: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerButtonText: {
-    fontSize: 18,
-    color: '#8B7500',
-    fontWeight: 'bold',
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
   },
   headerTitleContainer: {
     alignItems: 'center',
@@ -1061,6 +1381,41 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
+  swipeContainer: {
+    flex: 1,
+  },
+  swipeHint: {
+    position: 'absolute',
+    top: 100,
+    left: 20,
+    right: 20,
+    zIndex: 100,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  swipeHintGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  swipeHintText: {
+    color: THEME.text.light,
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   illustrationContainer: {
     width: '100%',
     height: 250,
@@ -1079,9 +1434,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   favoriteButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -1089,14 +1444,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: THEME.accent,
   },
   favoriteButtonEmoji: {
-    fontSize: 22,
+    fontSize: 18,
   },
   favoriteButtonEmojiActive: {
-    fontSize: 24,
+    fontSize: 20,
+  },
+  // Steps Container
+  stepsContainer: {
+    margin: 16,
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: `${THEME.success}20`,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: THEME.success,
+  },
+  stepsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: THEME.success,
+    marginBottom: 8,
+  },
+  stepsText: {
+    fontSize: 14,
+    color: THEME.text.primary,
+    lineHeight: 20,
   },
   modeContainer: {
     marginTop: 0,
@@ -1143,7 +1519,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   wordByWordContainer: {
-     minHeight: 50,
+    minHeight: 50,
     justifyContent: 'center',
   },
   arabicTextContainer: {
@@ -1155,6 +1531,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 6,
+    marginBottom: 16,
   },
   arabicText: {
     fontSize: 28,
@@ -1172,6 +1549,41 @@ const styles = StyleSheet.create({
   currentWord: {
     fontWeight: 'bold',
   },
+  fullDuaContainer: {
+    minHeight: 50,
+    justifyContent: 'center',
+  },
+  translationSection: {
+    marginTop: 0,
+    padding: 16,
+    backgroundColor: `${THEME.primary}10`,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: THEME.primary,
+  },
+  translationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: THEME.primary,
+    marginBottom: 8,
+  },
+  translationText: {
+    fontSize: 14,
+    color: THEME.text.primary,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  referenceTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: THEME.text.secondary,
+    marginBottom: 4,
+  },
+  referenceText: {
+    fontSize: 13,
+    color: THEME.text.secondary,
+    fontStyle: 'italic',
+  },
   readingGuide: {
     marginTop: 16,
     padding: 12,
@@ -1183,10 +1595,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: THEME.text.primary,
     fontWeight: '600',
-  },
-  fullDuaContainer: {
-    minHeight: 50,
-    justifyContent: 'center',
   },
   fullDuaHint: {
     marginTop: 16,
@@ -1223,32 +1631,6 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.success,
     borderRadius: 3,
   },
-  infoContainer: {
-    margin: 16,
-    gap: 12,
-  },
-  infoSection: {
-    backgroundColor: THEME.neutral,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: THEME.primary,
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: THEME.text.primary,
-    lineHeight: 20,
-  },
-  // Repeat Badge Styles
   repeatBadge: {
     position: 'absolute',
     top: '40%',
@@ -1269,7 +1651,7 @@ const styles = StyleSheet.create({
   repeatBadgeGradient: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 25,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -1280,15 +1662,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: THEME.text.light,
   },
-  // Small badge on repeat button
   repeatBadgeSmall: {
     position: 'absolute',
     top: -5,
     right: -5,
     backgroundColor: THEME.accent,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -1303,7 +1684,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.primary,
   },
   repeatBadgeSmallText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
     color: THEME.text.light,
   },
@@ -1311,94 +1692,51 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   footer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  footerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: THEME.neutral,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    width: '100%',
   },
-  navButton: {
-    backgroundColor: THEME.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 20,
-    minWidth: 90,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+  gradientBorder: {
+    borderRadius: 16,
+    padding: 2,
   },
-  nextButton: {
-    backgroundColor: THEME.accent,
-    shadowColor: THEME.accent,
-  },
-  navButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navButtonEmoji: {
-    fontSize: 16,
-    marginHorizontal: 6,
-  },
-  navButtonText: {
-    color: THEME.text.light,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  mainControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
+  footerNavButton: {
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 14,
   },
   controlButton: {
-    backgroundColor: THEME.neutral,
-    padding: 14,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 2,
-    borderColor: THEME.primary + '20',
-  },
-  controlButtonInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controlButtonEmoji: {
-    fontSize: 22,
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 14,
   },
   playButton: {
-    backgroundColor: THEME.primary,
-    padding: 20,
-    borderRadius: 30,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-    borderWidth: 3,
-    borderColor: THEME.accent,
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 14,
   },
-  playButtonInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 40,
-    height: 40,
+  disabledButton: {
+    opacity: 0.5,
   },
-  playButtonEmoji: {
-    fontSize: 28,
+  disabledButtonImage: {
+    opacity: 0.6,
+  },
+  bottomPadding: {
+    height: 20,
   },
   celebrationContainer: {
     position: 'absolute',
@@ -1446,8 +1784,5 @@ const styles = StyleSheet.create({
   star: {
     fontSize: 24,
     marginHorizontal: 8,
-  },
-  bottomPadding: {
-    height: 20,
   },
 });
