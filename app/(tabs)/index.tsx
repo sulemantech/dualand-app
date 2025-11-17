@@ -1033,7 +1033,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   cardTitle: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: 'bold',
     color: THEME.text.primary,
     textAlign: 'center',
