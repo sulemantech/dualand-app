@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getAllDuas, getDuaById, getWordAudioPairsByDua, Dua } from '../lib/data/duas'; // Updated import path
+import { getAllDuas, getDuaById, getWordAudioPairsByDua, Dua } from '../lib/data/duas';
 
 // Import PNG images for buttons
 const BtnPrevious = require('../assets/btns/btn_back.png');
@@ -37,27 +37,23 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 const { width, height } = Dimensions.get('window');
 
-// Updated Theme to match your index screen
 const THEME = {
-  primary: '#7E57C2',      // Softer Purple
-  secondary: '#FFF7D0',    // Bright Lemon Yellow
-  tertiary: '#E8F4FF',     // Softer Sky Blue
-  neutral: '#FFFFFF',      // White
-  accent: '#FFD166',       // Sunny Yellow
-  success: '#4ECDC4',      // Mint Green
-  header: '#fcf8b1',       // Yellow Header Color
-
-  // Kid-Friendly Text Colors - Softer and Warmer
+  primary: '#7E57C2',
+  secondary: '#FFF7D0',
+  tertiary: '#E8F4FF',
+  neutral: '#FFFFFF',
+  accent: '#FFD166',
+  success: '#4ECDC4',
+  header: '#fcf8b1',
   text: {
-    primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
-    secondary: '#6B7B8C',  // Warm Gray - Gentle contrast
-    light: '#FFFFFF',      // White
-    dark: '#4A5C6B',       // Soft Charcoal - Not too dark
-    accent: '#E53E3E',     // Red accent for important text
+    primary: '#2D4A63',
+    secondary: '#6B7B8C',
+    light: '#FFFFFF',
+    dark: '#4A5C6B',
+    accent: '#E53E3E',
   }
 };
 
-// Import local images from your assets - COMPLETE SET
 const localImages = {
   kaaba: require('../assets/images/kaaba.png'),
   dua_1: require('../assets/images/kaaba.png'),
@@ -94,44 +90,34 @@ const localImages = {
   dua_32: require('../assets/images/dua_32.png'),
 };
 
-// Enhanced helper function to get local image
 const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: string, imagePath?: string) => {
-  // First try: Use imagePath if provided
   if (imagePath) {
     const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
     const imageKey = imageName as keyof typeof localImages;
     if (localImages[imageKey]) {
-      console.log(`🖼️ Using image from path: ${imageName}`);
       return localImages[imageKey];
     }
   }
   
-  // Second try: Use localImageIndex
   if (localImageIndex) {
     const imageKey = `dua_${localImageIndex}` as keyof typeof localImages;
     if (localImages[imageKey]) {
-      console.log(`🖼️ Using image from localImageIndex: dua_${localImageIndex}`);
       return localImages[imageKey];
     }
   }
   
-  // Third try: Use duaNumber
   if (duaNumber) {
     const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
     if (localImages[imageKey]) {
-      console.log(`🖼️ Using image from duaNumber: dua_${duaNumber}`);
       return localImages[imageKey];
     }
   }
   
-  // Fallback: Use duaId modulo 32
   const imageIndex = (parseInt(duaId) % 32) || 1;
   const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
-  console.log(`🖼️ Using fallback image: dua_${imageIndex}`);
   return localImages[fallbackImageKey] || localImages.kaaba;
 };
 
-// Floating Particles Component
 const FloatingParticles = React.memo(({ count = 8 }) => {
   const particles = useRef(
     Array.from({ length: count }, () => new Animated.Value(0))
@@ -209,7 +195,6 @@ const FloatingParticles = React.memo(({ count = 8 }) => {
   );
 });
 
-// Bouncing Button Component
 const BouncingButton = ({ children, onPress, style = {} }: { 
   children: React.ReactNode; 
   onPress?: () => void;
@@ -251,7 +236,6 @@ const BouncingButton = ({ children, onPress, style = {} }: {
   );
 };
 
-// Word Highlight Component for Word-by-Word Mode - FIXED VERSION
 const WordByWordDisplay = ({ 
   arabicText, 
   currentWordIndex, 
@@ -265,10 +249,7 @@ const WordByWordDisplay = ({
   translationText: string;
   referenceText: string;
 }) => {
-  // Ensure arabicText is never empty and split into words
   const words = (arabicText || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
-  
-  // Use state to manage animations to ensure re-renders
   const [animations] = useState(() => 
     words.map(() => new Animated.Value(0))
   );
@@ -302,7 +283,6 @@ const WordByWordDisplay = ({
     }
   }, [currentWordIndex, isPlaying, words.length]);
 
-  // Safe interpolation function
   const getWordAnimationStyle = (index: number) => {
     if (!animations[index]) {
       return {
@@ -329,7 +309,6 @@ const WordByWordDisplay = ({
 
   return (
     <View style={styles.wordByWordContainer}>
-      {/* Arabic Text Display */}
       <View style={styles.arabicTextContainer}>
         <Text style={styles.arabicText} dir="rtl">
           {words.map((word, index) => (
@@ -347,7 +326,6 @@ const WordByWordDisplay = ({
         </Text>
       </View>
 
-      {/* Translation Section */}
       <View style={styles.translationSection}>
         <Text style={styles.translationTitle}>Translation</Text>
         <Text style={styles.translationText}>
@@ -373,7 +351,6 @@ const WordByWordDisplay = ({
   );
 };
 
-// Masha Allah Celebration Popup Component
 const MashaAllahCelebration = ({ visible, onHide }: { visible: boolean; onHide: () => void }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -447,7 +424,6 @@ const MashaAllahCelebration = ({ visible, onHide }: { visible: boolean; onHide: 
   );
 };
 
-// Repeat Badge Component
 const RepeatBadge = ({ mode, isVisible }: { mode: string; isVisible: boolean }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -534,7 +510,7 @@ const RepeatBadge = ({ mode, isVisible }: { mode: string; isVisible: boolean }) 
   );
 };
 
-// Swipe Navigation Component
+// FIXED Swipe Navigation Component
 const SwipeNavigation = ({ 
   onSwipeLeft, 
   onSwipeRight, 
@@ -546,23 +522,31 @@ const SwipeNavigation = ({
 }) => {
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only respond to horizontal swipes
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy * 2);
+        // Only capture horizontal swipes, ignore vertical movements
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy * 1.5);
+        return isHorizontalSwipe;
+      },
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy * 1.5);
+        return isHorizontalSwipe;
       },
       onPanResponderRelease: (_, gestureState) => {
         const { dx } = gestureState;
-        const swipeThreshold = 50; // Minimum swipe distance
+        const swipeThreshold = 40;
         
         if (dx > swipeThreshold) {
-          // Swipe right - go to previous dua
+          console.log('➡️ Swipe right - Previous dua');
           onSwipeRight();
         } else if (dx < -swipeThreshold) {
-          // Swipe left - go to next dua
+          console.log('⬅️ Swipe left - Next dua');
           onSwipeLeft();
         }
       },
+      onPanResponderTerminate: () => null,
+      onShouldBlockNativeResponder: () => false,
     })
   ).current;
 
@@ -572,12 +556,10 @@ const SwipeNavigation = ({
     </View>
   );
 };
-
 export default function DuaDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  // Enhanced helper function to handle parameter names properly
   const getStringParam = (param: string | string[] | undefined): string => {
     if (Array.isArray(param)) {
       return param[0] || '';
@@ -585,34 +567,43 @@ export default function DuaDetailScreen() {
     return param || '';
   };
 
-  // State for ALL duas and current position - using static data
   const [allDuas, setAllDuas] = useState<Dua[]>([]);
   const [currentDuaIndex, setCurrentDuaIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load ALL duas and find current position - using static data
+  // Use ref to track current index to avoid stale closures
+  const currentDuaIndexRef = useRef(currentDuaIndex);
+  
+  // Update ref whenever currentDuaIndex changes
+  useEffect(() => {
+    currentDuaIndexRef.current = currentDuaIndex;
+  }, [currentDuaIndex]);
+
   useEffect(() => {
     const loadAllDuasAndFindPosition = async () => {
       try {
         setIsLoading(true);
         console.log('🔄 Loading ALL duas from static data...');
         
-        // Load ALL duas from static data
         const duas = getAllDuas();
         console.log(`📚 Loaded ${duas.length} duas from static data`);
         
         setAllDuas(duas);
 
-        // Find current dua position in the complete list
         const currentDuaId = getStringParam(params.id);
+        console.log('🔍 Looking for dua ID:', currentDuaId);
+        
         const foundIndex = duas.findIndex(dua => dua.id === currentDuaId);
+        console.log('📍 Found index:', foundIndex);
         
         if (foundIndex !== -1) {
           setCurrentDuaIndex(foundIndex);
+          currentDuaIndexRef.current = foundIndex;
           console.log(`📍 Starting at dua ${foundIndex + 1} of ${duas.length}`);
         } else {
           console.log('❌ Current dua not found in list, using index 0');
           setCurrentDuaIndex(0);
+          currentDuaIndexRef.current = 0;
         }
       } catch (error) {
         console.error('Error loading duas:', error);
@@ -624,12 +615,11 @@ export default function DuaDetailScreen() {
     loadAllDuasAndFindPosition();
   }, [params.id]);
 
-  // Get current dua data - using static data
+  // Get current dua data
+  const currentDua = allDuas[currentDuaIndex];
+  
   const getDuaData = () => {
-    // Always use data from allDuas array
-    if (allDuas.length > 0 && currentDuaIndex < allDuas.length) {
-      const currentDua = allDuas[currentDuaIndex];
-      
+    if (currentDua) {
       return {
         arabic: currentDua.arabic_text || "بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْمِ",
         translation: currentDua.translation || "Translation not available",
@@ -662,7 +652,8 @@ export default function DuaDetailScreen() {
   // Debug the actual values being used
   useEffect(() => {
     if (!isLoading && allDuas.length > 0) {
-      console.log('🔍 FINAL VALUES BEING USED:', {
+      console.log('🔍 CURRENT DUA DATA:', {
+        currentDuaIndex,
         title,
         arabic: arabic.substring(0, 50) + '...',
         translation,
@@ -673,7 +664,7 @@ export default function DuaDetailScreen() {
         imagePath
       });
     }
-  }, [arabic, translation, reference, title, duaNumber, currentDuaIndex, allDuas.length, isLoading, categoryName, imagePath]);
+  }, [currentDuaIndex, arabic, translation, reference, title, duaNumber, allDuas.length, isLoading, categoryName, imagePath]);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMode, setCurrentMode] = useState<'full' | 'word'>('word');
@@ -691,20 +682,16 @@ export default function DuaDetailScreen() {
   const repeatScale = useRef(new Animated.Value(1)).current;
   const swipeHintOpacity = useRef(new Animated.Value(1)).current;
 
-  // Get illustration image dynamically based on current dua - ENHANCED
   const illustrationImage = getLocalImage(
     id || '1', 
     duaNumber, 
     ((parseInt(id) || 1) % 32) + 1,
-    imagePath // Use the passed image path
+    imagePath
   );
 
-  // Word-by-word progression
   const words = (arabic || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
 
-  // Hide swipe hint after 3 seconds
   useEffect(() => {
-    console.log('⏳ Swipe hint will hide after 3 seconds');
     const timer = setTimeout(() => {
       Animated.timing(swipeHintOpacity, {
         toValue: 0,
@@ -718,8 +705,20 @@ export default function DuaDetailScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+  // FIXED: Debug current state
   useEffect(() => {
-    // Animate image when dua changes
+    if (!isLoading) {
+      console.log('🔄 STATE UPDATE:', {
+        currentDuaIndex,
+        totalDuas: allDuas.length,
+        currentDuaTitle: currentDua?.title,
+        isLoading,
+        isPlaying
+      });
+    }
+  }, [currentDuaIndex, allDuas.length, isLoading, isPlaying, currentDua]);
+
+  useEffect(() => {
     Animated.sequence([
       Animated.timing(imageScale, {
         toValue: 0.8,
@@ -735,67 +734,77 @@ export default function DuaDetailScreen() {
     ]).start();
   }, [currentDuaIndex]);
 
-  // SIMPLE FUNCTION TO CHANGE DUA WITHOUT NAVIGATION
-  const changeCurrentDua = (index: number) => {
-    if (index < 0 || index >= allDuas.length || isLoading) return;
+  // FIXED: Navigation functions using useCallback to avoid stale closures
+  const changeCurrentDua = useCallback((newIndex: number) => {
+    if (newIndex < 0 || newIndex >= allDuas.length || isLoading) {
+      console.log(`🚫 Cannot navigate to index ${newIndex}. Valid range: 0-${allDuas.length - 1}`);
+      return;
+    }
     
-    // Prevent rapid navigation
-    if (index === currentDuaIndex) return;
+    const currentIndex = currentDuaIndexRef.current;
+    if (newIndex === currentIndex) {
+      console.log('⚠️ Already on this dua, ignoring navigation');
+      return;
+    }
     
-    console.log(`🔄 Changing from dua ${currentDuaIndex + 1} to ${index + 1}`);
+    console.log(`🔄 Changing from dua ${currentIndex + 1} to ${newIndex + 1}`);
     
-    // Reset player state
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    
     setIsPlaying(false);
     setCurrentWordIndex(0);
+    setCurrentDuaIndex(newIndex);
+    currentDuaIndexRef.current = newIndex;
     
-    // Update current index - this will trigger re-render with new dua data
-    setCurrentDuaIndex(index);
-    
-    // Show celebration when moving to next dua
-    if (index > currentDuaIndex) {
+    if (newIndex > currentIndex) {
+      console.log('🎉 Showing celebration for next dua');
       setShowCelebration(true);
     }
-  };
+  }, [allDuas.length, isLoading]);
 
-  const navigateToNextDua = () => {
-    if (currentDuaIndex < allDuas.length - 1) {
-      changeCurrentDua(currentDuaIndex + 1);
+  const navigateToNextDua = useCallback(() => {
+    const currentIndex = currentDuaIndexRef.current;
+    console.log('👉 Next button pressed, current index:', currentIndex);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < allDuas.length) {
+      changeCurrentDua(nextIndex);
     } else {
       console.log('🎉 Reached the last dua');
-      // Optional: Show completion message
     }
-  };
+  }, [allDuas.length, changeCurrentDua]);
 
-  const navigateToPrevDua = () => {
-    if (currentDuaIndex > 0) {
-      changeCurrentDua(currentDuaIndex - 1);
+  const navigateToPrevDua = useCallback(() => {
+    const currentIndex = currentDuaIndexRef.current;
+    console.log('👈 Previous button pressed, current index:', currentIndex);
+    const prevIndex = currentIndex - 1;
+    if (prevIndex >= 0) {
+      changeCurrentDua(prevIndex);
+    } else {
+      console.log('⏮️ Reached the first dua');
     }
-  };
+  }, [changeCurrentDua]);
 
-  // Handle swipe gestures
-  const handleSwipeLeft = () => {
-    // Swipe left = next dua
+  // FIXED: Handle swipe gestures using useCallback
+  const handleSwipeLeft = useCallback(() => {
+    console.log('⬅️ Handle swipe left called');
     navigateToNextDua();
-  };
+  }, [navigateToNextDua]);
 
-  const handleSwipeRight = () => {
-    // Swipe right = previous dua
+  const handleSwipeRight = useCallback(() => {
+    console.log('➡️ Handle swipe right called');
     navigateToPrevDua();
-  };
+  }, [navigateToPrevDua]);
 
   const handlePlayPause = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     
     if (!isPlaying) {
-      // Start playing
       setIsPlaying(true);
       setCurrentWordIndex(0);
     } else {
-      // Stop playing
       setIsPlaying(false);
     }
 
-    // Play button animation
     Animated.sequence([
       Animated.spring(playButtonScale, {
         toValue: 0.85,
@@ -835,7 +844,6 @@ export default function DuaDetailScreen() {
   const handleRepeat = () => {
     Vibration.vibrate(30);
     
-    // Cycle through repeat modes: empty → 1 → 2 → 3 → infinite → empty
     const modes: Array<'empty' | '1' | '2' | '3' | 'infinite'> = ['empty', '1', '2', '3', 'infinite'];
     const currentIndex = modes.indexOf(repeatMode);
     const nextIndex = (currentIndex + 1) % modes.length;
@@ -844,7 +852,6 @@ export default function DuaDetailScreen() {
     setRepeatMode(nextMode);
     setShowRepeatBadge(true);
 
-    // Button animation
     Animated.sequence([
       Animated.spring(repeatScale, {
         toValue: 1.2,
@@ -860,13 +867,11 @@ export default function DuaDetailScreen() {
       }),
     ]).start();
 
-    // Hide badge after delay
     setTimeout(() => {
       setShowRepeatBadge(false);
     }, 1500);
   };
 
-  // Word-by-word progression
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -874,7 +879,6 @@ export default function DuaDetailScreen() {
       interval = setInterval(() => {
         setCurrentWordIndex(prev => {
           if (prev >= words.length - 1) {
-            // Reached the end
             clearInterval(interval);
             setIsPlaying(false);
             setShowCelebration(true);
@@ -882,7 +886,7 @@ export default function DuaDetailScreen() {
           }
           return prev + 1;
         });
-      }, 1500); // 1.5 seconds per word for kids to follow
+      }, 1500);
     }
 
     return () => {
@@ -890,7 +894,6 @@ export default function DuaDetailScreen() {
     };
   }, [isPlaying, currentMode, words.length]);
 
-  // Pulsing animation for play button when playing
   useEffect(() => {
     if (isPlaying) {
       const pulse = Animated.loop(
@@ -924,7 +927,6 @@ export default function DuaDetailScreen() {
     router.push('/');
   };
 
-  // Update header to show category info
   const renderHeader = () => (
     <View style={styles.header}>
       <LinearGradient
@@ -932,7 +934,6 @@ export default function DuaDetailScreen() {
         style={styles.headerGradient}
       >
         <View style={styles.headerContent}>
-          {/* Back Button - PNG as ready-made button */}
           <BouncingButton onPress={handleBack}>
             <LinearGradient
               colors={['#7E57C2', '#9C77D9']}
@@ -949,7 +950,6 @@ export default function DuaDetailScreen() {
             </Text>
           </View>
 
-          {/* Home Button - PNG as ready-made button */}
           <BouncingButton onPress={handleHome}>
             <LinearGradient
               colors={['#FFD166', '#FFB347']}
@@ -974,7 +974,6 @@ export default function DuaDetailScreen() {
     );
   }
 
-  // Show message if no duas found
   if (allDuas.length === 0 && !isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -1005,16 +1004,13 @@ export default function DuaDetailScreen() {
       
       <FloatingParticles />
 
-      {/* Masha Allah Celebration Popup */}
       <MashaAllahCelebration 
         visible={showCelebration} 
         onHide={() => setShowCelebration(false)} 
       />
 
-      {/* Repeat Mode Badge */}
       <RepeatBadge mode={repeatMode} isVisible={showRepeatBadge} />
 
-      {/* Swipe Navigation Hint */}
       {showSwipeHint && (
         <Animated.View style={[styles.swipeHint, { opacity: swipeHintOpacity }]}>
           <LinearGradient
@@ -1022,181 +1018,176 @@ export default function DuaDetailScreen() {
             style={styles.swipeHintGradient}
           >
             <Text style={styles.swipeHintText}>
-              💫 Swipe left for next dua • Swipe right for previous dua
+              👉 Swipe RIGHT for previous • Swipe LEFT for next 👈
             </Text>
           </LinearGradient>
         </Animated.View>
       )}
 
-      {/* Header */}
       {renderHeader()}
 
-      {/* Main Content with Swipe Navigation */}
-      <SwipeNavigation 
-        onSwipeLeft={handleSwipeLeft}
-        onSwipeRight={handleSwipeRight}
+    <SwipeNavigation 
+  onSwipeLeft={handleSwipeLeft}
+  onSwipeRight={handleSwipeRight}
+>
+  <ScrollView 
+    style={styles.content}
+    showsVerticalScrollIndicator={false}
+    contentContainerStyle={styles.scrollContent}
+    scrollEventThrottle={16}
+    directionalLockEnabled={true}
+    alwaysBounceVertical={true}
+    bounces={true}
+  >
+    {/* Your existing content here */}
+    <Animated.View 
+      style={[
+        styles.illustrationContainer,
+        { 
+          transform: [{ scale: imageScale }],
+        }
+      ]}
+    >
+      <Image
+        source={illustrationImage}
+        style={styles.illustration}
+        resizeMode="cover"
+      />
+      
+      <Animated.View 
+        style={[
+          styles.favoriteButtonContainer,
+          { transform: [{ scale: favoriteScale }] }
+        ]}
       >
-        <ScrollView 
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Illustration Image */}
-          <Animated.View 
-            style={[
-              styles.illustrationContainer,
-              { 
-                transform: [{ scale: imageScale }],
-              }
-            ]}
+        <BouncingButton onPress={handleFavorite}>
+          <LinearGradient
+            colors={isFavorite ? ['#FF6B6B', '#FF8E8E'] : ['#FFFFFF', '#F8F9FA']}
+            style={styles.favoriteButton}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <Image
-              source={illustrationImage}
-              style={styles.illustration}
-              resizeMode="cover"
-            />
+            <Text style={[
+              styles.favoriteButtonEmoji,
+              isFavorite && styles.favoriteButtonEmojiActive
+            ]}>
+              {isFavorite ? '❤️' : '🤍'}
+            </Text>
+          </LinearGradient>
+        </BouncingButton>
+      </Animated.View>
+    </Animated.View>
+
+    {/* Rest of your content remains the same */}
+    {steps && (
+      <View style={styles.stepsContainer}>
+        <Text style={styles.stepsTitle}>Steps:</Text>
+        <Text style={styles.stepsText}>{steps}</Text>
+      </View>
+    )}
+
+    <View style={styles.modeContainer}>
+      <View style={styles.modePills}>
+        <TouchableOpacity
+          style={[
+            styles.modePill,
+            currentMode === 'word' && styles.modePillActive
+          ]}
+          onPress={() => {
+            setCurrentMode('word');
+            setIsPlaying(false);
+            setCurrentWordIndex(0);
+          }}
+        >
+          <Text style={[
+            styles.modePillText,
+            currentMode === 'word' && styles.modePillTextActive
+          ]}>
+            🎯 Word by Word
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[
+            styles.modePill,
+            currentMode === 'full' && styles.modePillActive
+          ]}
+          onPress={() => {
+            setCurrentMode('full');
+            setIsPlaying(false);
+          }}
+        >
+          <Text style={[
+            styles.modePillText,
+            currentMode === 'full' && styles.modePillTextActive
+          ]}>
+            📖 Full Dua
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+
+    <View style={styles.duaTextContainer}>
+      {currentMode === 'word' ? (
+        <WordByWordDisplay 
+          arabicText={arabic}
+          currentWordIndex={currentWordIndex}
+          isPlaying={isPlaying}
+          translationText={translation}
+          referenceText={reference}
+        />
+      ) : (
+        <View style={styles.fullDuaContainer}>
+          <View style={styles.arabicTextContainer}>
+            <Text style={styles.arabicText} dir="rtl">
+              {arabic}
+            </Text>
+          </View>
+          <View style={styles.translationSection}>
+            <Text style={styles.translationTitle}>Translation</Text>
+            <Text style={styles.translationText}>
+              {translation}
+            </Text>
             
-            {/* Favorite Button */}
-            <Animated.View 
-              style={[
-                styles.favoriteButtonContainer,
-                { transform: [{ scale: favoriteScale }] }
-              ]}
-            >
-              <BouncingButton onPress={handleFavorite}>
-                <LinearGradient
-                  colors={isFavorite ? ['#FF6B6B', '#FF8E8E'] : ['#FFFFFF', '#F8F9FA']}
-                  style={styles.favoriteButton}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Text style={[
-                    styles.favoriteButtonEmoji,
-                    isFavorite && styles.favoriteButtonEmojiActive
-                  ]}>
-                    {isFavorite ? '❤️' : '🤍'}
-                  </Text>
-                </LinearGradient>
-              </BouncingButton>
-            </Animated.View>
-          </Animated.View>
-
-          {/* Steps Section (if available) */}
-          {steps && (
-            <View style={styles.stepsContainer}>
-              <Text style={styles.stepsTitle}>Steps:</Text>
-              <Text style={styles.stepsText}>{steps}</Text>
-            </View>
-          )}
-
-          {/* Mode Selection */}
-          <View style={styles.modeContainer}>
-            <View style={styles.modePills}>
-              <TouchableOpacity
-                style={[
-                  styles.modePill,
-                  currentMode === 'word' && styles.modePillActive
-                ]}
-                onPress={() => {
-                  setCurrentMode('word');
-                  setIsPlaying(false);
-                  setCurrentWordIndex(0);
-                }}
-              >
-                <Text style={[
-                  styles.modePillText,
-                  currentMode === 'word' && styles.modePillTextActive
-                ]}>
-                  🎯 Word by Word
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[
-                  styles.modePill,
-                  currentMode === 'full' && styles.modePillActive
-                ]}
-                onPress={() => {
-                  setCurrentMode('full');
-                  setIsPlaying(false);
-                }}
-              >
-                <Text style={[
-                  styles.modePillText,
-                  currentMode === 'full' && styles.modePillTextActive
-                ]}>
-                  📖 Full Dua
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Dua Text Container */}
-          <View style={styles.duaTextContainer}>
-            {currentMode === 'word' ? (
-              <WordByWordDisplay 
-                arabicText={arabic}
-                currentWordIndex={currentWordIndex}
-                isPlaying={isPlaying}
-                translationText={translation}
-                referenceText={reference}
-              />
-            ) : (
-              <View style={styles.fullDuaContainer}>
-                {/* Arabic Text */}
-                <View style={styles.arabicTextContainer}>
-                  <Text style={styles.arabicText} dir="rtl">
-                    {arabic}
-                  </Text>
-                </View>
-                <View style={styles.translationSection}>
-                  <Text style={styles.translationTitle}>Translation</Text>
-                  <Text style={styles.translationText}>
-                    {translation}
-                  </Text>
-                  
-                  {reference && reference !== 'Reference not available' && (
-                    <>
-                      <Text style={styles.referenceTitle}>Reference</Text>
-                      <Text style={styles.referenceText}>{reference}</Text>
-                    </>
-                  )}
-                </View>
-              </View>
-            )}
-
-            {currentMode === 'full' && (
-              <View style={styles.fullDuaHint}>
-                <Text style={styles.hintText}>Tap play to listen to the full dua 🔊</Text>
-              </View>
+            {reference && reference !== 'Reference not available' && (
+              <>
+                <Text style={styles.referenceTitle}>Reference</Text>
+                <Text style={styles.referenceText}>{reference}</Text>
+              </>
             )}
           </View>
+        </View>
+      )}
 
-          {/* Progress Indicator */}
-          {isPlaying && currentMode === 'word' && (
-            <View style={styles.wordProgress}>
-              <Text style={styles.wordProgressText}>
-                Word {currentWordIndex + 1} of {words.length}
-              </Text>
-              <View style={styles.wordProgressBar}>
-                <View 
-                  style={[
-                    styles.wordProgressFill,
-                    { width: `${((currentWordIndex + 1) / words.length) * 100}%` }
-                  ]} 
-                />
-              </View>
-            </View>
-          )}
+      {currentMode === 'full' && (
+        <View style={styles.fullDuaHint}>
+          <Text style={styles.hintText}>Tap play to listen to the full dua 🔊</Text>
+        </View>
+      )}
+    </View>
 
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-      </SwipeNavigation>
+    {isPlaying && currentMode === 'word' && (
+      <View style={styles.wordProgress}>
+        <Text style={styles.wordProgressText}>
+          Word {currentWordIndex + 1} of {words.length}
+        </Text>
+        <View style={styles.wordProgressBar}>
+          <View 
+            style={[
+              styles.wordProgressFill,
+              { width: `${((currentWordIndex + 1) / words.length) * 100}%` }
+            ]} 
+          />
+        </View>
+      </View>
+    )}
 
-      {/* Footer with Controls */}
+    <View style={styles.bottomPadding} />
+  </ScrollView>
+</SwipeNavigation>
+
       <View style={styles.footer}>
         <View style={styles.footerContent}>
-          {/* Previous Button */}
           <BouncingButton 
             onPress={navigateToPrevDua}
             style={currentDuaIndex === 0 ? styles.disabledButton : {}}
@@ -1215,7 +1206,6 @@ export default function DuaDetailScreen() {
             </LinearGradient>
           </BouncingButton>
 
-          {/* Repeat Button with Badge */}
           <View style={styles.repeatButtonContainer}>
             <Animated.View style={{ transform: [{ scale: repeatScale }] }}>
               <BouncingButton onPress={handleRepeat}>
@@ -1228,7 +1218,6 @@ export default function DuaDetailScreen() {
               </BouncingButton>
             </Animated.View>
             
-            {/* Badge showing current repeat count */}
             {repeatMode !== 'empty' && (
               <View style={[
                 styles.repeatBadgeSmall,
@@ -1241,7 +1230,6 @@ export default function DuaDetailScreen() {
             )}
           </View>
 
-          {/* Main Play/Pause Button */}
           <Animated.View style={{ 
             transform: [
               { scale: playButtonScale },
@@ -1261,7 +1249,6 @@ export default function DuaDetailScreen() {
             </BouncingButton>
           </Animated.View>
 
-          {/* Next Button */}
           <BouncingButton 
             onPress={navigateToNextDua}
             style={currentDuaIndex === allDuas.length - 1 ? styles.disabledButton : {}}
@@ -1383,6 +1370,7 @@ const styles = StyleSheet.create({
   },
   swipeContainer: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   swipeHint: {
     position: 'absolute',
@@ -1453,7 +1441,6 @@ const styles = StyleSheet.create({
   favoriteButtonEmojiActive: {
     fontSize: 20,
   },
-  // Steps Container
   stepsContainer: {
     margin: 16,
     marginTop: 16,

@@ -335,11 +335,11 @@ const CategoryCard = React.memo(({ category, index, onPress }: {
             <Text style={styles.cardTitle} numberOfLines={2}>
               {category.name}
             </Text>
-            <View style={styles.cardMeta}>
+            {/* <View style={styles.cardMeta}>
               <Text style={[styles.categoryText, { color: category.color }]}>
                 {category.icon} Category
               </Text>
-            </View>
+            </View> */}
             <View style={styles.cardSparkle}>
               <Text style={styles.sparkleText}>🌟</Text>
             </View>
@@ -1033,8 +1033,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   cardTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '600',
     color: THEME.text.primary,
     textAlign: 'center',
     lineHeight: 16,

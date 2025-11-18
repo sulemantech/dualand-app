@@ -45,8 +45,8 @@ export interface WordAudioPair {
 export const categories: Category[] = [
   { id: 1, name: 'Praise and Glory', icon: 'star', color: '#2D7D46', order_index: 1, image_path: '../assets/images/kaaba.png' },
   { id: 2, name: 'Peace and Blessing upon the Prophet Muhammad ﷺ', icon: 'peace', color: '#3182CE', order_index: 2, image_path: '../assets/images/dua_2.png' },
-  { id: 3, name: 'Du\'a of Morning (Before Sunrise)', icon: 'sunny', color: '#a0825cff', order_index: 3, image_path: '../assets/images/dua_3.png' },
-  { id: 4, name: 'Du\'a of Evening (Before Sunset)', icon: 'moon', color: '#805AD5', order_index: 4, image_path: '../assets/images/dua_4.png' },
+  { id: 3, name: 'Du\'a of Morning \n(Before Sunrise)', icon: 'sunny', color: '#a0825cff', order_index: 3, image_path: '../assets/images/dua_3.png' },
+  { id: 4, name: 'Du\'a of Evening \n(Before Sunset)', icon: 'moon', color: '#805AD5', order_index: 4, image_path: '../assets/images/dua_4.png' },
   { id: 5, name: 'Du\'a for Protection', icon: 'shield', color: '#E53E3E', order_index: 5, image_path: '../assets/images/dua_5.png' },
   { id: 6, name: 'Du\'a before Sleeping', icon: 'bed', color: '#38A169', order_index: 6, image_path: '../assets/images/dua_6.png' },
   { id: 7, name: 'Du\'a after Waking Up', icon: 'alarm', color: '#DD6B20', order_index: 7, image_path: '../assets/images/dua_7.png' },
