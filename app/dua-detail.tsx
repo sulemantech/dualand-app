@@ -19,9 +19,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Dua, getAllDuas } from '../lib/data/duas';
+import { useCustomAudioPlayer } from '../lib/audio/useCustomAudioPlayer';
+import { Dua, getAllDuas, getWordAudioPairsByDua } from '../lib/data/duas';
 
 // Import PNG images for buttons
 const BtnPrevious = require('../assets/btns/btn_back.png');
@@ -91,32 +93,60 @@ const localImages = {
   dua_32: require('../assets/images/dua_32.png'),
 };
 
-const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: string, imagePath?: string) => {
-  if (imagePath) {
-    const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
-    const imageKey = imageName as keyof typeof localImages;
-    if (localImages[imageKey]) {
-      return localImages[imageKey];
+// FIXED: Updated getLocalImage function to handle undefined imagePath
+const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: string, imagePath?: string | any) => {
+  console.log('🖼️ getLocalImage called with:', {
+    duaId,
+    duaNumber,
+    localImageIndex,
+    imagePath,
+    imagePathType: typeof imagePath
+  });
+
+  // Case 1: If imagePath is already a require statement (number), return it directly
+  if (imagePath && typeof imagePath === 'number') {
+    console.log('✅ Using direct require statement from imagePath');
+    return imagePath;
+  }
+
+  // Case 2: If imagePath is a string path
+  if (imagePath && typeof imagePath === 'string') {
+    try {
+      const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
+      const imageKey = imageName as keyof typeof localImages;
+      if (localImages[imageKey]) {
+        console.log('✅ Found image from imagePath string:', imageName);
+        return localImages[imageKey];
+      }
+    } catch (error) {
+      console.log('❌ Error processing imagePath string:', error);
     }
   }
-  
-  if (localImageIndex) {
+
+  // Case 3: Try localImageIndex
+  if (localImageIndex && typeof localImageIndex === 'string') {
     const imageKey = `dua_${localImageIndex}` as keyof typeof localImages;
     if (localImages[imageKey]) {
+      console.log('✅ Found image from localImageIndex:', localImageIndex);
       return localImages[imageKey];
     }
   }
-  
-  if (duaNumber) {
+
+  // Case 4: Try duaNumber
+  if (duaNumber && typeof duaNumber === 'string') {
     const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
     if (localImages[imageKey]) {
+      console.log('✅ Found image from duaNumber:', duaNumber);
       return localImages[imageKey];
     }
   }
-  
-  const imageIndex = (parseInt(duaId) % 32) || 1;
+
+  // Case 5: Fallback to duaId-based image
+  const imageIndex = (parseInt(duaId || '1') % 32) || 1;
   const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
-  return localImages[fallbackImageKey] || localImages.kaaba;
+  const fallbackImage = localImages[fallbackImageKey] || localImages.kaaba;
+  console.log('🔄 Using fallback image based on duaId:', imageIndex);
+  return fallbackImage;
 };
 
 const FloatingParticles = React.memo(({ count = 8 }) => {
@@ -152,6 +182,7 @@ const FloatingParticles = React.memo(({ count = 8 }) => {
     };
   }, [particles]);
 
+  
   const emojis = ['✨', '⭐', '🌟', '💫', '🦄', '🌈', '🎀', '🌸'];
 
   return (
@@ -196,10 +227,10 @@ const FloatingParticles = React.memo(({ count = 8 }) => {
   );
 });
 
-const BouncingButton = ({ children, onPress, style = {} }: { 
-  children: React.ReactNode; 
+const BouncingButton = ({ children, onPress, style = {} }: {
+  children: React.ReactNode;
   onPress?: () => void;
-  style?: any; 
+  style?: any;
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -237,21 +268,21 @@ const BouncingButton = ({ children, onPress, style = {} }: {
   );
 };
 
-const WordByWordDisplay = ({ 
-  arabicText, 
-  currentWordIndex, 
+const WordByWordDisplay = ({
+  arabicText,
+  currentWordIndex,
   isPlaying,
   translationText,
   referenceText
-}: { 
-  arabicText: string; 
-  currentWordIndex: number; 
+}: {
+  arabicText: string;
+  currentWordIndex: number;
   isPlaying: boolean;
   translationText: string;
   referenceText: string;
 }) => {
   const words = (arabicText || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
-  const [animations] = useState(() => 
+  const [animations] = useState(() =>
     words.map(() => new Animated.Value(0))
   );
 
@@ -332,7 +363,7 @@ const WordByWordDisplay = ({
         <Text style={styles.translationText}>
           {translationText}
         </Text>
-        
+
         {referenceText && referenceText !== 'Reference not available' && (
           <>
             <Text style={styles.referenceTitle}>Reference</Text>
@@ -340,7 +371,7 @@ const WordByWordDisplay = ({
           </>
         )}
       </View>
-      
+
       {isPlaying && (
         <View style={styles.readingGuide}>
           <Text style={styles.readingGuideText}>
@@ -359,7 +390,7 @@ const MashaAllahCelebration = ({ visible, onHide }: { visible: boolean; onHide: 
   useEffect(() => {
     if (visible) {
       Vibration.vibrate(300);
-      
+
       Animated.sequence([
         Animated.spring(scaleAnim, {
           toValue: 1,
@@ -397,7 +428,7 @@ const MashaAllahCelebration = ({ visible, onHide }: { visible: boolean; onHide: 
   if (!visible) return null;
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         styles.celebrationContainer,
         {
@@ -490,7 +521,7 @@ const RepeatBadge = ({ mode, isVisible }: { mode: string; isVisible: boolean }) 
   };
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         styles.repeatBadge,
         {
@@ -512,11 +543,11 @@ const RepeatBadge = ({ mode, isVisible }: { mode: string; isVisible: boolean }) 
 };
 
 // FIXED Swipe Navigation Component
-const SwipeNavigation = ({ 
-  onSwipeLeft, 
-  onSwipeRight, 
-  children 
-}: { 
+const SwipeNavigation = ({
+  onSwipeLeft,
+  onSwipeRight,
+  children
+}: {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   children: React.ReactNode;
@@ -537,7 +568,7 @@ const SwipeNavigation = ({
       onPanResponderRelease: (_, gestureState) => {
         const { dx } = gestureState;
         const swipeThreshold = 40;
-        
+
         if (dx > swipeThreshold) {
           console.log('➡️ Swipe right - Previous dua');
           onSwipeRight();
@@ -557,10 +588,11 @@ const SwipeNavigation = ({
     </View>
   );
 };
+
 export default function DuaDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   const getStringParam = (param: string | string[] | undefined): string => {
     if (Array.isArray(param)) {
       return param[0] || '';
@@ -568,35 +600,68 @@ export default function DuaDetailScreen() {
     return param || '';
   };
 
+  // ✅ ADDED: New state for repeat tracking
+  const [currentRepeatIteration, setCurrentRepeatIteration] = useState(0);
+
   const [allDuas, setAllDuas] = useState<Dua[]>([]);
   const [currentDuaIndex, setCurrentDuaIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // Use ref to track current index to avoid stale closures
   const currentDuaIndexRef = useRef(currentDuaIndex);
-  
+
   // Update ref whenever currentDuaIndex changes
   useEffect(() => {
     currentDuaIndexRef.current = currentDuaIndex;
   }, [currentDuaIndex]);
+
+  // ✅ FIXED: Helper functions for repeat logic - moved outside useEffect
+  const getRepeatCount = useCallback(() => {
+    switch (repeatMode) {
+      case '1': return 1;
+      case '2': return 2;
+      case '3': return 3;
+      case 'infinite': return Infinity;
+      default: return 0;
+    }
+  }, [repeatMode]);
+
+  const checkShouldRepeat = useCallback((currentIteration: number) => {
+  const totalRepeats = getRepeatCount();
+  console.log(`🔄 Check Repeat: current=${currentIteration}, total=${totalRepeats}, shouldRepeat=${currentIteration < totalRepeats}`);
+  return currentIteration < totalRepeats;
+}, [getRepeatCount]);
+
+
+  // ✅ ADDED: Debug repeat functionality
+ useEffect(() => {
+  console.log('🔄 REPEAT STATE:', {
+    mode: repeatMode,
+    iteration: currentRepeatIteration,
+    totalNeeded: getRepeatCount(),
+    shouldRepeat: checkShouldRepeat(currentRepeatIteration),
+    isPlaying
+  });
+}, [repeatMode, currentRepeatIteration, isPlaying, getRepeatCount, checkShouldRepeat]);
+
 
   useEffect(() => {
     const loadAllDuasAndFindPosition = async () => {
       try {
         setIsLoading(true);
         console.log('🔄 Loading ALL duas from static data...');
-        
+
         const duas = getAllDuas();
         console.log(`📚 Loaded ${duas.length} duas from static data`);
-        
+
         setAllDuas(duas);
 
         const currentDuaId = getStringParam(params.id);
         console.log('🔍 Looking for dua ID:', currentDuaId);
-        
+
         const foundIndex = duas.findIndex(dua => dua.id === currentDuaId);
         console.log('📍 Found index:', foundIndex);
-        
+
         if (foundIndex !== -1) {
           setCurrentDuaIndex(foundIndex);
           currentDuaIndexRef.current = foundIndex;
@@ -618,57 +683,116 @@ export default function DuaDetailScreen() {
 
   // Get current dua data
   const currentDua = allDuas[currentDuaIndex];
-  
+
+  // ✅ FIXED: Safe data extraction with fallbacks
   const getDuaData = () => {
     if (currentDua) {
-      return {
+      const data = {
         arabic: currentDua.arabic_text || "بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْمِ",
         translation: currentDua.translation || "Translation not available",
         reference: currentDua.reference || "Reference not available",
         title: currentDua.title || "Beautiful Dua",
         duaNumber: currentDua.duaNumber || currentDua.order_index?.toString() || "1",
-        id: currentDua.id,
+        id: currentDua.id || '',
         categoryName: currentDua.textheading || '',
         steps: currentDua.steps || '',
-        imagePath: currentDua.image_path || ''
+        imagePath: currentDua.image_path,
+        audioFull: currentDua.audio_full || '',
+        audioWordByWord: currentDua.audio_word_by_word || ''
       };
+
+      console.log('📋 Current Dua Data:', {
+        id: data.id,
+        title: data.title,
+        audioFull: data.audioFull,
+        audioWordByWord: data.audioWordByWord
+      });
+
+      return data;
     }
-    
+
     // Fallback for initial load
-    return {
+    const fallbackData = {
       arabic: getStringParam(params.arabic) || "بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْمِ",
       translation: getStringParam(params.translation) || "Translation not available",
       reference: getStringParam(params.reference) || "Reference not available",
       title: getStringParam(params.title) || "Beautiful Dua",
       duaNumber: getStringParam(params.duaNumber) || "1",
-      id: getStringParam(params.id),
+      id: getStringParam(params.id) || '',
       categoryName: getStringParam(params.categoryName) || '',
       steps: getStringParam(params.steps) || '',
-      imagePath: getStringParam(params.imagePath) || ''
+      imagePath: getStringParam(params.imagePath) || '',
+      audioFull: getStringParam(params.audio_full) || '',
+      audioWordByWord: getStringParam(params.audio_word_by_word) || ''
     };
+
+    return fallbackData;
   };
 
-  const { arabic, translation, reference, title, duaNumber, id, categoryName, steps, imagePath } = getDuaData();
+  const { arabic, translation, reference, title, duaNumber, id, categoryName, steps, imagePath, audioFull, audioWordByWord } = getDuaData();
 
-  // Debug the actual values being used
-  useEffect(() => {
-    if (!isLoading && allDuas.length > 0) {
-      console.log('🔍 CURRENT DUA DATA:', {
-        currentDuaIndex,
-        title,
-        arabic: arabic.substring(0, 50) + '...',
-        translation,
-        reference,
-        duaNumber,
-        currentPosition: `${currentDuaIndex + 1} of ${allDuas.length}`,
-        categoryName,
-        imagePath
-      });
-    }
-  }, [currentDuaIndex, arabic, translation, reference, title, duaNumber, allDuas.length, isLoading, categoryName, imagePath]);
-
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Mode state
   const [currentMode, setCurrentMode] = useState<'full' | 'word'>('word');
+
+  // ✅ FIXED: Initialize wordAudioPairs with empty array to prevent undefined errors
+  const [wordAudioPairs, setWordAudioPairs] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (id) {
+      try {
+        const pairs = getWordAudioPairsByDua(id);
+        console.log(`🔊 Loaded ${pairs?.length || 0} word audio pairs for dua ${id}`);
+        setWordAudioPairs(pairs || []);
+      } catch (error) {
+        console.error('Error loading word audio pairs:', error);
+        setWordAudioPairs([]);
+      }
+    } else {
+      setWordAudioPairs([]);
+    }
+  }, [id]);
+
+  // ✅ FIXED: Function to get appropriate audio URL based on mode
+  const getAudioUrlForCurrentMode = useCallback(() => {
+    // For word mode, we don't need a single audio file since we're using wordAudioPairs
+    const audioSource = currentMode === 'full' ? audioFull : undefined;
+
+    console.log('🎵 Audio source for mode:', {
+      mode: currentMode,
+      source: audioSource,
+      type: typeof audioSource,
+      hasValue: !!audioSource,
+      wordAudioPairsCount: wordAudioPairs?.length || 0
+    });
+
+    // Return undefined for word mode - we'll handle it with wordAudioPairs
+    return audioSource;
+  }, [currentMode, audioFull, wordAudioPairs]);
+
+  // ✅ FIXED: Initialize audio player only for full mode
+  const {
+    isPlaying: audioIsPlaying,
+    play: audioPlay,
+    pause: audioPause,
+    playPause: audioPlayPause,
+    replay: audioReplay,
+    status: audioStatus,
+    position: audioPosition,
+    duration: audioDuration,
+    seekTo: audioSeekTo,
+    setVolume: audioSetVolume,
+    toggleMute: audioToggleMute,
+    isMuted: audioIsMuted,
+    currentVolume: audioCurrentVolume,
+    isBuffering: audioIsBuffering,
+    didJustFinish: audioDidJustFinish,
+    loadError,
+  } = useCustomAudioPlayer(
+    currentMode === 'full' ? getAudioUrlForCurrentMode() : undefined
+  );
+
+  // Sync local state with audio player state
+  const [isPlaying, setIsPlaying] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -683,14 +807,138 @@ export default function DuaDetailScreen() {
   const repeatScale = useRef(new Animated.Value(1)).current;
   const swipeHintOpacity = useRef(new Animated.Value(1)).current;
 
+  // FIXED: Use the updated getLocalImage function with proper error handling
   const illustrationImage = getLocalImage(
-    id || '1', 
-    duaNumber, 
-    ((parseInt(id) || 1) % 32) + 1,
+    id || '1',
+    duaNumber,
+    ((parseInt(id || '1')) % 32) + 1,
     imagePath
   );
 
+  // ✅ FIXED: Safe words array initialization
   const words = (arabic || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
+
+  // ✅ ADDED: Function to play individual word audio
+  const playWordAudio = async (audioSource: any): Promise<void> => {
+    return new Promise(async (resolve) => {
+      try {
+        const { sound } = await Audio.Sound.createAsync(audioSource);
+
+        // Set up playback status update to detect when audio finishes
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            sound.unloadAsync().then(() => {
+              resolve();
+            });
+          }
+        });
+
+        await sound.playAsync();
+
+        // Fallback: if we can't detect completion, resolve after estimated duration
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded && status.durationMillis) {
+          setTimeout(() => {
+            sound.unloadAsync().then(() => {
+              resolve();
+            });
+          }, status.durationMillis + 100); // Add small buffer
+        } else {
+          // Default fallback
+          setTimeout(() => {
+            sound.unloadAsync().then(() => {
+              resolve();
+            });
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('Error playing word audio:', error);
+        resolve(); // Always resolve to continue playback
+      }
+    });
+  };
+
+  // ✅ FIXED: Reset repeat state when changing modes or duas
+ useEffect(() => {
+  console.log('🔄 Resetting repeat state due to mode/dua change');
+  setCurrentRepeatIteration(0);
+}, [currentMode, currentDuaIndex]);
+
+  // Sync local isPlaying state with audio player
+  useEffect(() => {
+    setIsPlaying(audioIsPlaying);
+  }, [audioIsPlaying]);
+
+  // ✅ FIXED: Handle audio completion for full mode with WORKING repeat support
+  useEffect(() => {
+  if (audioDidJustFinish && currentMode === 'full') {
+    console.log('🎵 Full audio finished playing', {
+      currentIteration: currentRepeatIteration,
+      repeatMode,
+      totalRepeats: getRepeatCount(),
+      shouldRepeat: checkShouldRepeat(currentRepeatIteration)
+    });
+
+    const shouldRepeat = checkShouldRepeat(currentRepeatIteration);
+
+    if (shouldRepeat) {
+      console.log(`🔄 Repeating full audio (${currentRepeatIteration + 1}/${getRepeatCount()})`);
+      
+      // ✅ FIXED: Update iteration state using functional update
+      setCurrentRepeatIteration(prev => {
+        const newIteration = prev + 1;
+        console.log(`🔄 Updating iteration: ${prev} -> ${newIteration}`);
+        return newIteration;
+      });
+
+      // ✅ FIXED: Use a ref to track the restart to avoid closure issues
+      const restartAudio = async () => {
+        try {
+          console.log('🔄 Restarting audio for repeat...');
+          // Small delay to ensure state is updated
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await audioReplay();
+          console.log('✅ Audio restarted successfully for repeat');
+        } catch (error) {
+          console.error('❌ Error restarting audio:', error);
+        }
+      };
+
+      restartAudio();
+    } else {
+      // No more repeats - show completion
+      console.log('🎉 Full audio playback completed - all repeats done');
+      setIsPlaying(false);
+      setShowCelebration(true);
+      // Keep the final iteration count to show completion status
+    }
+  }
+}, [audioDidJustFinish, currentMode, currentRepeatIteration, repeatMode, checkShouldRepeat, getRepeatCount, audioReplay]);
+
+  // ✅ ADDED: Display current repeat status in UI
+  const getRepeatStatusText = () => {
+    if (repeatMode === 'empty' || currentRepeatIteration === 0) return '';
+
+    const totalRepeats = getRepeatCount();
+    if (totalRepeats === Infinity) {
+      return ` (Repeat ∞ - #${currentRepeatIteration})`;
+    } else {
+      return ` (Repeat ${currentRepeatIteration}/${totalRepeats})`;
+    }
+  };
+
+  // UPDATED: Reinitialize audio when mode changes
+  useEffect(() => {
+    console.log('🔄 Mode changed to:', currentMode);
+    if (isPlaying) {
+      if (currentMode === 'full') {
+        audioPause();
+      }
+      setIsPlaying(false);
+    }
+    setCurrentWordIndex(0);
+    setCurrentRepeatIteration(0);
+  }, [currentMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -714,10 +962,17 @@ export default function DuaDetailScreen() {
         totalDuas: allDuas.length,
         currentDuaTitle: currentDua?.title,
         isLoading,
-        isPlaying
+        isPlaying: audioIsPlaying,
+        currentMode,
+        audioFull,
+        audioWordByWord,
+        wordAudioPairsCount: wordAudioPairs?.length || 0,
+        loadError,
+        repeatMode,
+        currentRepeatIteration
       });
     }
-  }, [currentDuaIndex, allDuas.length, isLoading, isPlaying, currentDua]);
+  }, [currentDuaIndex, allDuas.length, isLoading, audioIsPlaying, currentDua, currentMode, audioFull, audioWordByWord, wordAudioPairs, loadError, repeatMode, currentRepeatIteration]);
 
   useEffect(() => {
     Animated.sequence([
@@ -735,33 +990,215 @@ export default function DuaDetailScreen() {
     ]).start();
   }, [currentDuaIndex]);
 
+  // ✅ FIXED: Enhanced word-by-word playback that waits for current audio to finish
+  useEffect(() => {
+    let currentAudioIndex = 0;
+    let currentIteration = currentRepeatIteration;
+    let isCancelled = false;
+
+    const playWordByWord = async () => {
+      if (isCancelled || !isPlaying) return;
+
+      // ✅ FIXED: Wait for each word audio to complete before playing next
+      while (currentAudioIndex < (wordAudioPairs?.length || 0) && isPlaying && !isCancelled) {
+        setCurrentWordIndex(currentAudioIndex);
+
+        // Play individual word audio and wait for it to finish
+        const wordAudio = wordAudioPairs?.[currentAudioIndex];
+        if (wordAudio && wordAudio.audio_res_id) {
+          console.log(`🔊 Playing word ${currentAudioIndex + 1}:`, wordAudio.word_text);
+          try {
+            await playWordAudio(wordAudio.audio_res_id);
+          } catch (error) {
+            console.error('Error playing word audio:', error);
+          }
+        } else {
+          // If no audio file, wait for a default duration
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+
+        if (isCancelled || !isPlaying) break;
+
+        currentAudioIndex++;
+
+        // Update progress
+        if (currentAudioIndex < (wordAudioPairs?.length || 0)) {
+          // Continue to next word
+          continue;
+        } else {
+          // Finished all words in current iteration
+          console.log(`🎉 Word-by-word playback completed iteration ${currentIteration + 1}`);
+
+          // ✅ FIXED: Handle repeat logic
+          const shouldRepeat = checkShouldRepeat(currentIteration);
+
+          if (shouldRepeat) {
+            // Repeat the playback
+            console.log(`🔄 Repeating playback (${currentIteration + 1}/${getRepeatCount()})`);
+
+            // ✅ FIXED: Update state immediately and wait for it to be set
+            const nextIteration = currentIteration + 1;
+            setCurrentRepeatIteration(nextIteration);
+
+            // Wait for state to update and then reset
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            if (isPlaying && !isCancelled) {
+              currentAudioIndex = 0;
+              currentIteration = nextIteration;
+              setCurrentWordIndex(0);
+              console.log(`🔄 Starting repeat iteration ${nextIteration}`);
+              // Continue with next iteration
+              continue;
+            }
+          } else {
+            // Finished all repetitions
+            if (!isCancelled) {
+              setIsPlaying(false);
+              setShowCelebration(true);
+              setCurrentWordIndex(0);
+              setCurrentRepeatIteration(0);
+            }
+            console.log('🎉 Word-by-word playback fully completed');
+          }
+        }
+      }
+    };
+
+    // ✅ FIXED: Reset iterations when starting playback
+    if (isPlaying && currentMode === 'word' && wordAudioPairs && wordAudioPairs.length > 0) {
+      console.log('🔊 Starting word-by-word playback with', wordAudioPairs.length, 'words');
+      console.log(`🔄 Repeat mode: ${repeatMode}, iterations: ${getRepeatCount()}`);
+
+      // Reset iteration counter when starting fresh (not when repeating)
+      if (currentRepeatIteration === 0) {
+        setCurrentRepeatIteration(0);
+      }
+
+      currentIteration = currentRepeatIteration;
+      playWordByWord();
+    } else if (isPlaying && currentMode === 'word' && (!wordAudioPairs || wordAudioPairs.length === 0)) {
+      // Fallback to simulated word-by-word if no word audio files
+      console.log('🔄 Using simulated word-by-word (no audio files)');
+
+      let simCurrentIndex = 0;
+      let simCurrentIteration = currentRepeatIteration;
+      let simInterval: NodeJS.Timeout;
+
+      const playSimulatedWords = async () => {
+        if (!isPlaying) return;
+
+        simInterval = setInterval(async () => {
+          if (!isPlaying) {
+            clearInterval(simInterval);
+            return;
+          }
+
+          setCurrentWordIndex(simCurrentIndex);
+          simCurrentIndex++;
+
+          if (simCurrentIndex >= words.length) {
+            clearInterval(simInterval);
+
+            // Finished current iteration
+            const shouldRepeat = checkShouldRepeat(simCurrentIteration);
+
+            if (shouldRepeat) {
+              console.log(`🔄 Repeating simulation (${simCurrentIteration + 1}/${getRepeatCount()})`);
+              simCurrentIndex = 0;
+              simCurrentIteration++;
+              setCurrentRepeatIteration(simCurrentIteration);
+              setCurrentWordIndex(0);
+
+              // Wait before starting next iteration
+              setTimeout(() => {
+                if (isPlaying) {
+                  playSimulatedWords();
+                }
+              }, 1000);
+            } else {
+              setIsPlaying(false);
+              setShowCelebration(true);
+              setCurrentWordIndex(0);
+              setCurrentRepeatIteration(0);
+            }
+          }
+        }, 1500);
+      };
+
+      playSimulatedWords();
+
+      return () => {
+        if (simInterval) {
+          clearInterval(simInterval);
+        }
+      };
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isPlaying, currentMode, words.length, wordAudioPairs, currentRepeatIteration, repeatMode, checkShouldRepeat, getRepeatCount]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isPlaying, pulseAnim]);
+
   // FIXED: Navigation functions using useCallback to avoid stale closures
   const changeCurrentDua = useCallback((newIndex: number) => {
     if (newIndex < 0 || newIndex >= allDuas.length || isLoading) {
       console.log(`🚫 Cannot navigate to index ${newIndex}. Valid range: 0-${allDuas.length - 1}`);
       return;
     }
-    
+
     const currentIndex = currentDuaIndexRef.current;
     if (newIndex === currentIndex) {
       console.log('⚠️ Already on this dua, ignoring navigation');
       return;
     }
-    
+
     console.log(`🔄 Changing from dua ${currentIndex + 1} to ${newIndex + 1}`);
-    
+
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    
-    setIsPlaying(false);
+
+    // Stop audio when changing duas
+    if (isPlaying) {
+      if (currentMode === 'full') {
+        audioPause();
+      }
+      setIsPlaying(false);
+    }
     setCurrentWordIndex(0);
+    setCurrentRepeatIteration(0);
     setCurrentDuaIndex(newIndex);
     currentDuaIndexRef.current = newIndex;
-    
+
     if (newIndex > currentIndex) {
       console.log('🎉 Showing celebration for next dua');
       setShowCelebration(true);
     }
-  }, [allDuas.length, isLoading]);
+  }, [allDuas.length, isLoading, isPlaying, audioPause, currentMode]);
 
   const navigateToNextDua = useCallback(() => {
     const currentIndex = currentDuaIndexRef.current;
@@ -796,36 +1233,64 @@ export default function DuaDetailScreen() {
     navigateToPrevDua();
   }, [navigateToPrevDua]);
 
-  const handlePlayPause = () => {
+  // ✅ FIXED: Enhanced play/pause handler with proper restart functionality
+  const handlePlayPause = useCallback(async () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    
-    if (!isPlaying) {
-      setIsPlaying(true);
-      setCurrentWordIndex(0);
-    } else {
-      setIsPlaying(false);
+
+    try {
+      if (currentMode === 'full') {
+        // Use the audio player for full mode
+        if (isPlaying) {
+          await audioPause();
+        } else {
+          // ✅ FIXED: If audio finished and we're pressing play again, restart from beginning
+          if (audioDidJustFinish || currentWordIndex >= (wordAudioPairs?.length || words.length) - 1) {
+            setCurrentRepeatIteration(0);
+            setCurrentWordIndex(0);
+            // Use replay to start from beginning
+            await audioReplay();
+          } else {
+            await audioPlay();
+          }
+        }
+      } else {
+        // Handle word mode manually
+        if (isPlaying) {
+          setIsPlaying(false);
+          // Don't reset word index when pausing, so we can resume
+        } else {
+          // ✅ FIXED: Reset to beginning only if we're not in the middle of playback
+          if (currentWordIndex >= (wordAudioPairs?.length || words.length) - 1) {
+            setCurrentWordIndex(0);
+            setCurrentRepeatIteration(0);
+          }
+          setIsPlaying(true);
+        }
+      }
+
+      Animated.sequence([
+        Animated.spring(playButtonScale, {
+          toValue: 0.85,
+          tension: 100,
+          friction: 3,
+          useNativeDriver: true,
+        }),
+        Animated.spring(playButtonScale, {
+          toValue: 1,
+          tension: 100,
+          friction: 3,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } catch (error) {
+      console.error('Error handling play/pause:', error);
     }
+  }, [isPlaying, currentMode, audioDidJustFinish, currentWordIndex, wordAudioPairs, words.length, audioReplay, audioPlay, audioPause, playButtonScale]);
 
-    Animated.sequence([
-      Animated.spring(playButtonScale, {
-        toValue: 0.85,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-      Animated.spring(playButtonScale, {
-        toValue: 1,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const handleFavorite = () => {
+  const handleFavorite = useCallback(() => {
     Vibration.vibrate(50);
     setIsFavorite(!isFavorite);
-    
+
     Animated.sequence([
       Animated.spring(favoriteScale, {
         toValue: 1.3,
@@ -840,93 +1305,86 @@ export default function DuaDetailScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [isFavorite, favoriteScale]);
 
-  const handleRepeat = () => {
-    Vibration.vibrate(30);
-    
-    const modes: Array<'empty' | '1' | '2' | '3' | 'infinite'> = ['empty', '1', '2', '3', 'infinite'];
-    const currentIndex = modes.indexOf(repeatMode);
-    const nextIndex = (currentIndex + 1) % modes.length;
-    const nextMode = modes[nextIndex];
-    
-    setRepeatMode(nextMode);
-    setShowRepeatBadge(true);
+  // ✅ FIXED: Enhanced repeat handler
+const handleRepeat = useCallback(() => {
+  Vibration.vibrate(30);
 
-    Animated.sequence([
-      Animated.spring(repeatScale, {
-        toValue: 1.2,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-      Animated.spring(repeatScale, {
-        toValue: 1,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const modes: Array<'empty' | '1' | '2' | '3' | 'infinite'> = ['empty', '1', '2', '3', 'infinite'];
+  const currentIndex = modes.indexOf(repeatMode);
+  const nextIndex = (currentIndex + 1) % modes.length;
+  const nextMode = modes[nextIndex];
 
-    setTimeout(() => {
-      setShowRepeatBadge(false);
-    }, 1500);
-  };
+  console.log(`🔄 Repeat mode changing: ${repeatMode} -> ${nextMode}, total repeats: ${nextMode === '1' ? 1 : nextMode === '2' ? 2 : nextMode === '3' ? 3 : nextMode === 'infinite' ? '∞' : 0}`);
+  
+  setRepeatMode(nextMode);
+  setCurrentRepeatIteration(0);
+  setShowRepeatBadge(true);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isPlaying && currentMode === 'word') {
-      interval = setInterval(() => {
-        setCurrentWordIndex(prev => {
-          if (prev >= words.length - 1) {
-            clearInterval(interval);
-            setIsPlaying(false);
-            setShowCelebration(true);
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1500);
-    }
+  Animated.sequence([
+    Animated.spring(repeatScale, {
+      toValue: 1.2,
+      tension: 100,
+      friction: 3,
+      useNativeDriver: true,
+    }),
+    Animated.spring(repeatScale, {
+      toValue: 1,
+      tension: 100,
+      friction: 3,
+      useNativeDriver: true,
+    }),
+  ]).start();
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isPlaying, currentMode, words.length]);
+  setTimeout(() => {
+    setShowRepeatBadge(false);
+  }, 1500);
+}, [repeatMode, repeatScale]);
 
-  useEffect(() => {
+  const handleBack = useCallback(() => {
+    // Stop audio when going back
     if (isPlaying) {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulse.start();
-      return () => pulse.stop();
-    } else {
-      pulseAnim.setValue(1);
+      if (currentMode === 'full') {
+        audioPause();
+      }
+      setIsPlaying(false);
     }
-  }, [isPlaying]);
-
-  const handleBack = () => {
     router.back();
-  };
+  }, [isPlaying, audioPause, router, currentMode]);
 
-  const handleHome = () => {
+  const handleHome = useCallback(() => {
+    // Stop audio when going home
+    if (isPlaying) {
+      if (currentMode === 'full') {
+        audioPause();
+      }
+      setIsPlaying(false);
+    }
     router.push('/');
-  };
+  }, [isPlaying, audioPause, router, currentMode]);
+
+  // UPDATED: Mode change handlers
+  const handleWordMode = useCallback(() => {
+    setCurrentMode('word');
+    if (isPlaying) {
+      if (currentMode === 'full') {
+        audioPause();
+      }
+      setIsPlaying(false);
+    }
+    setCurrentWordIndex(0);
+    setCurrentRepeatIteration(0); // ✅ ADDED
+  }, [isPlaying, audioPause, currentMode]);
+
+  const handleFullMode = useCallback(() => {
+    setCurrentMode('full');
+    if (isPlaying) {
+      setIsPlaying(false);
+    }
+    setCurrentWordIndex(0);
+    setCurrentRepeatIteration(0); // ✅ ADDED
+  }, [isPlaying]);
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -1002,12 +1460,12 @@ export default function DuaDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
-      
+
       <FloatingParticles />
 
-      <MashaAllahCelebration 
-        visible={showCelebration} 
-        onHide={() => setShowCelebration(false)} 
+      <MashaAllahCelebration
+        visible={showCelebration}
+        onHide={() => setShowCelebration(false)}
       />
 
       <RepeatBadge mode={repeatMode} isVisible={showRepeatBadge} />
@@ -1027,169 +1485,211 @@ export default function DuaDetailScreen() {
 
       {renderHeader()}
 
-    <SwipeNavigation 
-  onSwipeLeft={handleSwipeLeft}
-  onSwipeRight={handleSwipeRight}
->
-  <ScrollView 
-    style={styles.content}
-    showsVerticalScrollIndicator={false}
-    contentContainerStyle={styles.scrollContent}
-    scrollEventThrottle={16}
-    directionalLockEnabled={true}
-    alwaysBounceVertical={true}
-    bounces={true}
-  >
-    {/* Your existing content here */}
-    <Animated.View 
-      style={[
-        styles.illustrationContainer,
-        { 
-          transform: [{ scale: imageScale }],
-        }
-      ]}
-    >
-      <Image
-        source={illustrationImage}
-        style={styles.illustration}
-        resizeMode="cover"
-      />
-      
-      <Animated.View 
-        style={[
-          styles.favoriteButtonContainer,
-          { transform: [{ scale: favoriteScale }] }
-        ]}
+      <SwipeNavigation
+        onSwipeLeft={handleSwipeLeft}
+        onSwipeRight={handleSwipeRight}
       >
-        <BouncingButton onPress={handleFavorite}>
-          <LinearGradient
-            colors={isFavorite ? ['#FF6B6B', '#FF8E8E'] : ['#FFFFFF', '#F8F9FA']}
-            style={styles.favoriteButton}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          scrollEventThrottle={16}
+          directionalLockEnabled={true}
+          alwaysBounceVertical={true}
+          bounces={true}
+        >
+          <Animated.View
+            style={[
+              styles.illustrationContainer,
+              {
+                transform: [{ scale: imageScale }],
+              }
+            ]}
           >
-            <Text style={[
-              styles.favoriteButtonEmoji,
-              isFavorite && styles.favoriteButtonEmojiActive
-            ]}>
-              {isFavorite ? '❤️' : '🤍'}
-            </Text>
-          </LinearGradient>
-        </BouncingButton>
-      </Animated.View>
-    </Animated.View>
+            <Image
+              source={illustrationImage}
+              style={styles.illustration}
+              resizeMode="cover"
+            />
 
-    {/* Rest of your content remains the same */}
-    {steps && (
-      <View style={styles.stepsContainer}>
-        <Text style={styles.stepsTitle}>Steps:</Text>
-        <Text style={styles.stepsText}>{steps}</Text>
-      </View>
-    )}
+            <Animated.View
+              style={[
+                styles.favoriteButtonContainer,
+                { transform: [{ scale: favoriteScale }] }
+              ]}
+            >
+              <BouncingButton onPress={handleFavorite}>
+                <LinearGradient
+                  colors={isFavorite ? ['#FF6B6B', '#FF8E8E'] : ['#FFFFFF', '#F8F9FA']}
+                  style={styles.favoriteButton}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={[
+                    styles.favoriteButtonEmoji,
+                    isFavorite && styles.favoriteButtonEmojiActive
+                  ]}>
+                    {isFavorite ? '❤️' : '🤍'}
+                  </Text>
+                </LinearGradient>
+              </BouncingButton>
+            </Animated.View>
+          </Animated.View>
 
-    <View style={styles.modeContainer}>
-      <View style={styles.modePills}>
-        <TouchableOpacity
-          style={[
-            styles.modePill,
-            currentMode === 'word' && styles.modePillActive
-          ]}
-          onPress={() => {
-            setCurrentMode('word');
-            setIsPlaying(false);
-            setCurrentWordIndex(0);
-          }}
-        >
-          <Text style={[
-            styles.modePillText,
-            currentMode === 'word' && styles.modePillTextActive
-          ]}>
-            🎯 Word by Word
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[
-            styles.modePill,
-            currentMode === 'full' && styles.modePillActive
-          ]}
-          onPress={() => {
-            setCurrentMode('full');
-            setIsPlaying(false);
-          }}
-        >
-          <Text style={[
-            styles.modePillText,
-            currentMode === 'full' && styles.modePillTextActive
-          ]}>
-            📖 Full Dua
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          {steps && (
+            <View style={styles.stepsContainer}>
+              <Text style={styles.stepsTitle}>Steps:</Text>
+              <Text style={styles.stepsText}>{steps}</Text>
+            </View>
+          )}
 
-    <View style={styles.duaTextContainer}>
-      {currentMode === 'word' ? (
-        <WordByWordDisplay 
-          arabicText={arabic}
-          currentWordIndex={currentWordIndex}
-          isPlaying={isPlaying}
-          translationText={translation}
-          referenceText={reference}
-        />
-      ) : (
-        <View style={styles.fullDuaContainer}>
-          <View style={styles.arabicTextContainer}>
-            <Text style={styles.arabicText} dir="rtl">
-              {arabic}
-            </Text>
+          <View style={styles.modeContainer}>
+            <View style={styles.modePills}>
+              <TouchableOpacity
+                style={[
+                  styles.modePill,
+                  currentMode === 'word' && styles.modePillActive
+                ]}
+                onPress={handleWordMode}
+              >
+                <Text style={[
+                  styles.modePillText,
+                  currentMode === 'word' && styles.modePillTextActive
+                ]}>
+                  🎯 Word by Word
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modePill,
+                  currentMode === 'full' && styles.modePillActive
+                ]}
+                onPress={handleFullMode}
+              >
+                <Text style={[
+                  styles.modePillText,
+                  currentMode === 'full' && styles.modePillTextActive
+                ]}>
+                  📖 Full Dua
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.translationSection}>
-            <Text style={styles.translationTitle}>Translation</Text>
-            <Text style={styles.translationText}>
-              {translation}
-            </Text>
-            
-            {reference && reference !== 'Reference not available' && (
-              <>
-                <Text style={styles.referenceTitle}>Reference</Text>
-                <Text style={styles.referenceText}>{reference}</Text>
-              </>
+
+          {/* ✅ NEW: Audio Error Display */}
+          {loadError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Audio Error: {loadError}</Text>
+            </View>
+          )}
+
+          {/* ✅ NEW: Audio Debug Info */}
+          {__DEV__ && (
+            <View style={styles.debugContainer}>
+              <Text style={styles.debugText}>
+                Audio: {audioStatus?.isLoaded ? 'Loaded✅' : 'Not Loaded❌'} |
+                Playing: {isPlaying ? 'Yes▶️' : 'No⏸️'} |
+                Mode: {currentMode} |
+                Words: {wordAudioPairs.length} |
+                Repeat: {repeatMode} {getRepeatStatusText()} {/* ✅ ADDED */}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.duaTextContainer}>
+            {currentMode === 'word' ? (
+              <WordByWordDisplay
+                arabicText={arabic}
+                currentWordIndex={currentWordIndex}
+                isPlaying={isPlaying}
+                translationText={translation}
+                referenceText={reference}
+              />
+            ) : (
+              <View style={styles.fullDuaContainer}>
+                <View style={styles.arabicTextContainer}>
+                  <Text style={styles.arabicText} dir="rtl">
+                    {arabic}
+                  </Text>
+                </View>
+                <View style={styles.translationSection}>
+                  <Text style={styles.translationTitle}>Translation</Text>
+                  <Text style={styles.translationText}>
+                    {translation}
+                  </Text>
+
+                  {reference && reference !== 'Reference not available' && (
+                    <>
+                      <Text style={styles.referenceTitle}>Reference</Text>
+                      <Text style={styles.referenceText}>{reference}</Text>
+                    </>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {currentMode === 'full' && (
+              <View style={styles.fullDuaHint}>
+                <Text style={styles.hintText}>Tap play to listen to the full dua 🔊</Text>
+              </View>
             )}
           </View>
-        </View>
-      )}
 
-      {currentMode === 'full' && (
-        <View style={styles.fullDuaHint}>
-          <Text style={styles.hintText}>Tap play to listen to the full dua 🔊</Text>
-        </View>
-      )}
-    </View>
+          {isPlaying && currentMode === 'word' && (
+            <View style={styles.wordProgress}>
+              <Text style={styles.wordProgressText}>
+                Word {currentWordIndex + 1} of {wordAudioPairs.length}
+                {getRepeatStatusText()} {/* ✅ ADDED */}
+              </Text>
+              <View style={styles.wordProgressBar}>
+                <View
+                  style={[
+                    styles.wordProgressFill,
+                    {
+                      width: `${((currentWordIndex + 1) / wordAudioPairs.length) * 100}%`
+                    }
+                  ]}
+                />
+              </View>
+              {/* ✅ NEW: Show current word being played */}
+              {wordAudioPairs[currentWordIndex] && (
+                <Text style={styles.currentWordText}>
+                  🔊 {wordAudioPairs[currentWordIndex].word_text}
+                </Text>
+              )}
+            </View>
+          )}
 
-    {isPlaying && currentMode === 'word' && (
-      <View style={styles.wordProgress}>
-        <Text style={styles.wordProgressText}>
-          Word {currentWordIndex + 1} of {words.length}
-        </Text>
-        <View style={styles.wordProgressBar}>
-          <View 
-            style={[
-              styles.wordProgressFill,
-              { width: `${((currentWordIndex + 1) / words.length) * 100}%` }
-            ]} 
-          />
-        </View>
-      </View>
-    )}
+          {/* Audio progress for full mode */}
+          {isPlaying && currentMode === 'full' && audioFull && (
+            <View style={styles.wordProgress}>
+              <Text style={styles.wordProgressText}>
+                {audioIsBuffering ? 'Buffering...' : `Playing ${Math.round(audioPosition / 1000)}s / ${Math.round(audioDuration / 1000)}s`}
+                {getRepeatStatusText()} {/* ✅ ADDED */}
+              </Text>
+              <View style={styles.wordProgressBar}>
+                <View
+                  style={[
+                    styles.wordProgressFill,
+                    {
+                      width: audioDuration > 0
+                        ? `${(audioPosition / audioDuration) * 100}%`
+                        : '0%'
+                    }
+                  ]}
+                />
+              </View>
+            </View>
+          )}
 
-    <View style={styles.bottomPadding} />
-  </ScrollView>
-</SwipeNavigation>
+          <View style={styles.bottomPadding} />
+        </ScrollView>
+      </SwipeNavigation>
 
       <View style={styles.footer}>
         <View style={styles.footerContent}>
-          <BouncingButton 
+          <BouncingButton
             onPress={navigateToPrevDua}
             style={currentDuaIndex === 0 ? styles.disabledButton : {}}
           >
@@ -1197,12 +1697,12 @@ export default function DuaDetailScreen() {
               colors={currentDuaIndex === 0 ? ['#CCCCCC', '#DDDDDD'] : ['#7E57C2', '#9C77D9']}
               style={styles.gradientBorder}
             >
-              <Image 
-                source={BtnPrevious} 
+              <Image
+                source={BtnPrevious}
                 style={[
                   styles.footerNavButton,
                   currentDuaIndex === 0 && styles.disabledButtonImage
-                ]} 
+                ]}
               />
             </LinearGradient>
           </BouncingButton>
@@ -1218,7 +1718,7 @@ export default function DuaDetailScreen() {
                 </LinearGradient>
               </BouncingButton>
             </Animated.View>
-            
+
             {repeatMode !== 'empty' && (
               <View style={[
                 styles.repeatBadgeSmall,
@@ -1231,26 +1731,26 @@ export default function DuaDetailScreen() {
             )}
           </View>
 
-          <Animated.View style={{ 
+          <Animated.View style={{
             transform: [
               { scale: playButtonScale },
               { scale: isPlaying ? pulseAnim : 1 }
-            ] 
+            ]
           }}>
             <BouncingButton onPress={handlePlayPause}>
               <LinearGradient
                 colors={['#4ECDC4', '#26C6DA']}
                 style={styles.gradientBorder}
               >
-                <Image 
-                  source={isPlaying ? BtnPause : BtnPlay} 
-                  style={styles.playButton} 
+                <Image
+                  source={isPlaying ? BtnPause : BtnPlay}
+                  style={styles.playButton}
                 />
               </LinearGradient>
             </BouncingButton>
           </Animated.View>
 
-          <BouncingButton 
+          <BouncingButton
             onPress={navigateToNextDua}
             style={currentDuaIndex === allDuas.length - 1 ? styles.disabledButton : {}}
           >
@@ -1258,12 +1758,12 @@ export default function DuaDetailScreen() {
               colors={currentDuaIndex === allDuas.length - 1 ? ['#CCCCCC', '#DDDDDD'] : ['#7E57C2', '#9C77D9']}
               style={styles.gradientBorder}
             >
-              <Image 
-                source={BtnNext} 
+              <Image
+                source={BtnNext}
                 style={[
                   styles.footerNavButton,
                   currentDuaIndex === allDuas.length - 1 && styles.disabledButtonImage
-                ]} 
+                ]}
               />
             </LinearGradient>
           </BouncingButton>
@@ -1500,6 +2000,40 @@ const styles = StyleSheet.create({
   },
   modePillTextActive: {
     color: THEME.text.light,
+  },
+  // ✅ NEW: Error container styles
+  errorContainer: {
+    margin: 16,
+    padding: 12,
+    backgroundColor: '#FFE6E6',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF6B6B',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#E53E3E',
+    fontWeight: '500',
+  },
+  // ✅ NEW: Debug container styles
+  debugContainer: {
+    margin: 16,
+    padding: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
+  },
+  // ✅ NEW: Current word text style
+  currentWordText: {
+    fontSize: 16,
+    color: THEME.primary,
+    fontWeight: 'bold',
+    marginTop: 8,
+    textAlign: 'center',
   },
   duaTextContainer: {
     margin: 16,

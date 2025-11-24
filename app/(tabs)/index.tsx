@@ -130,19 +130,23 @@ const FloatingParticles = React.memo(({ count = 8 }) => {
   );
 });
 
-// Function to get image source from image_path
-const getImageSource = (imagePath: string | undefined) => {
-  if (!imagePath) {
-    // Fallback to a default image if no path is provided
-    return require('../../assets/images/kaaba.png');
+// Fixed Image Source Function
+const getImageSource = (imagePath: any, categoryId?: number, categoryName?: string) => {
+  // Debug information
+  if (categoryId) {
+    console.log(`🖼️ Loading image for Category ${categoryId}: ${categoryName}`, {
+      imagePath,
+      imagePathType: typeof imagePath
+    });
   }
 
-  try {
-    // Since we can't dynamically require with variables in React Native,
-    // we'll use a mapping approach based on the image name
-    const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
-    
-    // Map image names to require statements
+  // Case 1: Direct require statement (number)
+  if (typeof imagePath === 'number') {
+    return imagePath;
+  }
+
+  // Case 2: String path that needs mapping
+  if (typeof imagePath === 'string') {
     const imageMap = {
       'kaaba': require('../../assets/images/kaaba.png'),
       'dua_2': require('../../assets/images/dua_2.png'),
@@ -179,11 +183,57 @@ const getImageSource = (imagePath: string | undefined) => {
       'dua_33': require('../../assets/images/dua_33.png'),
     };
 
-    return imageMap[imageName as keyof typeof imageMap] || require('../../assets/images/kaaba.png');
-  } catch (error) {
-    console.log('Error loading image:', error);
-    return require('../../assets/images/kaaba.png');
+    const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
+    const resolvedImage = imageMap[imageName as keyof typeof imageMap] || require('../../assets/images/kaaba.png');
+    
+    console.log(`📸 Mapped "${imageName}" to image:`, resolvedImage);
+    return resolvedImage;
   }
+
+  // Case 3: Fallback to category-based image
+  if (categoryId) {
+    const categoryBasedImages = {
+      1: require('../../assets/images/kaaba.png'),
+      2: require('../../assets/images/dua_2.png'),
+      3: require('../../assets/images/dua_3.png'),
+      4: require('../../assets/images/dua_4.png'),
+      5: require('../../assets/images/dua_5.png'),
+      6: require('../../assets/images/dua_6.png'),
+      7: require('../../assets/images/dua_7.png'),
+      8: require('../../assets/images/dua_8.png'),
+      9: require('../../assets/images/dua_9.png'),
+      10: require('../../assets/images/dua_10.png'),
+      11: require('../../assets/images/dua_11.png'),
+      12: require('../../assets/images/dua_15.png'),
+      13: require('../../assets/images/dua_13.png'),
+      14: require('../../assets/images/dua_14.png'),
+      15: require('../../assets/images/dua_16.png'),
+      16: require('../../assets/images/dua_17.png'),
+      17: require('../../assets/images/dua_18.png'),
+      18: require('../../assets/images/dua_19.png'),
+      19: require('../../assets/images/dua_20.png'),
+      20: require('../../assets/images/dua_21.png'),
+      21: require('../../assets/images/dua_22.png'),
+      22: require('../../assets/images/dua_23.png'),
+      23: require('../../assets/images/dua_24.png'),
+      24: require('../../assets/images/dua_25.png'),
+      25: require('../../assets/images/dua_26.png'),
+      26: require('../../assets/images/dua_27.png'),
+      27: require('../../assets/images/dua_28.png'),
+      28: require('../../assets/images/dua_29.png'),
+      29: require('../../assets/images/dua_30.png'),
+      30: require('../../assets/images/dua_31.png'),
+      31: require('../../assets/images/dua_32.png'),
+      32: require('../../assets/images/dua_33.png'),
+    };
+
+    const fallbackImage = categoryBasedImages[categoryId as keyof typeof categoryBasedImages] || require('../../assets/images/kaaba.png');
+    console.log(`🎯 Using category-based fallback for ID ${categoryId}:`, fallbackImage);
+    return fallbackImage;
+  }
+
+  console.log('🚨 Ultimate fallback to default image');
+  return require('../../assets/images/kaaba.png');
 };
 
 // Bouncing Button Component
@@ -280,7 +330,7 @@ const CategoryCard = React.memo(({ category, index, onPress }: {
     outputRange: [1, 0.96],
   });
 
-  const categoryImageSource = getImageSource(category.image_path);
+  const categoryImageSource = getImageSource(category.image_path, category.id, category.name);
 
   return (
     <Animated.View
@@ -331,11 +381,6 @@ const CategoryCard = React.memo(({ category, index, onPress }: {
             <Text style={styles.cardTitle} numberOfLines={2}>
               {category.name}
             </Text>
-            {/* <View style={styles.cardMeta}>
-              <Text style={[styles.categoryText, { color: category.color }]}>
-                {category.icon} Category
-              </Text>
-            </View> */}
             <View style={styles.cardSparkle}>
               <Text style={styles.sparkleText}>🌟</Text>
             </View>
@@ -383,6 +428,14 @@ export default function DashboardScreen() {
       const allCategories = getAllCategories();
       setCategories(allCategories);
       console.log(`Successfully loaded ${allCategories.length} categories`);
+      
+      // Debug: Log all categories with their image paths
+      allCategories.forEach(category => {
+        console.log(`📋 Category ${category.id}: ${category.name}`, {
+          imagePath: category.image_path,
+          type: typeof category.image_path
+        });
+      });
     } catch (err) {
       console.error('Error loading data:', err);
       setError('Failed to load categories. Please restart the app.');
@@ -436,7 +489,7 @@ export default function DashboardScreen() {
       const wordAudioPairs = getWordAudioPairsByDua(firstDua.id);
 
       // Get the dua image using image_path
-      const duaImageSource = getImageSource(firstDua.image_path);
+      const duaImageSource = getImageSource(firstDua.image_path, category.id, category.name);
 
       // Prepare the params for dua-detail screen
       const navigationParams = {

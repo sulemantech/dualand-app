@@ -1,9 +1,11 @@
-import { AudioModule, AudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { Audio } from 'expo-av';
 import { useEffect, useState } from 'react';
 
 export const useCustomAudioPlayer = (audioSource?: string) => {
-  const [player, setPlayer] = useState<AudioPlayer | null>(null);
-  const status = useAudioPlayerStatus(player!);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [status, setStatus] = useState<Audio.AVPlaybackStatus>({
+    isLoaded: false,
+  } as Audio.AVPlaybackStatus);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -11,12 +13,12 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (player) {
-        console.log('Removing Audio Player');
-        player.remove();
+      if (sound) {
+        console.log('Unloading Audio Sound');
+        sound.unloadAsync();
       }
     };
-  }, [player]);
+  }, [sound]);
 
   // Load audio when source changes
   useEffect(() => {
@@ -24,9 +26,9 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
       loadSound(audioSource);
     } else {
       // Clean up if source is removed
-      if (player) {
-        player.remove();
-        setPlayer(null);
+      if (sound) {
+        sound.unloadAsync();
+        setSound(null);
       }
     }
   }, [audioSource]);
@@ -34,43 +36,50 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
   const loadSound = async (source: string) => {
     try {
       // Configure audio mode
-      await AudioModule.setAudioModeAsync({
+      await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
-        interruptionModeAndroid: 'duckOthers',
-        shouldPlayInBackground: false,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
 
-      // Create audio player with the source
-      // Note: expo-audio handles both local assets and remote URLs
-      const audioPlayer = AudioModule.createAudioPlayer(
+      // Create audio sound with the source
+      const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: source },
-        {
-          updateInterval: 100, // More frequent updates for better UX
-          downloadFirst: true, // Download before playback for better performance
-        }
+        { shouldPlay: false },
+        onPlaybackStatusUpdate
       );
 
-      setPlayer(audioPlayer);
+      setSound(newSound);
       
     } catch (error) {
       console.error('Error loading audio:', error);
     }
   };
 
+  const onPlaybackStatusUpdate = (playbackStatus: Audio.AVPlaybackStatus) => {
+    if (!playbackStatus.isLoaded) return;
+
+    setStatus(playbackStatus);
+    setIsPlaying(playbackStatus.isPlaying || false);
+    setPosition(playbackStatus.positionMillis || 0);
+    setDuration(playbackStatus.durationMillis || 0);
+  };
+
   // Update local state when status changes
   useEffect(() => {
-    if (status) {
-      setIsPlaying(status.playing || false);
-      setPosition(status.currentTime || 0);
-      setDuration(status.duration || 0);
+    if (status.isLoaded) {
+      setIsPlaying(status.isPlaying || false);
+      setPosition(status.positionMillis || 0);
+      setDuration(status.durationMillis || 0);
     }
   }, [status]);
 
   const play = async () => {
     try {
-      if (player) {
-        await player.play();
+      if (sound) {
+        await sound.playAsync();
       }
     } catch (error) {
       console.error('Error playing audio:', error);
@@ -79,8 +88,8 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
 
   const pause = async () => {
     try {
-      if (player) {
-        await player.pause();
+      if (sound) {
+        await sound.pauseAsync();
       }
     } catch (error) {
       console.error('Error pausing audio:', error);
@@ -97,8 +106,8 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
 
   const seekTo = async (positionMs: number) => {
     try {
-      if (player) {
-        await player.seekTo(positionMs / 1000); // expo-audio uses seconds
+      if (sound) {
+        await sound.setPositionAsync(positionMs);
       }
     } catch (error) {
       console.error('Error seeking audio:', error);
@@ -107,9 +116,9 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
 
   const replay = async () => {
     try {
-      if (player) {
-        await player.seekTo(0);
-        await player.play();
+      if (sound) {
+        await sound.setPositionAsync(0);
+        await sound.playAsync();
       }
     } catch (error) {
       console.error('Error replaying audio:', error);
@@ -118,8 +127,8 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
 
   const setPlaybackRate = async (rate: number) => {
     try {
-      if (player) {
-        await player.setPlaybackRate(rate, 'medium');
+      if (sound) {
+        await sound.setRateAsync(rate, true); // true for pitch correction
       }
     } catch (error) {
       console.error('Error setting playback rate:', error);
@@ -128,8 +137,8 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
 
   const setVolume = async (volume: number) => {
     try {
-      if (player) {
-        player.volume = Math.max(0, Math.min(1, volume)); // Clamp between 0-1
+      if (sound) {
+        await sound.setVolumeAsync(Math.max(0, Math.min(1, volume))); // Clamp between 0-1
       }
     } catch (error) {
       console.error('Error setting volume:', error);
@@ -138,32 +147,35 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
 
   const toggleMute = async () => {
     try {
-      if (player) {
-        player.muted = !player.muted;
+      if (sound) {
+        await sound.setIsMutedAsync(!(status as any).isMuted);
       }
     } catch (error) {
       console.error('Error toggling mute:', error);
     }
   };
 
+  // Create compatible status object for backward compatibility
+  const compatibleStatus = {
+    isLoaded: status.isLoaded || false,
+    playing: (status.isLoaded && status.isPlaying) || false,
+    currentTime: (status.isLoaded ? status.positionMillis || 0 : 0) / 1000, // Convert to seconds
+    duration: (status.isLoaded ? status.durationMillis || 0 : 0) / 1000,   // Convert to seconds
+    isBuffering: (status.isLoaded && status.isBuffering) || false,
+    didJustFinish: (status.isLoaded && status.didJustFinish) || false,
+    loop: false, // expo-av handles looping differently
+    muted: (status.isLoaded && (status as any).isMuted) || false,
+    volume: (status.isLoaded && (status as any).volume) || 1,
+    playbackRate: (status.isLoaded && status.rate) || 1,
+  };
+
   // Return a similar API structure for backward compatibility
   return {
-    player,
-    status: {
-      isLoaded: status?.isLoaded || false,
-      playing: status?.playing || false,
-      currentTime: status?.currentTime || 0,
-      duration: status?.duration || 0,
-      isBuffering: status?.isBuffering || false,
-      didJustFinish: status?.didJustFinish || false,
-      loop: status?.loop || false,
-      muted: player?.muted || false,
-      volume: player?.volume || 1,
-      playbackRate: status?.playbackRate || 1,
-    },
+    player: sound,
+    status: compatibleStatus,
     isPlaying,
-    position: (status?.currentTime || 0) * 1000, // Convert back to ms for compatibility
-    duration: (status?.duration || 0) * 1000,   // Convert back to ms for compatibility
+    position: status.isLoaded ? status.positionMillis || 0 : 0,
+    duration: status.isLoaded ? status.durationMillis || 0 : 0,
     play,
     pause,
     playPause,
@@ -172,13 +184,17 @@ export const useCustomAudioPlayer = (audioSource?: string) => {
     setPlaybackRate,
     setVolume,
     toggleMute,
-    // Additional expo-audio specific methods
+    // Additional expo-av specific methods
     replaceSource: (newSource: string) => {
-      if (player && newSource) {
-        player.replace({ uri: newSource });
+      if (sound && newSource) {
+        sound.unloadAsync().then(() => {
+          loadSound(newSource);
+        });
+      } else if (newSource) {
+        loadSound(newSource);
       }
     },
-    isMuted: player?.muted || false,
-    currentVolume: player?.volume || 1,
+    isMuted: (status.isLoaded && (status as any).isMuted) || false,
+    currentVolume: (status.isLoaded && (status as any).volume) || 1,
   };
 };
