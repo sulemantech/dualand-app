@@ -1,5 +1,5 @@
 export const THEME = {
-  primary: '#7E57C2',
+ primary: '#FF9A3D',
   secondary: '#FFF7D0',
   tertiary: '#E8F4FF',
   neutral: '#FFFFFF',
@@ -49,4 +49,13 @@ export const localImages = {
   dua_30: require('../assets/images/dua_30.png'),
   dua_31: require('../assets/images/dua_31.png'),
   dua_32: require('../assets/images/dua_32.png'),
+};
+
+export const BUTTON_IMAGES = {
+  previous: require('../assets/btns/btn_back.png'),
+  next: require('../assets/btns/btn_next.png'),
+  pause: require('../assets/btns/btn_pause.png'),
+  play: require('../assets/btns/btn_play.png'),
+  repeat: require('../assets/btns/btn_repeat.png'),
+  home: require('../assets/btns/btn_setting.png'),
 };

@@ -1,603 +1,117 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  Switch, 
-  ScrollView, 
-  StyleSheet, 
-  Animated,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
-  Alert,
-  Platform
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { ScreenWrapper } from '@/components/common/ScreenWrapper';
-import * as FileSystem from 'expo-file-system';
-import * as SQLite from 'expo-sqlite';
-import { databaseService } from '../../lib/database/database';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
+
+// Enhanced Theme System
 const THEME = {
-  primary: '#FF6B9D',      // Softer Pink
-  secondary: '#FFF7D0',    // Bright Lemon Yellow
-  tertiary: '#E8F4FF',     // Softer Sky Blue
-  neutral: '#FFFFFF',      // White
-  accent: '#FFD166',       // Sunny Yellow
-  success: '#4ECDC4',      // Mint Green
-  header: '#fcf8b1',       // Yellow Header Color
+  primary: '#FF9A3D',
+  primaryLight: '#FFB366',
+  primaryDark: '#CC7A29',
+  secondary: '#FFF7D0',
+  tertiary: '#F8FAFF',
+  neutral: '#FFFFFF',
+  accent: '#FFD166',
+  success: '#4ECDC4',
+  error: '#FF6B6B',
+  warning: '#FFD166',
+  header: '#fcf8b1',
   
-  // Kid-Friendly Text Colors - Softer and Warmer
   text: {
-    primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
-    secondary: '#6B7B8C',  // Warm Gray - Gentle contrast
-    light: '#FFFFFF',      // White
-    dark: '#4A5C6B',       // Soft Charcoal - Not too dark
-    accent: '#E53E3E',     // Red accent for important text
+    primary: '#1A1F36',
+    secondary: '#6B7280',
+    tertiary: '#9CA3AF',
+    light: '#FFFFFF',
+    inverted: '#FFFFFF',
+  },
+  
+  background: {
+    primary: '#FFFFFF',
+    secondary: '#F8FAFF',
+    tertiary: '#F1F5F9',
+    card: '#FFFFFF',
+  },
+  
+  border: {
+    light: '#F3F4F6',
+    medium: '#E5E7EB',
+    dark: '#D1D5DB',
   }
 };
 
-// Enhanced Get database file path - FIXED VERSION
-const getDatabasePath = async (): Promise<string | null> => {
-  try {
-    console.log('🔍 Searching for database file...');
+// Voice Options with enhanced metadata
+const VOICE_OPTIONS = [
+  { 
+    id: '1', 
+    name: 'Arabic (Male)', 
+    language: 'ar',
+    quality: 'Premium',
+    emoji: '👨‍💼'
+  },
+  { 
+    id: '2', 
+    name: 'Arabic (Female)', 
+    language: 'ar',
+    quality: 'Premium',
+    emoji: '👩‍💼'
+  },
+  { 
+    id: '3', 
+    name: 'English Voice', 
+    language: 'en',
+    quality: 'Standard',
+    emoji: '🔊'
+  },
+  { 
+    id: '4', 
+    name: 'Urdu Voice', 
+    language: 'ur',
+    quality: 'Standard',
+    emoji: '🗣️'
+  },
+];
 
-    // Method 1: Try Expo SQLite's actual database location
-    try {
-      // In Expo, SQLite databases are stored in a specific location
-      // Let's try to access the database through SQLite first
-      const db = SQLite.openDatabase('dualand-2.db');
-      
-      // Test if database is accessible by making a simple query
-      await new Promise((resolve, reject) => {
-        db.transaction(
-          tx => {
-            tx.executeSql(
-              'SELECT name FROM sqlite_master WHERE type="table"',
-              [],
-              (_, result) => {
-                console.log('✅ Database is accessible via SQLite');
-                console.log('📊 Found tables:', result.rows._array.map((row: any) => row.name));
-                resolve(result);
-              },
-              (_, error) => {
-                console.log('❌ Database not accessible via SQLite:', error);
-                reject(error);
-                return false;
-              }
-            );
-          },
-          error => {
-            console.log('❌ Transaction failed:', error);
-            reject(error);
-          }
-        );
-      });
+// Language Options
+const LANGUAGE_OPTIONS = [
+  { id: 'en', name: 'English', available: true, emoji: '🇺🇸' },
+  { id: 'ur', name: 'Urdu', available: false, emoji: '🇵🇰' },
+  { id: 'ar', name: 'Arabic', available: false, emoji: '🇸🇦' },
+  { id: 'hi', name: 'Hindi', available: false, emoji: '🇮🇳' },
+];
 
-      // If we reach here, the database exists but we need to find its file path
-      console.log('💡 Database exists in SQLite but file path is internal');
-      
-    } catch (sqliteError) {
-      console.log('❌ SQLite access failed:', sqliteError);
-    }
-
-    // Method 2: Enhanced file system search
-    try {
-      const documentDirectory = FileSystem.documentDirectory;
-      console.log('📁 Document directory:', documentDirectory);
-      
-      // List all files in document directory recursively
-      const files = await FileSystem.readDirectoryAsync(documentDirectory);
-      console.log('📄 Files in document directory:', files);
-
-      // Look for SQLite directory specifically
-      if (files.includes('SQLite')) {
-        const sqliteDir = documentDirectory + 'SQLite';
-        const sqliteFiles = await FileSystem.readDirectoryAsync(sqliteDir);
-        console.log('💾 Files in SQLite directory:', sqliteFiles);
-        
-        const dbFiles = sqliteFiles.filter(file => file.endsWith('.db'));
-        if (dbFiles.length > 0) {
-          const dbPath = sqliteDir + '/' + dbFiles[0];
-          console.log('✅ Found database in SQLite directory:', dbPath);
-          
-          const fileInfo = await FileSystem.getInfoAsync(dbPath);
-          if (fileInfo.exists && fileInfo.size > 0) {
-            console.log('📊 Database file size:', fileInfo.size, 'bytes');
-            return dbPath;
-          }
-        }
-      }
-
-      // Look for any .db files in document directory
-      const dbFiles = files.filter(file => file.endsWith('.db'));
-      console.log('💾 Database files found:', dbFiles);
-      
-      if (dbFiles.length > 0) {
-        for (const dbFile of dbFiles) {
-          const dbPath = documentDirectory + dbFile;
-          try {
-            const fileInfo = await FileSystem.getInfoAsync(dbPath);
-            if (fileInfo.exists && fileInfo.size > 0) {
-              console.log('✅ Found valid database at:', dbPath);
-              console.log('📊 Database file size:', fileInfo.size, 'bytes');
-              return dbPath;
-            }
-          } catch (error) {
-            console.log(`❌ Database file ${dbPath} is not accessible:`, error);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error searching file system:', error);
-    }
-
-    // Method 3: Try to get database info through the service
-    try {
-      const [duas, categories] = await Promise.all([
-        databaseService.getAllDuas(),
-        databaseService.getAllCategories()
-      ]);
-      
-      console.log('📊 Database service is working. Data stats:', {
-        duas: duas.length,
-        categories: categories.length
-      });
-      
-      if (duas.length > 0) {
-        console.log('💡 Database exists but file path is not directly accessible');
-        // Return a special indicator that database exists but path isn't accessible
-        return 'DATABASE_EXISTS_BUT_PATH_NOT_ACCESSIBLE';
-      }
-    } catch (dbError) {
-      console.log('❌ Database service also failed:', dbError);
-    }
-
-    console.log('❌ No database file found in any accessible location');
-    return null;
-  } catch (error) {
-    console.error('❌ Error getting database path:', error);
-    return null;
-  }
-};
-
-// JSON Export Fallback Function
-const exportAsJson = async (duas: any[], categories: any[]) => {
-  try {
-    const exportData = {
-      exportedAt: new Date().toISOString(),
-      app: 'DuaLand',
-      version: '1.0.0',
-      data: {
-        duas,
-        categories
-      },
-      statistics: {
-        totalDuas: duas.length,
-        totalCategories: categories.length,
-        favorites: duas.filter(dua => dua.is_favorited).length,
-        memorized: duas.filter(dua => dua.memorization_status === 'memorized').length
-      }
-    };
-
-    const jsonString = JSON.stringify(exportData, null, 2);
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `DuaLand_Data_${timestamp}.json`;
-    const fileUri = FileSystem.documentDirectory + filename;
-
-    await FileSystem.writeAsStringAsync(fileUri, jsonString, {
-      encoding: FileSystem.EncodingType.UTF8
-    });
-
-    const fileInfo = await FileSystem.getInfoAsync(fileUri);
-    
-    Alert.alert(
-      'JSON Export Complete! ✅',
-      `Your DuaLand data has been exported as JSON.\n\n` +
-      `📁 File: ${filename}\n` +
-      `💾 Size: ${Math.round(fileInfo.size / 1024)} KB\n` +
-      `📖 Total Duas: ${duas.length}\n` +
-      `📂 Total Categories: ${categories.length}`,
-      [{ text: 'OK' }]
-    );
-  } catch (error) {
-    console.error('JSON export error:', error);
-    throw error;
-  }
-};
-
-// Enhanced Database Export Function - UPDATED
-const exportDatabase = async () => {
-  try {
-    Alert.alert(
-      'Export Database',
-      'This will export your DuaLand data. If SQLite file is not accessible, it will export as JSON. Continue?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Export',
-          onPress: async () => {
-            try {
-              console.log('🔄 Starting database export process...');
-              
-              // Get the database file path
-              const sourceDbPath = await getDatabasePath();
-              
-              if (!sourceDbPath || sourceDbPath === 'DATABASE_EXISTS_BUT_PATH_NOT_ACCESSIBLE') {
-                // Database exists but file path isn't accessible - use JSON export
-                try {
-                  const [duas, categories] = await Promise.all([
-                    databaseService.getAllDuas(),
-                    databaseService.getAllCategories()
-                  ]);
-                  
-                  console.log('📊 Database is working but file not accessible. Data stats:', {
-                    duas: duas.length,
-                    categories: categories.length
-                  });
-                  
-                  Alert.alert(
-                    'Export as JSON',
-                    `Your database contains ${duas.length} duas and ${categories.length} categories, but the SQLite file isn't directly accessible.\n\nWould you like to export your data as JSON instead?`,
-                    [
-                      {
-                        text: 'Export as JSON',
-                        onPress: () => exportAsJson(duas, categories)
-                      },
-                      { text: 'Cancel' }
-                    ]
-                  );
-                } catch (dbError) {
-                  Alert.alert(
-                    'Database Not Found ❌',
-                    'Could not access the database. Please make sure the app is working correctly.',
-                    [{ text: 'OK' }]
-                  );
-                }
-                return;
-              }
-
-              // If we have a valid file path, try to export the SQLite file
-              console.log('📤 Attempting SQLite file export from:', sourceDbPath);
-
-              // Create filename with timestamp
-              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-              const filename = `DuaLand_Database_${timestamp}.db`;
-              const exportPath = FileSystem.documentDirectory + filename;
-              
-              try {
-                // Copy the database file
-                await FileSystem.copyAsync({
-                  from: sourceDbPath,
-                  to: exportPath
-                });
-
-                // Verify the file was created
-                const fileInfo = await FileSystem.getInfoAsync(exportPath);
-                
-                if (fileInfo.exists && fileInfo.size > 0) {
-                  console.log('✅ SQLite database exported successfully!');
-                  
-                  // Get some stats about the database
-                  const [duas, categories] = await Promise.all([
-                    databaseService.getAllDuas(),
-                    databaseService.getAllCategories()
-                  ]);
-
-                  Alert.alert(
-                    'Export Complete! ✅',
-                    `Your DuaLand SQLite database has been exported successfully!\n\n` +
-                    `📁 File: ${filename}\n` +
-                    `💾 Size: ${Math.round(fileInfo.size / 1024)} KB\n` +
-                    `📖 Total Duas: ${duas.length}\n` +
-                    `📂 Total Categories: ${categories.length}`,
-                    [{ text: 'OK' }]
-                  );
-                } else {
-                  throw new Error('Exported file is empty or does not exist');
-                }
-
-              } catch (fileError) {
-                console.error('❌ SQLite file export failed, falling back to JSON:', fileError);
-                
-                // Fallback to JSON export
-                const [duas, categories] = await Promise.all([
-                  databaseService.getAllDuas(),
-                  databaseService.getAllCategories()
-                ]);
-                
-                await exportAsJson(duas, categories);
-              }
-
-            } catch (error) {
-              console.error('❌ Error exporting database:', error);
-              
-              // Final fallback - try JSON export
-              try {
-                const [duas, categories] = await Promise.all([
-                  databaseService.getAllDuas(),
-                  databaseService.getAllCategories()
-                ]);
-                
-                Alert.alert(
-                  'SQLite Export Failed',
-                  `Could not export SQLite database. Would you like to export as JSON instead?\n\nError: ${error.message}`,
-                  [
-                    {
-                      text: 'Export as JSON',
-                      onPress: () => exportAsJson(duas, categories)
-                    },
-                    { text: 'Cancel' }
-                  ]
-                );
-              } catch (finalError) {
-                Alert.alert(
-                  'Export Failed ❌',
-                  'Could not export data in any format. Please try again later.',
-                  [{ text: 'OK' }]
-                );
-              }
-            }
-          },
-        },
-      ]
-    );
-  } catch (error) {
-    console.error('Error in export process:', error);
-    Alert.alert(
-      'Error',
-      'Failed to start export process. Please try again.',
-      [{ text: 'OK' }]
-    );
-  }
-};
-
-// Enhanced Database Info Function - UPDATED
-const viewDatabaseInfo = async () => {
-  try {
-    const [duas, categories, dbPath] = await Promise.all([
-      databaseService.getAllDuas(),
-      databaseService.getAllCategories(),
-      getDatabasePath()
-    ]);
-
-    const favorites = duas.filter(dua => dua.is_favorited).length;
-    const memorized = duas.filter(dua => dua.memorization_status === 'memorized').length;
-    const learning = duas.filter(dua => dua.memorization_status === 'learning').length;
-
-    let fileStatus = 'Not Found';
-    let fileSize = 'Unknown';
-    
-    if (dbPath === 'DATABASE_EXISTS_BUT_PATH_NOT_ACCESSIBLE') {
-      fileStatus = 'Working (Internal)';
-      fileSize = 'Not Accessible';
-    } else if (dbPath) {
-      try {
-        const fileInfo = await FileSystem.getInfoAsync(dbPath);
-        if (fileInfo.exists) {
-          fileSize = `${Math.round(fileInfo.size / 1024)} KB`;
-          fileStatus = 'Found';
-        }
-      } catch (error) {
-        console.error('Error getting file size:', error);
-      }
-    }
-
-    Alert.alert(
-      'Database Information 📊',
-      `Your DuaLand Database:\n\n` +
-      `📁 Database Status: ${fileStatus}\n` +
-      `💾 File Size: ${fileSize}\n` +
-      `📖 Total Duas: ${duas.length}\n` +
-      `📂 Total Categories: ${categories.length}\n` +
-      `❤️ Favorites: ${favorites}\n` +
-      `⭐ Memorized: ${memorized}\n` +
-      `📚 Learning: ${learning}`,
-      [
-        {
-          text: 'Export Database',
-          onPress: exportDatabase
-        },
-        {
-          text: 'Export as JSON',
-          onPress: async () => {
-            try {
-              await exportAsJson(duas, categories);
-            } catch (error) {
-              Alert.alert('Export Failed', 'Could not export as JSON.');
-            }
-          }
-        },
-        { text: 'OK' }
-      ]
-    );
-  } catch (error) {
-    console.error('Error getting database info:', error);
-    Alert.alert(
-      'Error',
-      'Could not retrieve database information.',
-      [{ text: 'OK' }]
-    );
-  }
-};
-
-// Database Import Function
-const importDatabase = async () => {
-  Alert.alert(
-    'Import Database',
-    'This feature is coming soon! You can currently export your SQLite database file for backup.',
-    [
-      {
-        text: 'Learn More',
-        onPress: () => {
-          Alert.alert(
-            'Import Feature Coming Soon',
-            'In future updates, you will be able to:\n\n• Import your SQLite database backup\n• Restore all your data and progress\n• Merge data from multiple devices\n• Import from previous versions',
-            [{ text: 'OK' }]
-          );
-        }
-      },
-      { text: 'OK' }
-    ]
-  );
-};
-
-// Simplified Animated Setting Item Component
-const AnimatedSettingItem = ({ 
-  title, 
-  description, 
-  value, 
-  onValueChange,
-  emoji,
-  delay = 0
-}) => {
+// Enhanced Section Component
+const SettingsSection = ({ title, icon, children, delay = 0 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-
-  useFocusEffect(
-    useCallback(() => {
-      const animation = Animated.sequence([
-        Animated.delay(delay),
-        Animated.parallel([
-          Animated.spring(fadeAnim, {
-            toValue: 1,
-            tension: 50,
-            friction: 7,
-            useNativeDriver: true,
-          }),
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            tension: 60,
-            friction: 8,
-            useNativeDriver: true,
-          })
-        ])
-      ]);
-
-      animation.start();
-
-      return () => {
-        animation.stop();
-        fadeAnim.setValue(0);
-        slideAnim.setValue(50);
-      };
-    }, [fadeAnim, slideAnim, delay])
-  );
-
-  return (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateX: slideAnim }],
-      }}
-    >
-      <TouchableOpacity 
-        style={styles.settingItem}
-        onPress={() => onValueChange(!value)}
-        activeOpacity={0.8}
-      >
-        <View style={styles.settingLeft}>
-          <View style={styles.settingEmoji}>
-            <Text style={styles.emojiText}>{emoji}</Text>
-          </View>
-          <View style={styles.settingText}>
-            <Text style={styles.settingTitle}>{title}</Text>
-            <Text style={styles.settingDescription}>{description}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.switchContainer}>
-          <Switch
-            value={value}
-            onValueChange={onValueChange}
-            trackColor={{ false: '#d1d5db', true: '#8B5CF6' }}
-            thumbColor={value ? '#ffffff' : '#f3f4f6'}
-          />
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-};
-
-// Simplified Info Item Component
-const AnimatedInfoItem = ({ label, value, emoji, delay = 0 }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-
-  useFocusEffect(
-    useCallback(() => {
-      const animation = Animated.sequence([
-        Animated.delay(delay),
-        Animated.parallel([
-          Animated.spring(fadeAnim, {
-            toValue: 1,
-            tension: 50,
-            friction: 7,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 60,
-            friction: 5,
-            useNativeDriver: true,
-          })
-        ])
-      ]);
-
-      animation.start();
-
-      return () => {
-        animation.stop();
-        fadeAnim.setValue(0);
-        scaleAnim.setValue(0.9);
-      };
-    }, [fadeAnim, scaleAnim, delay])
-  );
-
-  return (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ scale: scaleAnim }],
-      }}
-    >
-      <View style={styles.infoItem}>
-        <View style={styles.infoLeft}>
-          <Text style={styles.infoEmoji}>{emoji}</Text>
-          <Text style={styles.infoLabel}>{label}</Text>
-        </View>
-        <View style={styles.infoValueContainer}>
-          <Text style={styles.infoValue}>{value}</Text>
-        </View>
-      </View>
-    </Animated.View>
-  );
-};
-
-// Header Component with Animation
-const AnimatedHeader = () => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-100)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
 
   useFocusEffect(
     useCallback(() => {
       const animation = Animated.parallel([
-        Animated.spring(fadeAnim, {
+        Animated.timing(fadeAnim, {
           toValue: 1,
-          tension: 50,
-          friction: 7,
+          duration: 400,
+          delay,
           useNativeDriver: true,
         }),
-        Animated.spring(slideAnim, {
+        Animated.timing(slideAnim, {
           toValue: 0,
-          tension: 60,
-          friction: 8,
+          duration: 500,
+          delay,
           useNativeDriver: true,
         })
       ]);
@@ -605,479 +119,1058 @@ const AnimatedHeader = () => {
       animation.start();
 
       return () => {
-        animation.stop();
         fadeAnim.setValue(0);
-        slideAnim.setValue(-100);
+        slideAnim.setValue(20);
       };
-    }, [fadeAnim, slideAnim])
+    }, [fadeAnim, slideAnim, delay])
   );
 
   return (
     <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      }}
+      style={[
+        styles.sectionContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }
+      ]}
     >
-      <View style={styles.header}>
-        <LinearGradient
-          colors={[THEME.header, '#fef9c3']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.headerEmoji}>⚡</Text>
-              <View>
-                <Text style={styles.title}>Power Settings</Text>
-                <Text style={styles.subtitle}>Customize DuaLand</Text>
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionIcon}>
+          <Text style={styles.sectionIconText}>{icon}</Text>
+        </View>
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
+      <View style={styles.sectionContent}>
+        {children}
       </View>
     </Animated.View>
   );
 };
 
-export default function SettingsScreen() {
-  const router = useRouter();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(true);
-  const [hapticFeedback, setHapticFeedback] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
+// Enhanced Setting Row Component
+const SettingRow = ({ 
+  title, 
+  subtitle,
+  icon,
+  rightElement,
+  onPress,
+  disabled = false,
+  showDivider = true,
+  isFirst = false,
+  isLast = false,
+}) => {
+  const [isPressed, setIsPressed] = useState(false);
+  
+  return (
+    <TouchableOpacity
+      style={[
+        styles.settingRow,
+        isFirst && styles.settingRowFirst,
+        isLast && styles.settingRowLast,
+        showDivider && !isLast && styles.settingRowWithDivider,
+        disabled && styles.settingRowDisabled,
+        isPressed && styles.settingRowPressed,
+      ]}
+      onPress={onPress}
+      disabled={disabled || !onPress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      activeOpacity={0.8}
+    >
+      <View style={styles.settingLeft}>
+        {icon && (
+          <View style={[
+            styles.settingIcon,
+            disabled && styles.settingIconDisabled
+          ]}>
+            <Text style={styles.settingIconText}>{icon}</Text>
+          </View>
+        )}
+        <View style={styles.settingTextContainer}>
+          <Text style={[
+            styles.settingTitle,
+            disabled && styles.settingTitleDisabled
+          ]}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text style={[
+              styles.settingSubtitle,
+              disabled && styles.settingSubtitleDisabled
+            ]}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+      </View>
+      
+      <View style={styles.settingRight}>
+        {rightElement}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
-  const handleExportDatabase = async () => {
-    if (isExporting) return;
+// Enhanced Switch Component
+const SettingSwitch = ({ 
+  title, 
+  subtitle, 
+  icon,
+  value, 
+  onValueChange,
+  disabled = false,
+}) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      })
+    ]).start();
     
-    setIsExporting(true);
-    try {
-      await exportDatabase();
-    } catch (error) {
-      console.error('Export error:', error);
-    } finally {
-      setIsExporting(false);
-    }
+    onValueChange(!value);
   };
 
   return (
-    <ScreenWrapper bottomMargin={30}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
-        
-        {/* Background */}
-        <View style={styles.background} />
+    <SettingRow
+      title={title}
+      subtitle={subtitle}
+      icon={icon}
+      onPress={handlePress}
+      disabled={disabled}
+      rightElement={
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <Switch
+            value={value}
+            onValueChange={onValueChange}
+            trackColor={{ 
+              false: THEME.border.light, 
+              true: THEME.primaryLight 
+            }}
+            thumbColor={value ? THEME.primary : THEME.neutral}
+            ios_backgroundColor={THEME.border.light}
+            disabled={disabled}
+          />
+        </Animated.View>
+      }
+    />
+  );
+};
 
-        {/* Header */}
-        <AnimatedHeader />
+// Language Selector Component
+const LanguageSelector = ({ currentLanguage, onLanguageChange }) => {
+  const currentLang = LANGUAGE_OPTIONS.find(lang => lang.id === currentLanguage);
 
-        <ScrollView 
-          style={styles.content}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+  return (
+    <View>
+      <SettingRow
+        title="App Language"
+        subtitle="Change the app display language"
+        icon="🌐"
+        onPress={() => {
+          Alert.alert(
+            'Select Language',
+            'Choose your preferred language',
+            LANGUAGE_OPTIONS.map(lang => ({
+              text: `${lang.emoji} ${lang.name}${!lang.available ? ' (Coming Soon)' : ''}`,
+              onPress: lang.available ? () => onLanguageChange(lang.id) : null,
+              style: lang.available ? 'default' : 'cancel',
+            }))
+          );
+        }}
+        rightElement={
+          <View style={styles.languageSelector}>
+            <Text style={styles.currentLanguage}>
+              {currentLang?.emoji} {currentLang?.name}
+            </Text>
+            <Text style={styles.chevron}>›</Text>
+          </View>
+        }
+      />
+    </View>
+  );
+};
+
+// Voice Selector Component
+const VoiceSelector = ({ selectedVoice, onVoiceSelect }) => {
+  return (
+    <View style={styles.voiceSection}>
+      <Text style={styles.voiceSectionTitle}>Select Voice</Text>
+      {VOICE_OPTIONS.map((voice, index) => (
+        <TouchableOpacity
+          key={voice.id}
+          style={[
+            styles.voiceOption,
+            index === VOICE_OPTIONS.length - 1 && styles.voiceOptionLast,
+            selectedVoice.id === voice.id && styles.voiceOptionSelected,
+          ]}
+          onPress={() => onVoiceSelect(voice)}
         >
-          {/* Preferences Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionEmoji}>⚙️</Text>
-              <Text style={styles.sectionTitle}>Preferences</Text>
+          <View style={styles.voiceInfo}>
+            <View style={styles.voiceEmojiContainer}>
+              <Text style={styles.voiceEmoji}>{voice.emoji}</Text>
             </View>
-            
-            <AnimatedSettingItem
-              title="Notifications"
-              description="Receive prayer reminders and updates"
-              value={notifications}
-              onValueChange={setNotifications}
-              emoji="🔔"
-              delay={100}
-            />
-            
-            <AnimatedSettingItem
-              title="Dark Mode"
-              description="Switch to dark theme"
-              value={darkMode}
-              onValueChange={setDarkMode}
-              emoji="🌙"
-              delay={200}
-            />
-            
-            <AnimatedSettingItem
-              title="Auto-play Audio"
-              description="Automatically play Dua audio"
-              value={autoPlay}
-              onValueChange={setAutoPlay}
-              emoji="🎵"
-              delay={300}
-            />
-            
-            <AnimatedSettingItem
-              title="Haptic Feedback"
-              description="Vibrate on interactions"
-              value={hapticFeedback}
-              onValueChange={setHapticFeedback}
-              emoji="📱"
-              delay={400}
-            />
-          </View>
-
-          {/* Data Management Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionEmoji}>💾</Text>
-              <Text style={styles.sectionTitle}>Data Management</Text>
-            </View>
-            
-            <View style={styles.dataActionsContainer}>
-              <TouchableOpacity 
-                style={[
-                  styles.dataActionButton,
-                  isExporting && styles.dataActionButtonDisabled
-                ]}
-                onPress={handleExportDatabase}
-                disabled={isExporting}
-              >
-                <View style={[styles.dataActionIcon, { backgroundColor: '#10B981' }]}>
-                  <Text style={styles.dataActionEmoji}>
-                    {isExporting ? '⏳' : '💾'}
-                  </Text>
-                </View>
-                <View style={styles.dataActionContent}>
-                  <Text style={styles.dataActionTitle}>
-                    {isExporting ? 'Exporting...' : 'Export Database'}
-                  </Text>
-                  <Text style={styles.dataActionDescription}>
-                    Backup your complete data (SQLite + JSON fallback)
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.dataActionButton}
-                onPress={viewDatabaseInfo}
-              >
-                <View style={[styles.dataActionIcon, { backgroundColor: '#8B5CF6' }]}>
-                  <Text style={styles.dataActionEmoji}>📊</Text>
-                </View>
-                <View style={styles.dataActionContent}>
-                  <Text style={styles.dataActionTitle}>Database Info</Text>
-                  <Text style={styles.dataActionDescription}>
-                    View SQLite database statistics and details
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.dataActionButton}
-                onPress={importDatabase}
-              >
-                <View style={[styles.dataActionIcon, { backgroundColor: '#3B82F6' }]}>
-                  <Text style={styles.dataActionEmoji}>📥</Text>
-                </View>
-                <View style={styles.dataActionContent}>
-                  <Text style={styles.dataActionTitle}>Import Database</Text>
-                  <Text style={styles.dataActionDescription}>
-                    Restore SQLite backup (Coming Soon)
-                  </Text>
-                </View>
-              </TouchableOpacity>
+            <View style={styles.voiceDetails}>
+              <Text style={styles.voiceName}>{voice.name}</Text>
+              <Text style={styles.voiceMeta}>
+                {voice.language.toUpperCase()} • {voice.quality}
+              </Text>
             </View>
           </View>
-
-          {/* App Information Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionEmoji}>📱</Text>
-              <Text style={styles.sectionTitle}>App Information</Text>
+          
+          {selectedVoice.id === voice.id && (
+            <View style={styles.voiceSelectedIndicator}>
+              <View style={styles.voiceSelectedDot} />
             </View>
-            
-            <AnimatedInfoItem 
-              label="Version" 
-              value="1.0.0"
-              emoji="🏷️"
-              delay={500}
+          )}
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+// Font Size Selector Component
+const FontSizeSelector = ({ size, onSizeChange }) => {
+  return (
+    <View style={styles.fontSizeContainer}>
+      <View style={styles.fontSizeHeader}>
+        <Text style={styles.fontSizeLabel}>Arabic Font Size</Text>
+        <Text style={styles.fontSizeValue}>{size.toFixed(1)}</Text>
+      </View>
+      
+      <View style={styles.fontSizeSliderContainer}>
+        <View style={styles.fontSizeLabels}>
+          <Text style={styles.fontSizeMinMax}>A</Text>
+          <Text style={styles.fontSizeMinMax}>A</Text>
+        </View>
+        
+        <View style={styles.fontSizeSlider}>
+          {[16, 20, 24, 28, 32].map((fontSize) => (
+            <TouchableOpacity
+              key={fontSize}
+              style={[
+                styles.fontSizeOption,
+                size >= fontSize && styles.fontSizeOptionActive,
+              ]}
+              onPress={() => onSizeChange(fontSize)}
             />
-            <AnimatedInfoItem 
-              label="Last Updated" 
-              value="January 2024"
-              emoji="📅"
-              delay={600}
-            />
-            <AnimatedInfoItem 
-              label="Build Number" 
-              value="2024.01.001"
-              emoji="🔢"
-              delay={700}
-            />
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// Data Management Section
+const DataManagementSection = ({ onExport, onImport, onViewInfo, isExporting }) => {
+  return (
+    <View style={styles.dataManagementGrid}>
+      <TouchableOpacity
+        style={[styles.dataActionCard, isExporting && styles.dataActionCardDisabled]}
+        onPress={onExport}
+        disabled={isExporting}
+      >
+        <View style={[styles.dataActionIcon, { backgroundColor: '#10B981' }]}>
+          {isExporting ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.dataActionIconText}>💾</Text>
+          )}
+        </View>
+        <Text style={styles.dataActionTitle}>
+          {isExporting ? 'Exporting...' : 'Export Data'}
+        </Text>
+        <Text style={styles.dataActionDescription}>
+          Backup your progress and settings
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.dataActionCard}
+        onPress={onViewInfo}
+      >
+        <View style={[styles.dataActionIcon, { backgroundColor: '#8B5CF6' }]}>
+          <Text style={styles.dataActionIconText}>📊</Text>
+        </View>
+        <Text style={styles.dataActionTitle}>Database Info</Text>
+        <Text style={styles.dataActionDescription}>
+          View storage and usage statistics
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.dataActionCard, styles.dataActionCardDisabled]}
+        onPress={onImport}
+        disabled
+      >
+        <View style={[styles.dataActionIcon, { backgroundColor: '#6B7280' }]}>
+          <Text style={styles.dataActionIconText}>📥</Text>
+        </View>
+        <Text style={styles.dataActionTitle}>Import Data</Text>
+        <Text style={styles.dataActionDescription}>
+          Coming in next update
+        </Text>
+        <View style={styles.comingSoonBadge}>
+          <Text style={styles.comingSoonText}>SOON</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.dataActionCard}
+        onPress={() => Alert.alert('Reset Data', 'This will reset all your progress. Are you sure?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Reset', style: 'destructive' },
+        ])}
+      >
+        <View style={[styles.dataActionIcon, { backgroundColor: '#EF4444' }]}>
+          <Text style={styles.dataActionIconText}>🔄</Text>
+        </View>
+        <Text style={styles.dataActionTitle}>Reset Data</Text>
+        <Text style={styles.dataActionDescription}>
+          Clear all progress and start fresh
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Enhanced Header Component
+const SettingsHeader = () => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(-50)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        })
+      ]).start();
+    }, [fadeAnim, slideAnim])
+  );
+
+  return (
+    <Animated.View
+      style={[
+        styles.header,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }
+      ]}
+    >
+      <LinearGradient
+        colors={['#FF9E7D', '#FF6B9D']}
+        style={styles.headerGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerIcon}>
+            <Text style={styles.headerIconText}>⚙️</Text>
           </View>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Settings</Text>
+            <Text style={styles.headerSubtitle}>
+              Customize your DuaLand experience
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </Animated.View>
+  );
+};
 
-          {/* Quick Actions Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionEmoji}>🚀</Text>
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
+// Main Settings Screen Component
+export default function EnhancedSettingsScreen() {
+  const [settings, setSettings] = useState({
+    // Language & Display
+    language: 'en',
+    arabicFontSize: 24,
+    darkMode: false,
+    
+    // Audio & Playback
+    readDuaTitle: true,
+    readDuaTranslation: true,
+    autoPlayAudio: true,
+    wordByWordPause: true,
+    pauseDuration: 2,
+    selectedVoice: VOICE_OPTIONS[0],
+    
+    // Features
+    enableRewards: true,
+    autoNextDuas: false,
+    hapticFeedback: true,
+    notifications: true,
+    
+    // Data
+    cloudSync: false,
+  });
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const updateSetting = useCallback((key, value) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    // Simulate export process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsExporting(false);
+    Alert.alert(
+      '✅ Export Complete',
+      'Your DuaLand data has been successfully exported and saved to your device.',
+      [{ text: 'OK', style: 'default' }]
+    );
+  }, []);
+
+  const handleImport = useCallback(() => {
+    Alert.alert(
+      '🚧 Coming Soon',
+      'The data import feature will be available in our next major update. Stay tuned!',
+      [{ text: 'Got It', style: 'default' }]
+    );
+  }, []);
+
+  const handleViewInfo = useCallback(() => {
+    Alert.alert(
+      '📊 Database Information',
+      'Here\'s your current data usage:\n\n• Total Duas: 142\n• Categories: 32\n• Favorites: 12\n• Storage Used: 45.2 MB\n• Last Backup: Today, 14:30',
+      [{ text: 'Close', style: 'cancel' }]
+    );
+  }, []);
+
+  const handleSupport = useCallback((action) => {
+    const actions = {
+      rate: () => Alert.alert(
+        '⭐ Rate DuaLand',
+        'Thank you for using DuaLand! If you enjoy the app, please consider rating us on the App Store.',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'Rate Now', style: 'default' }
+        ]
+      ),
+      feedback: () => Alert.alert(
+        '💌 Send Feedback',
+        'We\'d love to hear your thoughts! Your feedback helps us improve DuaLand for everyone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Send Feedback', style: 'default' }
+        ]
+      ),
+      help: () => Alert.alert(
+        '❓ Help & Support',
+        'Need help with DuaLand? Visit our help center or contact our support team.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Get Help', style: 'default' }
+        ]
+      ),
+      about: () => Alert.alert(
+        '📱 About DuaLand',
+        'DuaLand v1.4.2\n\nA beautiful, kid-friendly app for learning and memorizing Islamic duas. Built with love for the Muslim community.',
+        [{ text: 'Close', style: 'cancel' }]
+      )
+    };
+    
+    actions[action]?.();
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={THEME.primary} />
+      
+      {/* Header */}
+      <SettingsHeader />
+
+      {/* Content */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Language & Display */}
+        <SettingsSection title="Language & Display" icon="🌐" delay={100}>
+          <LanguageSelector
+            currentLanguage={settings.language}
+            onLanguageChange={(lang) => updateSetting('language', lang)}
+          />
+          <FontSizeSelector
+            size={settings.arabicFontSize}
+            onSizeChange={(size) => updateSetting('arabicFontSize', size)}
+          />
+          <SettingSwitch
+            title="Dark Mode"
+            subtitle="Switch to dark theme"
+            icon="🌙"
+            value={settings.darkMode}
+            onValueChange={(value) => updateSetting('darkMode', value)}
+          />
+        </SettingsSection>
+
+        {/* Audio & Playback */}
+        <SettingsSection title="Audio & Playback" icon="🔊" delay={200}>
+          <SettingSwitch
+            title="Read Dua Titles"
+            subtitle="Announce dua titles automatically"
+            icon="📖"
+            value={settings.readDuaTitle}
+            onValueChange={(value) => updateSetting('readDuaTitle', value)}
+          />
+          <SettingSwitch
+            title="Read Translations"
+            subtitle="Read translation after Arabic"
+            icon="🔤"
+            value={settings.readDuaTranslation}
+            onValueChange={(value) => updateSetting('readDuaTranslation', value)}
+          />
+          <SettingSwitch
+            title="Auto-play Audio"
+            subtitle="Play audio when opening a dua"
+            icon="🎵"
+            value={settings.autoPlayAudio}
+            onValueChange={(value) => updateSetting('autoPlayAudio', value)}
+          />
+          <SettingSwitch
+            title="Word-by-Word Pause"
+            subtitle="Pause between words for learning"
+            icon="⏸️"
+            value={settings.wordByWordPause}
+            onValueChange={(value) => updateSetting('wordByWordPause', value)}
+          />
+          <VoiceSelector
+            selectedVoice={settings.selectedVoice}
+            onVoiceSelect={(voice) => updateSetting('selectedVoice', voice)}
+          />
+        </SettingsSection>
+
+        {/* Features */}
+        <SettingsSection title="Features" icon="✨" delay={300}>
+          <SettingSwitch
+            title="Rewards System"
+            subtitle="Earn rewards for completing duas"
+            icon="🏆"
+            value={settings.enableRewards}
+            onValueChange={(value) => updateSetting('enableRewards', value)}
+          />
+          <SettingSwitch
+            title="Auto Next Dua"
+            subtitle="Automatically proceed to next dua"
+            icon="➡️"
+            value={settings.autoNextDuas}
+            onValueChange={(value) => updateSetting('autoNextDuas', value)}
+          />
+          <SettingSwitch
+            title="Haptic Feedback"
+            subtitle="Vibrate on interactions"
+            icon="📱"
+            value={settings.hapticFeedback}
+            onValueChange={(value) => updateSetting('hapticFeedback', value)}
+          />
+          <SettingSwitch
+            title="Push Notifications"
+            subtitle="Receive reminders and updates"
+            icon="🔔"
+            value={settings.notifications}
+            onValueChange={(value) => updateSetting('notifications', value)}
+          />
+        </SettingsSection>
+
+        {/* Data Management */}
+        <SettingsSection title="Data Management" icon="💾" delay={400}>
+          <DataManagementSection
+            onExport={handleExport}
+            onImport={handleImport}
+            onViewInfo={handleViewInfo}
+            isExporting={isExporting}
+          />
+        </SettingsSection>
+
+        {/* App Information */}
+        <SettingsSection title="App Information" icon="📱" delay={500}>
+          <View style={styles.appInfoGrid}>
+            <View style={styles.appInfoItem}>
+              <Text style={styles.appInfoLabel}>Version</Text>
+              <Text style={styles.appInfoValue}>1.4.2</Text>
             </View>
-            
-            <View style={styles.actionsContainer}>
-              <TouchableOpacity style={styles.actionButton}>
-                <View style={[styles.actionIcon, { backgroundColor: '#EC4899' }]}>
-                  <Text style={styles.actionEmoji}>❤️</Text>
-                </View>
-                <Text style={styles.actionText}>Rate App</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.actionButton}>
-                <View style={[styles.actionIcon, { backgroundColor: '#8B5CF6' }]}>
-                  <Text style={styles.actionEmoji}>↗️</Text>
-                </View>
-                <Text style={styles.actionText}>Share</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.actionButton}>
-                <View style={[styles.actionIcon, { backgroundColor: '#10B981' }]}>
-                  <Text style={styles.actionEmoji}>❓</Text>
-                </View>
-                <Text style={styles.actionText}>Help</Text>
-              </TouchableOpacity>
+            <View style={styles.appInfoItem}>
+              <Text style={styles.appInfoLabel}>Build</Text>
+              <Text style={styles.appInfoValue}>2024.02.1</Text>
+            </View>
+            <View style={styles.appInfoItem}>
+              <Text style={styles.appInfoLabel}>Last Updated</Text>
+              <Text style={styles.appInfoValue}>Feb 15, 2024</Text>
+            </View>
+            <View style={styles.appInfoItem}>
+              <Text style={styles.appInfoLabel}>Storage</Text>
+              <Text style={styles.appInfoValue}>62.3 MB</Text>
             </View>
           </View>
+        </SettingsSection>
 
-          {/* Bottom Padding */}
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-      </SafeAreaView>
-    </ScreenWrapper>
+        {/* Support Section */}
+        <SettingsSection title="Support" icon="❤️" delay={600}>
+          <SettingRow
+            title="Rate DuaLand"
+            subtitle="Share your experience with us"
+            icon="⭐"
+            onPress={() => handleSupport('rate')}
+          />
+          <SettingRow
+            title="Send Feedback"
+            subtitle="Help us improve the app"
+            icon="💌"
+            onPress={() => handleSupport('feedback')}
+          />
+          <SettingRow
+            title="Help & Support"
+            subtitle="Get help with the app"
+            icon="❓"
+            onPress={() => handleSupport('help')}
+          />
+          <SettingRow
+            title="About DuaLand"
+            subtitle="Learn more about the app"
+            icon="📱"
+            onPress={() => handleSupport('about')}
+          />
+        </SettingsSection>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Made with ❤️ for the Muslim Ummah
+          </Text>
+          <Text style={styles.footerSubtext}>
+            DuaLand v1.4.2 • © 2024
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F9FF',
+    backgroundColor: THEME.background.secondary,
   },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F0F9FF',
-  },
-  header: {
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    paddingTop: 50,
-    paddingBottom: 20,
-  },
-  headerContent: {
-    paddingHorizontal: 20,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerEmoji: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: THEME.text.dark,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: THEME.text.dark,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  content: {
+  scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
   },
-  section: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 20,
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
+  header: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
     elevation: 8,
+  },
+  headerGradient: {
+    paddingTop: 20,
+    paddingBottom: 30,
+    paddingHorizontal: 24,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  headerIconText: {
+    fontSize: 28,
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: THEME.text.inverted,
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+  },
+  sectionContainer: {
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingHorizontal: 8,
   },
-  sectionEmoji: {
-    fontSize: 24,
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: THEME.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
+  },
+  sectionIconText: {
+    fontSize: 18,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: THEME.text.primary,
   },
-  settingItem: {
+  sectionContent: {
+    backgroundColor: THEME.background.card,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  settingRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: THEME.background.card,
+    minHeight: 68,
+  },
+  settingRowFirst: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  settingRowLast: {
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  settingRowWithDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139, 92, 246, 0.1)',
+    borderBottomColor: THEME.border.light,
+  },
+  settingRowDisabled: {
+    opacity: 0.5,
+  },
+  settingRowPressed: {
+    backgroundColor: THEME.background.tertiary,
   },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  settingEmoji: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+  settingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: THEME.primary + '10',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
-  emojiText: {
-    fontSize: 20,
+  settingIconDisabled: {
+    backgroundColor: THEME.border.light,
   },
-  settingText: {
+  settingIconText: {
+    fontSize: 18,
+  },
+  settingTextContainer: {
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
+    color: THEME.text.primary,
+    marginBottom: 2,
   },
-  settingDescription: {
+  settingTitleDisabled: {
+    color: THEME.text.tertiary,
+  },
+  settingSubtitle: {
     fontSize: 14,
-    color: '#6b7280',
+    color: THEME.text.secondary,
     lineHeight: 18,
   },
-  switchContainer: {
+  settingSubtitleDisabled: {
+    color: THEME.text.tertiary,
+  },
+  settingRight: {
     marginLeft: 12,
   },
-  infoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139, 92, 246, 0.1)',
-  },
-  infoLeft: {
+  languageSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-  },
-  infoEmoji: {
-    fontSize: 18,
-    marginRight: 12,
-    opacity: 0.7,
-  },
-  infoLabel: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  infoValueContainer: {
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    backgroundColor: THEME.primary + '10',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
-  infoValue: {
+  currentLanguage: {
     fontSize: 14,
-    color: '#7C3AED',
     fontWeight: '600',
+    color: THEME.primary,
+    marginRight: 4,
   },
-  // Data Management Styles
-  dataActionsContainer: {
+  chevron: {
+    fontSize: 16,
+    color: THEME.primary,
+    fontWeight: 'bold',
+  },
+  fontSizeContainer: {
+    padding: 20,
+  },
+  fontSizeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  fontSizeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: THEME.text.primary,
+  },
+  fontSizeValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: THEME.primary,
+    backgroundColor: THEME.primary + '10',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  fontSizeSliderContainer: {
     marginTop: 8,
   },
-  dataActionButton: {
+  fontSizeLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  fontSizeMinMax: {
+    fontSize: 14,
+    color: THEME.text.secondary,
+    fontWeight: '500',
+  },
+  fontSizeSlider: {
+    flexDirection: 'row',
+    height: 4,
+    backgroundColor: THEME.border.light,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  fontSizeOption: {
+    flex: 1,
+    height: 4,
+    backgroundColor: THEME.border.light,
+    marginHorizontal: 1,
+  },
+  fontSizeOptionActive: {
+    backgroundColor: THEME.primary,
+  },
+  voiceSection: {
+    paddingVertical: 8,
+  },
+  voiceSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: THEME.text.secondary,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  voiceOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderWidth: 2,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: THEME.background.card,
   },
-  dataActionButtonDisabled: {
-    opacity: 0.6,
+  voiceOptionLast: {
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
-  dataActionIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  voiceOptionSelected: {
+    backgroundColor: THEME.primary + '08',
+  },
+  voiceInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  voiceEmojiContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: THEME.primary + '10',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
-  dataActionEmoji: {
+  voiceEmoji: {
     fontSize: 20,
   },
-  dataActionContent: {
+  voiceDetails: {
     flex: 1,
+  },
+  voiceName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: THEME.text.primary,
+    marginBottom: 2,
+  },
+  voiceMeta: {
+    fontSize: 13,
+    color: THEME.text.secondary,
+  },
+  voiceSelectedIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: THEME.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceSelectedDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: THEME.primary,
+  },
+  dataManagementGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 8,
+    gap: 12,
+  },
+  dataActionCard: {
+    width: (width - 64) / 2,
+    backgroundColor: THEME.background.card,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  dataActionCardDisabled: {
+    opacity: 0.6,
+  },
+  dataActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  dataActionIconText: {
+    fontSize: 20,
   },
   dataActionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1f2937',
+    color: THEME.text.primary,
     marginBottom: 4,
   },
   dataActionDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 18,
+    fontSize: 13,
+    color: THEME.text.secondary,
+    lineHeight: 16,
   },
-  // Quick Actions Styles
-  actionsContainer: {
+  comingSoonBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: THEME.warning,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  comingSoonText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  appInfoGrid: {
+    padding: 16,
+  },
+  appInfoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  actionButton: {
-    flex: 1,
     alignItems: 'center',
-    marginHorizontal: 6,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderWidth: 2,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.border.light,
   },
-  actionIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  appInfoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+    paddingVertical: 12,
   },
-  actionEmoji: {
-    fontSize: 20,
+  appInfoLabel: {
+    fontSize: 15,
+    color: THEME.text.primary,
+    fontWeight: '500',
   },
-  actionText: {
-    fontSize: 12,
-    color: '#7C3AED',
+  appInfoValue: {
+    fontSize: 15,
+    color: THEME.primary,
     fontWeight: '600',
+    backgroundColor: THEME.primary + '10',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+  },
+  footerText: {
+    fontSize: 16,
+    color: THEME.text.secondary,
+    fontWeight: '500',
+    marginBottom: 4,
     textAlign: 'center',
   },
-  bottomPadding: {
-    height: 20,
+  footerSubtext: {
+    fontSize: 14,
+    color: THEME.text.tertiary,
+    textAlign: 'center',
   },
 });

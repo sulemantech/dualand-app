@@ -19,6 +19,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchIcon } from '../../Icons';
+import { BouncingButton } from '../../components/ui/BouncingButton';
+
 
 // Import the new in-memory data structure
 import {
@@ -34,7 +36,7 @@ const CARD_WIDTH = (width - 40 - CARD_MARGIN) / 2;
 
 // Enhanced Kid-Friendly Theme with Better Contrast
 const THEME = {
-  primary: '#7E57C2',      // Softer Purple
+   primary: '#8B6BC9',    // Softer Purple
   secondary: '#FFF7D0',    // Bright Lemon Yellow
   tertiary: '#E8F4FF',     // Softer Sky Blue
   neutral: '#FFFFFF',      // White
@@ -237,41 +239,41 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
 };
 
 // Bouncing Button Component
-const BouncingButton = ({ children, onPress, style = {} }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+// const BouncingButton = ({ children, onPress, style = {} }) => {
+//   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      tension: 100,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
-  };
+//   const handlePressIn = () => {
+//     Animated.spring(scaleAnim, {
+//       toValue: 0.95,
+//       tension: 100,
+//       friction: 3,
+//       useNativeDriver: true,
+//     }).start();
+//   };
 
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      tension: 100,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
-  };
+//   const handlePressOut = () => {
+//     Animated.spring(scaleAnim, {
+//       toValue: 1,
+//       tension: 100,
+//       friction: 3,
+//       useNativeDriver: true,
+//     }).start();
+//   };
 
-  return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-        style={style}
-        activeOpacity={0.8}
-      >
-        {children}
-      </TouchableOpacity>
-    </Animated.View>
-  );
-};
+//   return (
+//     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+//       <TouchableOpacity
+//         onPressIn={handlePressIn}
+//         onPressOut={handlePressOut}
+//         onPress={onPress}
+//         style={style}
+//         activeOpacity={0.8}
+//       >
+//         {children}
+//       </TouchableOpacity>
+//     </Animated.View>
+//   );
+// };
 
 // Progress Star Component
 const ProgressStar = ({ filled, size = 16 }) => (
@@ -721,7 +723,7 @@ export default function DashboardScreen() {
             {mode === 'kids' ? (
               // Kids Mode - Category cards
               <>
-                {!searchQuery && (
+                {/* {!searchQuery && (
                   <View style={styles.welcomeSection}>
                     <Text style={styles.welcomeText}>
                       Discover {categories.length} Beautiful Categories 🌟
@@ -730,7 +732,7 @@ export default function DashboardScreen() {
                       Each category contains special Duas • Tap to explore! 📚
                     </Text>
                   </View>
-                )}
+                )} */}
 
                 {filteredCategories.length === 0 && searchQuery && (
                   <View style={styles.noResultsContainer}>
@@ -829,7 +831,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 15,
   },
   headerContent: {
@@ -1038,22 +1040,44 @@ const styles = StyleSheet.create({
   },
   cardNumber: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: 1,
+    left: 1,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  cardNumber: {
+    position: 'absolute',
+    top: 1,
+    left: 1,
+    backgroundColor: '#8B6BC9',
+    width: 25,
+    height: 25,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
     borderWidth: 2,
-    borderColor: THEME.primary,
+    borderColor: '#fff',
+    // Rounded square with slight angle
+    borderRadius: 6,
+    transform: [{ rotate: '-5deg' }],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
   },
   cardNumberText: {
-    color: THEME.primary,
+    color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+    transform: [{ rotate: '5deg' }],
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   cardImage: {
     width: '100%',

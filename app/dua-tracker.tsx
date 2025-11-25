@@ -929,7 +929,7 @@ export default function DuaTrackerScreen() {
       {/* Header - Updated to match dashboard */}
       <View style={styles.header}>
         <LinearGradient
-          colors={[THEME.header, '#fef9c3']}
+           colors={[THEME.primary, '#3a8dfd']}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -1027,7 +1027,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 15,
   },
   headerContent: {

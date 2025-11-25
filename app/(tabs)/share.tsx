@@ -1,18 +1,18 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import { ScreenWrapper } from '@/components/common/ScreenWrapper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useRef } from 'react';
+import {
   Alert,
   Animated,
-  ScrollView,
   Dimensions,
+  ScrollView,
   StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
@@ -125,7 +125,7 @@ const AnimatedHeader = () => {
     >
       <View style={styles.header}>
         <LinearGradient
-          colors={[THEME.header, '#fef9c3']}
+          colors={[THEME.accent, '#1FB4C8']}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 20,
   },
   headerContent: {

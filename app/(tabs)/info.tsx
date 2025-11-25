@@ -1,17 +1,17 @@
-import React, { useRef, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet,
-  Animated,
-  Dimensions,
-  StatusBar
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
-import { ScreenWrapper } from '@/components/common/ScreenWrapper';
+import React, { useCallback, useRef } from 'react';
+import {
+  Animated,
+  Dimensions,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const THEME = {
@@ -124,7 +124,7 @@ const AnimatedHeader = () => {
     >
       <View style={styles.header}>
         <LinearGradient
-          colors={[THEME.header, '#fef9c3']}
+          colors={[THEME.secondary, '#9e904bff']}
           style={styles.headerGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 20,
   },
   headerContent: {
@@ -298,6 +298,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
+    alignContent: 'center',
     color: THEME.text.dark,
   },
   subtitle: {

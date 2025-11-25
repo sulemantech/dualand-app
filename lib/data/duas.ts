@@ -44,7 +44,7 @@ export interface WordAudioPair {
 // All Categories (Complete 32 categories with images)
 export const categories: Category[] = [
   { id: 1, name: 'Praise and Glory', icon: 'star', color: '#2D7D46', order_index: 1, image_path: require('../../assets/images/kaaba.png') },
-  { id: 2, name: 'Peace and Blessing upon the Prophet Muhammad ﷺ', icon: 'peace', color: '#3182CE', order_index: 2, image_path: require('../../assets/images/dua_2.png') },
+  { id: 2, name: 'Peace and Blessing upon Muhammad ﷺ', icon: 'peace', color: '#3182CE', order_index: 2, image_path: require('../../assets/images/dua_2.png') },
   { id: 3, name: 'Du\'a of Morning \n(Before Sunrise)', icon: 'sunny', color: '#a0825cff', order_index: 3, image_path: require('../../assets/images/dua_3.png') },
   { id: 4, name: 'Du\'a of Evening \n(Before Sunset)', icon: 'moon', color: '#805AD5', order_index: 4, image_path: require('../../assets/images/dua_4.png') },
   { id: 5, name: 'Du\'a for Protection', icon: 'shield', color: '#E53E3E', order_index: 5, image_path: require('../../assets/images/dua_5.png') },
@@ -113,11 +113,11 @@ export const duas: Dua[] = [
 
   // Category 2: Peace and Blessings (2 duas)
   {
-    id: '3', category_id: 2, title: 'Peace upon Muhammad',
+    id: '3', category_id: 2, title: 'Peace upon Muhammad ﷺ',
     arabic_text: 'اَللّٰھُمَّ صَلِّ عَلٰی مُحَمَّدٍ وَّعَلٰی آلِ مُحَمَّدٍ',
     translation: 'O Allah! bestow Your mercy upon Mohammad ﷺ and upon the family of Mohammad ﷺ.',
     reference: '[Sunan al-Nasā\'ī]',
-    textheading: 'Peace and Blessing upon the Prophet Muhammad ﷺ',
+    textheading: 'Peace and Blessing upon Muhammad ﷺ',
     duaNumber: '2.',
     order_index: 1,
     is_favorited: false,
