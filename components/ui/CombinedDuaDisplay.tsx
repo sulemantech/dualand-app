@@ -13,16 +13,18 @@ interface CombinedDuaDisplayProps {
   arabic: string;
   translation: string;
   reference: string;
+  arabicFontSize?: number;
 }
 
 export const CombinedDuaDisplay: React.FC<CombinedDuaDisplayProps> = ({
   arabic,
   translation,
-  reference
+  reference,
+  arabicFontSize = 28,
 }) => {
   return (
     <View style={styles.arabicTextContainer}>
-      <Text style={styles.arabicText} dir="rtl">
+      <Text style={[styles.arabicText, { fontSize: arabicFontSize, lineHeight: arabicFontSize * 1.7 }]} dir="rtl">
         {arabic}
       </Text>
       

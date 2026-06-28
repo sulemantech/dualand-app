@@ -32,6 +32,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCustomAudioPlayer } from '../lib/audio/useCustomAudioPlayer';
 import { Dua, getAllDuas, getWordAudioPairsByDua } from '../lib/data/duas';
+import { useUserProgressStore, MemorizationStatus } from '../stores/userProgressStore';
+import { useAppSettingsStore } from '../stores/appSettingsStore';
 
 // Import PNG images for buttons
 const BtnPrevious = require('../assets/btns/btn_back.png');
@@ -142,7 +144,26 @@ export default function DuaDetailScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  // Zustand stores — granular selectors to avoid unnecessary re-renders
+  const favorites = useUserProgressStore((s) => s.favorites);
+  const memorization = useUserProgressStore((s) => s.memorization);
+  const toggleFavorite = useUserProgressStore((s) => s.toggleFavorite);
+  const setMemorizationStatus = useUserProgressStore((s) => s.setMemorizationStatus);
+  const readDuaTitle = useAppSettingsStore((s) => s.readDuaTitle);
+  const autoPlayAudio = useAppSettingsStore((s) => s.autoPlayAudio);
+  const wordByWordPause = useAppSettingsStore((s) => s.wordByWordPause);
+  const pauseDuration = useAppSettingsStore((s) => s.pauseDuration);
+  const arabicFontSize = useAppSettingsStore((s) => s.arabicFontSize);
+  const enableRewards = useAppSettingsStore((s) => s.enableRewards);
+  const hapticFeedback = useAppSettingsStore((s) => s.hapticFeedback);
+  const autoNextDuas = useAppSettingsStore((s) => s.autoNextDuas);
+
+  // Keep a ref copy of settings so async effects/callbacks always read fresh values
+  const settingsRef = useRef({ hapticFeedback, enableRewards, wordByWordPause, pauseDuration, autoNextDuas });
+  settingsRef.current = { hapticFeedback, enableRewards, wordByWordPause, pauseDuration, autoNextDuas };
+
+  // Ref kept in sync with navigateToNextDua so triggerCelebration can call it without circular deps
+  const navigateToNextDuaRef = useRef<() => void>(() => {});
   const [repeatMode, setRepeatMode] = useState<'empty' | '1' | '2' | '3' | 'infinite'>('empty');
   const [showRepeatBadge, setShowRepeatBadge] = useState(false);
   const [showSwipeHint, setShowSwipeHint] = useState(true);
@@ -212,21 +233,26 @@ export default function DuaDetailScreen() {
     }
   }, [showCelebration]);
 
-  // ✅ FIXED: Enhanced celebration handler
+  // ✅ FIXED: Enhanced celebration handler — respects enableRewards + autoNextDuas settings
   const triggerCelebration = useCallback(() => {
-    console.log('🎉 Triggering MashaAllah celebration - current state:', {
-      isCelebrationVisible,
-      showCelebration,
-      hasCompletedPlayback
-    });
-    
+    // Mark playback complete regardless of rewards setting
+    setHasCompletedPlayback(true);
+
+    if (!settingsRef.current.enableRewards) {
+      // No celebration — but still auto-navigate if enabled
+      if (settingsRef.current.autoNextDuas) {
+        celebrationTimeoutRef.current = setTimeout(() => navigateToNextDuaRef.current(), 1000);
+      }
+      return;
+    }
+
     if (!isCelebrationVisible && !showCelebration) {
-      console.log('🎉 Setting celebration states to true');
       setShowCelebration(true);
       setIsCelebrationVisible(true);
-      setHasCompletedPlayback(true);
-    } else {
-      console.log('🎉 Celebration already visible, skipping');
+      // Schedule auto-navigation after celebration finishes (3.5 s)
+      if (settingsRef.current.autoNextDuas) {
+        celebrationTimeoutRef.current = setTimeout(() => navigateToNextDuaRef.current(), 3500);
+      }
     }
   }, [isCelebrationVisible, showCelebration]);
 
@@ -341,6 +367,10 @@ export default function DuaDetailScreen() {
 
   const { arabic, translation, reference, title, duaNumber, id, categoryName, steps, imagePath, audioFull, audioWordByWord, titleAudioResId } = getDuaData();
 
+  // Derived from persisted context (auto-updates when dua changes or user toggles)
+  const isFavorite = favorites[id] ?? false;
+  const memorizationStatus: MemorizationStatus = memorization[id] ?? 'not_started';
+
   useEffect(() => {
     if (id) {
       try {
@@ -406,7 +436,7 @@ export default function DuaDetailScreen() {
   const illustrationImage = getLocalImage(
     id || '1',
     duaNumber,
-    ((parseInt(id || '1')) % 32) + 1,
+    String(((parseInt(id || '1')) % 32) + 1),
     imagePath
   );
 
@@ -517,6 +547,14 @@ export default function DuaDetailScreen() {
     resetCompletionState();
   }, [currentMode, currentDuaIndex, resetCompletionState]);
 
+  // Auto-play when a dua finishes loading (respects autoPlayAudio setting)
+  useEffect(() => {
+    if (!isLoading && autoPlayAudio && allDuas.length > 0) {
+      const timer = setTimeout(() => setIsPlaying(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]); // intentionally only fires once when loading completes
+
   // ✅ FIXED: Reset completion state when starting new playback
   useEffect(() => {
     if (isPlaying) {
@@ -585,8 +623,8 @@ export default function DuaDetailScreen() {
 
       console.log(`🔊 Starting playback: iteration=${currentIteration}, words=${wordAudioPairs.length}`);
 
-      // Play title audio only on first iteration
-      if (currentIteration === 0 && !hasPlayedTitleAudio && titleAudioResId) {
+      // Play title audio only on first iteration (respects readDuaTitle setting)
+      if (currentIteration === 0 && !hasPlayedTitleAudio && titleAudioResId && readDuaTitle) {
         console.log('🎵 Playing title audio before dua...');
         await playTitleAudio();
         if (isCancelled || !isPlaying) return;
@@ -610,6 +648,12 @@ export default function DuaDetailScreen() {
         }
 
         if (isCancelled || !isPlaying || hasCompletedPlayback) break;
+
+        // Pause between words if setting is enabled (skip pause after the last word)
+        if (settingsRef.current.wordByWordPause && currentAudioIndex < (wordAudioPairs?.length || 0) - 1) {
+          await new Promise(resolve => setTimeout(resolve, settingsRef.current.pauseDuration * 1000));
+          if (isCancelled || !isPlaying || hasCompletedPlayback) break;
+        }
 
         currentAudioIndex++;
 
@@ -788,6 +832,9 @@ export default function DuaDetailScreen() {
     }
   }, [allDuas.length, changeCurrentDua]);
 
+  // Keep ref in sync so triggerCelebration can call it without circular deps
+  navigateToNextDuaRef.current = navigateToNextDua;
+
   const navigateToPrevDua = useCallback(() => {
     const currentIndex = currentDuaIndexRef.current;
     console.log('👈 Previous button pressed, current index:', currentIndex);
@@ -871,8 +918,8 @@ export default function DuaDetailScreen() {
   }, [isPlaying, currentMode, hasCompletedPlayback, currentWordIndex, wordAudioPairs, words.length, audioReplay, audioPlay, audioPause, playButtonScale, resetCompletionState, titleAudioResId, hasPlayedTitleAudio]);
 
   const handleFavorite = useCallback(() => {
-    Vibration.vibrate(50);
-    setIsFavorite(!isFavorite);
+    if (settingsRef.current.hapticFeedback) Vibration.vibrate(50);
+    toggleFavorite(id);
 
     Animated.sequence([
       Animated.spring(favoriteScale, {
@@ -888,11 +935,20 @@ export default function DuaDetailScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [isFavorite, favoriteScale]);
+  }, [id, toggleFavorite, favoriteScale]);
+
+  const handleMemorizationChange = useCallback((newStatus: MemorizationStatus) => {
+    if (newStatus === memorizationStatus) return;
+    if (settingsRef.current.hapticFeedback) Vibration.vibrate(30);
+    setMemorizationStatus(id, newStatus);
+    if (newStatus === 'memorized') {
+      triggerCelebration();
+    }
+  }, [id, memorizationStatus, setMemorizationStatus, triggerCelebration]);
 
   // ✅ FIXED: Enhanced repeat handler
   const handleRepeat = useCallback(() => {
-    Vibration.vibrate(30);
+    if (settingsRef.current.hapticFeedback) Vibration.vibrate(30);
 
     const modes: Array<'empty' | '1' | '2' | '3' | 'infinite'> = ['empty', '1', '2', '3', 'infinite'];
     const currentIndex = modes.indexOf(repeatMode);
@@ -1235,7 +1291,43 @@ export default function DuaDetailScreen() {
             </View>
           </View>
 
-          {/* ✅ NEW: Audio Error Display */}
+          {/* Memorization Status Tracker */}
+          <View style={styles.memorizationRow}>
+            {(
+              [
+                { status: 'not_started', label: '○  Not Started', activeColors: ['#E5E7EB', '#D1D5DB'] as const, textColor: '#6B7280' },
+                { status: 'learning', label: '📖  Learning', activeColors: ['#FCD34D', '#F59E0B'] as const, textColor: '#92400E' },
+                { status: 'memorized', label: '✅  Memorized', activeColors: ['#6EE7B7', '#10B981'] as const, textColor: '#065F46' },
+              ] as const
+            ).map(({ status, label, activeColors, textColor }) => {
+              const isActive = memorizationStatus === status;
+              return (
+                <TouchableOpacity
+                  key={status}
+                  onPress={() => handleMemorizationChange(status)}
+                  activeOpacity={0.8}
+                  style={styles.memorizationPillWrapper}
+                >
+                  <LinearGradient
+                    colors={isActive ? activeColors : ['#F9FAFB', '#F3F4F6']}
+                    style={[
+                      styles.memorizationPill,
+                      isActive && styles.memorizationPillActive,
+                    ]}
+                  >
+                    <Text style={[
+                      styles.memorizationPillText,
+                      isActive && { color: textColor, fontWeight: '700' },
+                    ]}>
+                      {label}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Audio Error Display */}
           {loadError && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>Audio Error: {loadError}</Text>
@@ -1251,12 +1343,14 @@ export default function DuaDetailScreen() {
                 translationText={translation}
                 referenceText={reference}
                 wordAudioPairs={wordAudioPairs}
+                arabicFontSize={arabicFontSize}
               />
             ) : (
               <CombinedDuaDisplay
                 arabic={arabic}
                 translation={translation}
                 reference={reference}
+                arabicFontSize={arabicFontSize}
               />
             )}
           </View>
@@ -1612,6 +1706,39 @@ const styles = StyleSheet.create({
   },
   modePillTextActive: {
     color: THEME.text.light,
+  },
+  memorizationRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  memorizationPillWrapper: {
+    flex: 1,
+  },
+  memorizationPill: {
+    paddingVertical: 7,
+    paddingHorizontal: 4,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  memorizationPillActive: {
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  memorizationPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
   errorContainer: {
     margin: 16,

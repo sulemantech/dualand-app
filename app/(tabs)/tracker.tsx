@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Dua, getAllDuas, getCategoryById } from '../../lib/data/duas';
+import { useUserProgressStore } from '../../stores/userProgressStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -581,7 +582,21 @@ export default function DuaTrackerScreen() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>('compact');
-  const [duas, setDuas] = useState<Dua[]>(getAllDuas());
+
+  // Zustand store — granular selectors to avoid unnecessary re-renders
+  const favorites = useUserProgressStore((s) => s.favorites);
+  const memorization = useUserProgressStore((s) => s.memorization);
+  const toggleFavorite = useUserProgressStore((s) => s.toggleFavorite);
+  const setMemorizationStatus = useUserProgressStore((s) => s.setMemorizationStatus);
+
+  // Overlay persisted user data on top of the base dua list
+  const duas = useMemo<Dua[]>(() => {
+    return getAllDuas().map(dua => ({
+      ...dua,
+      is_favorited: favorites[dua.id] ?? dua.is_favorited,
+      memorization_status: (memorization[dua.id] ?? dua.memorization_status) as Dua['memorization_status'],
+    }));
+  }, [favorites, memorization]);
 
   // Calculate counts for filter tabs
   const filterCounts = useMemo(() => ({
@@ -604,20 +619,13 @@ export default function DuaTrackerScreen() {
     }
   }, [duas, activeFilter]);
 
-  const handleToggleFavorite = useCallback((id: string, value: boolean) => {
-    setDuas(prev => prev.map(dua => 
-      dua.id === id ? { ...dua, is_favorited: value } : dua
-    ));
-  }, []);
+  const handleToggleFavorite = useCallback((id: string, _value: boolean) => {
+    toggleFavorite(id);
+  }, [toggleFavorite]);
 
   const handleToggleMemorized = useCallback((id: string, value: boolean) => {
-    setDuas(prev => prev.map(dua => 
-      dua.id === id ? { 
-        ...dua, 
-        memorization_status: value ? 'memorized' : 'not_started'
-      } : dua
-    ));
-  }, []);
+    setMemorizationStatus(id, value ? 'memorized' : 'not_started');
+  }, [setMemorizationStatus]);
 
   const handlePracticePress = useCallback((dua: Dua) => {
     // Navigate to dua detail screen

@@ -73,27 +73,15 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#f0f9ff' },
         }}
       >
-        {/* Main tabs navigation */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        
-        {/* Modal screens */}
-        <Stack.Screen 
-          name="dua-detail" 
-          options={{ 
+        <Stack.Screen
+          name="dua-detail"
+          options={{
             presentation: 'modal',
             headerShown: false,
             gestureEnabled: true,
-          }} 
+          }}
         />
-        
-        {/* Add more screens as needed */}
-        {/* <Stack.Screen 
-          name="category-detail" 
-          options={{ 
-            presentation: 'card',
-            headerShown: false,
-          }} 
-        /> */}
       </Stack>
     </ErrorBoundary>
   );

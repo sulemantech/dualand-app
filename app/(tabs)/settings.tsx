@@ -1,6 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { useAppSettingsStore } from '../../stores/appSettingsStore';
+import { useUserProgressStore } from '../../stores/userProgressStore';
 import {
   ActivityIndicator,
   Alert,
@@ -54,37 +57,6 @@ const THEME = {
   }
 };
 
-// Voice Options with enhanced metadata
-const VOICE_OPTIONS = [
-  { 
-    id: '1', 
-    name: 'Arabic (Male)', 
-    language: 'ar',
-    quality: 'Premium',
-    emoji: '👨‍💼'
-  },
-  { 
-    id: '2', 
-    name: 'Arabic (Female)', 
-    language: 'ar',
-    quality: 'Premium',
-    emoji: '👩‍💼'
-  },
-  { 
-    id: '3', 
-    name: 'English Voice', 
-    language: 'en',
-    quality: 'Standard',
-    emoji: '🔊'
-  },
-  { 
-    id: '4', 
-    name: 'Urdu Voice', 
-    language: 'ur',
-    quality: 'Standard',
-    emoji: '🗣️'
-  },
-];
 
 // Language Options
 const LANGUAGE_OPTIONS = [
@@ -300,44 +272,6 @@ const LanguageSelector = ({ currentLanguage, onLanguageChange }) => {
   );
 };
 
-// Voice Selector Component
-const VoiceSelector = ({ selectedVoice, onVoiceSelect }) => {
-  return (
-    <View style={styles.voiceSection}>
-      <Text style={styles.voiceSectionTitle}>Select Voice</Text>
-      {VOICE_OPTIONS.map((voice, index) => (
-        <TouchableOpacity
-          key={voice.id}
-          style={[
-            styles.voiceOption,
-            index === VOICE_OPTIONS.length - 1 && styles.voiceOptionLast,
-            selectedVoice.id === voice.id && styles.voiceOptionSelected,
-          ]}
-          onPress={() => onVoiceSelect(voice)}
-        >
-          <View style={styles.voiceInfo}>
-            <View style={styles.voiceEmojiContainer}>
-              <Text style={styles.voiceEmoji}>{voice.emoji}</Text>
-            </View>
-            <View style={styles.voiceDetails}>
-              <Text style={styles.voiceName}>{voice.name}</Text>
-              <Text style={styles.voiceMeta}>
-                {voice.language.toUpperCase()} • {voice.quality}
-              </Text>
-            </View>
-          </View>
-          
-          {selectedVoice.id === voice.id && (
-            <View style={styles.voiceSelectedIndicator}>
-              <View style={styles.voiceSelectedDot} />
-            </View>
-          )}
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-};
-
 // Font Size Selector Component
 const FontSizeSelector = ({ size, onSizeChange }) => {
   return (
@@ -371,7 +305,7 @@ const FontSizeSelector = ({ size, onSizeChange }) => {
 };
 
 // Data Management Section
-const DataManagementSection = ({ onExport, onImport, onViewInfo, isExporting }) => {
+const DataManagementSection = ({ onExport, onImport, onViewInfo, onReset, isExporting }) => {
   return (
     <View style={styles.dataManagementGrid}>
       <TouchableOpacity
@@ -426,9 +360,9 @@ const DataManagementSection = ({ onExport, onImport, onViewInfo, isExporting }) 
 
       <TouchableOpacity
         style={styles.dataActionCard}
-        onPress={() => Alert.alert('Reset Data', 'This will reset all your progress. Are you sure?', [
+        onPress={() => Alert.alert('Reset Data', 'This will reset all your favorites and memorization progress. Are you sure?', [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Reset', style: 'destructive' },
+          { text: 'Reset', style: 'destructive', onPress: () => onReset() },
         ])}
       >
         <View style={[styles.dataActionIcon, { backgroundColor: '#EF4444' }]}>
@@ -500,35 +434,16 @@ const SettingsHeader = () => {
 
 // Main Settings Screen Component
 export default function EnhancedSettingsScreen() {
-  const [settings, setSettings] = useState({
-    // Language & Display
-    language: 'en',
-    arabicFontSize: 24,
-    darkMode: false,
-    
-    // Audio & Playback
-    readDuaTitle: true,
-    readDuaTranslation: true,
-    autoPlayAudio: true,
-    wordByWordPause: true,
-    pauseDuration: 2,
-    selectedVoice: VOICE_OPTIONS[0],
-    
-    // Features
-    enableRewards: true,
-    autoNextDuas: false,
-    hapticFeedback: true,
-    notifications: true,
-    
-    // Data
-    cloudSync: false,
-  });
+  // useShallow prevents re-renders when unrelated store fields change
+  const {
+    language, arabicFontSize, darkMode, readDuaTitle, readDuaTranslation,
+    autoPlayAudio, wordByWordPause, enableRewards,
+    autoNextDuas, hapticFeedback, notifications,
+    updateSetting,
+  } = useAppSettingsStore(useShallow((s) => s));
+  const resetAllProgress = useUserProgressStore((s) => s.resetAllProgress);
 
   const [isExporting, setIsExporting] = useState(false);
-
-  const updateSetting = useCallback((key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  }, []);
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
@@ -551,9 +466,13 @@ export default function EnhancedSettingsScreen() {
   }, []);
 
   const handleViewInfo = useCallback(() => {
+    const { favorites, memorization } = useUserProgressStore.getState();
+    const favCount = Object.values(favorites).filter(Boolean).length;
+    const memorizedCount = Object.values(memorization).filter(v => v === 'memorized').length;
+    const learningCount = Object.values(memorization).filter(v => v === 'learning').length;
     Alert.alert(
-      '📊 Database Information',
-      'Here\'s your current data usage:\n\n• Total Duas: 142\n• Categories: 32\n• Favorites: 12\n• Storage Used: 45.2 MB\n• Last Backup: Today, 14:30',
+      '📊 App Information',
+      `Here's your current progress:\n\n• Total Duas: 43\n• Categories: 32\n• Favorites: ${favCount}\n• Memorized: ${memorizedCount}\n• Learning: ${learningCount}`,
       [{ text: 'Close', style: 'cancel' }]
     );
   }, []);
@@ -586,7 +505,7 @@ export default function EnhancedSettingsScreen() {
       ),
       about: () => Alert.alert(
         '📱 About DuaLand',
-        'DuaLand v1.4.2\n\nA beautiful, kid-friendly app for learning and memorizing Islamic duas. Built with love for the Muslim community.',
+        'DuaLand v1.0.0\n\nA beautiful, kid-friendly app for learning and memorizing Islamic duas. Built with love for the Muslim community.',
         [{ text: 'Close', style: 'cancel' }]
       )
     };
@@ -610,19 +529,20 @@ export default function EnhancedSettingsScreen() {
         {/* Language & Display */}
         <SettingsSection title="Language & Display" icon="🌐" delay={100}>
           <LanguageSelector
-            currentLanguage={settings.language}
+            currentLanguage={language}
             onLanguageChange={(lang) => updateSetting('language', lang)}
           />
           <FontSizeSelector
-            size={settings.arabicFontSize}
+            size={arabicFontSize}
             onSizeChange={(size) => updateSetting('arabicFontSize', size)}
           />
           <SettingSwitch
             title="Dark Mode"
-            subtitle="Switch to dark theme"
+            subtitle="Coming soon in the next update"
             icon="🌙"
-            value={settings.darkMode}
+            value={darkMode}
             onValueChange={(value) => updateSetting('darkMode', value)}
+            disabled={true}
           />
         </SettingsSection>
 
@@ -632,33 +552,41 @@ export default function EnhancedSettingsScreen() {
             title="Read Dua Titles"
             subtitle="Announce dua titles automatically"
             icon="📖"
-            value={settings.readDuaTitle}
+            value={readDuaTitle}
             onValueChange={(value) => updateSetting('readDuaTitle', value)}
           />
           <SettingSwitch
             title="Read Translations"
             subtitle="Read translation after Arabic"
             icon="🔤"
-            value={settings.readDuaTranslation}
+            value={readDuaTranslation}
             onValueChange={(value) => updateSetting('readDuaTranslation', value)}
           />
           <SettingSwitch
             title="Auto-play Audio"
             subtitle="Play audio when opening a dua"
             icon="🎵"
-            value={settings.autoPlayAudio}
+            value={autoPlayAudio}
             onValueChange={(value) => updateSetting('autoPlayAudio', value)}
           />
           <SettingSwitch
             title="Word-by-Word Pause"
             subtitle="Pause between words for learning"
             icon="⏸️"
-            value={settings.wordByWordPause}
+            value={wordByWordPause}
             onValueChange={(value) => updateSetting('wordByWordPause', value)}
           />
-          <VoiceSelector
-            selectedVoice={settings.selectedVoice}
-            onVoiceSelect={(voice) => updateSetting('selectedVoice', voice)}
+          <SettingRow
+            title="Reciter Voice"
+            subtitle="Multiple reciters coming in next update"
+            icon="🎙️"
+            disabled={true}
+            onPress={undefined}
+            rightElement={
+              <View style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>SOON</Text>
+              </View>
+            }
           />
         </SettingsSection>
 
@@ -668,29 +596,30 @@ export default function EnhancedSettingsScreen() {
             title="Rewards System"
             subtitle="Earn rewards for completing duas"
             icon="🏆"
-            value={settings.enableRewards}
+            value={enableRewards}
             onValueChange={(value) => updateSetting('enableRewards', value)}
           />
           <SettingSwitch
             title="Auto Next Dua"
             subtitle="Automatically proceed to next dua"
             icon="➡️"
-            value={settings.autoNextDuas}
+            value={autoNextDuas}
             onValueChange={(value) => updateSetting('autoNextDuas', value)}
           />
           <SettingSwitch
             title="Haptic Feedback"
             subtitle="Vibrate on interactions"
             icon="📱"
-            value={settings.hapticFeedback}
+            value={hapticFeedback}
             onValueChange={(value) => updateSetting('hapticFeedback', value)}
           />
           <SettingSwitch
             title="Push Notifications"
-            subtitle="Receive reminders and updates"
+            subtitle="Coming soon in the next update"
             icon="🔔"
-            value={settings.notifications}
+            value={notifications}
             onValueChange={(value) => updateSetting('notifications', value)}
+            disabled={true}
           />
         </SettingsSection>
 
@@ -700,6 +629,7 @@ export default function EnhancedSettingsScreen() {
             onExport={handleExport}
             onImport={handleImport}
             onViewInfo={handleViewInfo}
+            onReset={resetAllProgress}
             isExporting={isExporting}
           />
         </SettingsSection>
@@ -709,19 +639,19 @@ export default function EnhancedSettingsScreen() {
           <View style={styles.appInfoGrid}>
             <View style={styles.appInfoItem}>
               <Text style={styles.appInfoLabel}>Version</Text>
-              <Text style={styles.appInfoValue}>1.4.2</Text>
+              <Text style={styles.appInfoValue}>1.0.0</Text>
             </View>
             <View style={styles.appInfoItem}>
-              <Text style={styles.appInfoLabel}>Build</Text>
-              <Text style={styles.appInfoValue}>2024.02.1</Text>
+              <Text style={styles.appInfoLabel}>Duas</Text>
+              <Text style={styles.appInfoValue}>43</Text>
             </View>
             <View style={styles.appInfoItem}>
-              <Text style={styles.appInfoLabel}>Last Updated</Text>
-              <Text style={styles.appInfoValue}>Feb 15, 2024</Text>
+              <Text style={styles.appInfoLabel}>Categories</Text>
+              <Text style={styles.appInfoValue}>32</Text>
             </View>
             <View style={styles.appInfoItem}>
-              <Text style={styles.appInfoLabel}>Storage</Text>
-              <Text style={styles.appInfoValue}>62.3 MB</Text>
+              <Text style={styles.appInfoLabel}>Platform</Text>
+              <Text style={styles.appInfoValue}>iOS / Android</Text>
             </View>
           </View>
         </SettingsSection>

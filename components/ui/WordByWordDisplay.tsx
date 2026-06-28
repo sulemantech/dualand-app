@@ -25,6 +25,7 @@ interface WordByWordDisplayProps {
   translationText: string;
   referenceText: string;
   wordAudioPairs: WordAudioPair[];
+  arabicFontSize?: number;
 }
 
 export const WordByWordDisplay: React.FC<WordByWordDisplayProps> = ({
@@ -33,7 +34,8 @@ export const WordByWordDisplay: React.FC<WordByWordDisplayProps> = ({
   isPlaying,
   translationText,
   referenceText,
-  wordAudioPairs = []
+  wordAudioPairs = [],
+  arabicFontSize = 28,
 }) => {
   // Use wordAudioPairs if available, otherwise fall back to space splitting
   const words = wordAudioPairs.length > 0 
@@ -137,7 +139,7 @@ export const WordByWordDisplay: React.FC<WordByWordDisplayProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.arabicTextContainer}>
-        <Text style={styles.arabicText} dir="rtl">
+        <Text style={[styles.arabicText, { fontSize: arabicFontSize, lineHeight: arabicFontSize * 1.7 }]} dir="rtl">
           {words.map((word, index) => (
             <Animated.Text
               key={index}
