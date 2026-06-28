@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git pull *)",
-      "Bash(node -e \"const pkg = require\\('./package.json'\\); console.log\\(pkg.version, pkg.name\\)\")"
+      "Bash(node -e \"const pkg = require\\('./package.json'\\); console.log\\(pkg.version, pkg.name\\)\")",
+      "Bash(git checkout *)",
+      "Bash(node -e ' *)"
     ]
   }
 }
