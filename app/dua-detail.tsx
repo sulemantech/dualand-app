@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -112,7 +112,7 @@ export default function DuaDetailScreen() {
   const [wordAudioPairs, setWordAudioPairs] = useState<any[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   // Zustand stores — granular selectors to avoid unnecessary re-renders
   const favorites = useUserProgressStore((s) => s.favorites);
   const memorization = useUserProgressStore((s) => s.memorization);
@@ -143,12 +143,18 @@ export default function DuaDetailScreen() {
   
   // ✅ NEW: Track title audio playback state
   const [isPlayingTitleAudio, setIsPlayingTitleAudio] = useState(false);
-  const [hasPlayedTitleAudio, setHasPlayedTitleAudio] = useState(false);
+  // Ref (not state) — changing it must never re-trigger effects or re-renders
+  const hasPlayedTitleAudioRef = useRef(false);
 
   // Use ref to track current index to avoid stale closures
   const currentDuaIndexRef = useRef(currentDuaIndex);
   const celebrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const titleAudioSoundRef = useRef<Audio.Sound | null>(null);
+  // Single source of truth for the currently playing word sound
+  const currentWordSoundRef = useRef<Audio.Sound | null>(null);
+  // Stored resolve functions — calling them interrupts the pending promise immediately
+  const wordAudioResolveRef = useRef<(() => void) | null>(null);
+  const titleAudioResolveRef = useRef<(() => void) | null>(null);
 
   // Add animated values for mode buttons
   const wordModeScale = useRef(new Animated.Value(1)).current;
@@ -177,15 +183,28 @@ export default function DuaDetailScreen() {
     return shouldRepeat;
   }, [getRepeatCount]);
 
-  // ✅ FIXED: Clean up celebration timeouts and audio
+  // Stops and unloads all active audio immediately — safe to call from any context
+  const stopAllAudio = () => {
+    // Interrupt pending promises so any awaiting code unblocks right away
+    titleAudioResolveRef.current?.();
+    titleAudioResolveRef.current = null;
+    wordAudioResolveRef.current?.();
+    wordAudioResolveRef.current = null;
+
+    const ts = titleAudioSoundRef.current;
+    titleAudioSoundRef.current = null;
+    if (ts) { ts.stopAsync().catch(() => {}); ts.unloadAsync().catch(() => {}); }
+
+    const ws = currentWordSoundRef.current;
+    currentWordSoundRef.current = null;
+    if (ws) { ws.stopAsync().catch(() => {}); ws.unloadAsync().catch(() => {}); }
+  };
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (celebrationTimeoutRef.current) {
-        clearTimeout(celebrationTimeoutRef.current);
-      }
-      if (titleAudioSoundRef.current) {
-        titleAudioSoundRef.current.unloadAsync();
-      }
+      if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+      stopAllAudio();
     };
   }, []);
 
@@ -238,7 +257,7 @@ export default function DuaDetailScreen() {
     setHasCompletedPlayback(false);
     setIsCelebrationVisible(false);
     setShowCelebration(false);
-    setHasPlayedTitleAudio(false);
+    hasPlayedTitleAudioRef.current = false;
     setIsPlayingTitleAudio(false);
     
     if (celebrationTimeoutRef.current) {
@@ -390,101 +409,102 @@ export default function DuaDetailScreen() {
   // ✅ FIXED: Safe words array initialization
   const words = (arabic || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
 
-  // ✅ ADDED: Function to play title audio
+  // Plays the dua title audio and resolves when it finishes (or is interrupted)
   const playTitleAudio = async (): Promise<void> => {
+    if (!titleAudioResId || hasPlayedTitleAudioRef.current) return;
+
     return new Promise(async (resolve) => {
-      if (!titleAudioResId || hasPlayedTitleAudio) {
-        console.log('🎵 No title audio or already played, skipping');
-        resolve();
-        return;
-      }
+      let settled = false;
+      const safeResolve = () => {
+        if (!settled) {
+          settled = true;
+          titleAudioResolveRef.current = null;
+          resolve();
+        }
+      };
+      // Register so stopAllAudio() can unblock this promise instantly
+      titleAudioResolveRef.current = safeResolve;
 
       try {
-        console.log('🎵 Playing title audio...');
         setIsPlayingTitleAudio(true);
-        
         const { sound } = await Audio.Sound.createAsync(titleAudioResId);
+        titleAudioSoundRef.current = sound;
 
-        // Set up playback status update to detect when audio finishes
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.isLoaded && status.didJustFinish) {
-            console.log('🎵 Title audio finished');
-            sound.unloadAsync().then(() => {
-              setIsPlayingTitleAudio(false);
-              setHasPlayedTitleAudio(true);
-              resolve();
-            });
+            if (titleAudioSoundRef.current === sound) titleAudioSoundRef.current = null;
+            sound.unloadAsync().catch(() => {});
+            setIsPlayingTitleAudio(false);
+            hasPlayedTitleAudioRef.current = true;
+            safeResolve();
           }
         });
 
         await sound.playAsync();
-        titleAudioSoundRef.current = sound;
 
-        // Fallback: if we can't detect completion, resolve after estimated duration
+        // Safety timeout — fires only if the status callback never fires
         const status = await sound.getStatusAsync();
-        if (status.isLoaded && status.durationMillis) {
-          setTimeout(() => {
-            sound.unloadAsync().then(() => {
-              setIsPlayingTitleAudio(false);
-              setHasPlayedTitleAudio(true);
-              resolve();
-            });
-          }, status.durationMillis + 100); // Add small buffer
-        } else {
-          // Default fallback
-          setTimeout(() => {
-            sound.unloadAsync().then(() => {
-              setIsPlayingTitleAudio(false);
-              setHasPlayedTitleAudio(true);
-              resolve();
-            });
-          }, 3000);
-        }
-      } catch (error) {
-        console.error('Error playing title audio:', error);
+        const duration = (status.isLoaded && status.durationMillis) ? status.durationMillis : 3000;
+        setTimeout(() => {
+          if (titleAudioSoundRef.current === sound) titleAudioSoundRef.current = null;
+          sound.unloadAsync().catch(() => {});
+          setIsPlayingTitleAudio(false);
+          hasPlayedTitleAudioRef.current = true;
+          safeResolve();
+        }, duration + 300);
+      } catch {
         setIsPlayingTitleAudio(false);
-        setHasPlayedTitleAudio(true);
-        resolve(); // Always resolve to continue playback
+        titleAudioSoundRef.current = null;
+        safeResolve();
       }
     });
   };
 
-  // ✅ ADDED: Function to play individual word audio
+  // Plays one word's audio clip. Stops any previously playing word audio first.
   const playWordAudio = async (audioSource: any): Promise<void> => {
+    // Evict whatever was playing before — one sound at a time
+    const prev = currentWordSoundRef.current;
+    currentWordSoundRef.current = null;
+    wordAudioResolveRef.current = null;
+    if (prev) { prev.stopAsync().catch(() => {}); prev.unloadAsync().catch(() => {}); }
+
     return new Promise(async (resolve) => {
+      let settled = false;
+      const safeResolve = () => {
+        if (!settled) {
+          settled = true;
+          wordAudioResolveRef.current = null;
+          resolve();
+        }
+      };
+      // Register so stopAllAudio() can unblock this promise instantly
+      wordAudioResolveRef.current = safeResolve;
+
       try {
         const { sound } = await Audio.Sound.createAsync(audioSource);
+        currentWordSoundRef.current = sound;
 
-        // Set up playback status update to detect when audio finishes
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.isLoaded && status.didJustFinish) {
-            sound.unloadAsync().then(() => {
-              resolve();
-            });
+            if (currentWordSoundRef.current === sound) currentWordSoundRef.current = null;
+            sound.unloadAsync().catch(() => {});
+            safeResolve();
           }
         });
 
         await sound.playAsync();
 
-        // Fallback: if we can't detect completion, resolve after estimated duration
+        // Safety timeout — fires only if the status callback never fires
         const status = await sound.getStatusAsync();
-        if (status.isLoaded && status.durationMillis) {
-          setTimeout(() => {
-            sound.unloadAsync().then(() => {
-              resolve();
-            });
-          }, status.durationMillis + 100); // Add small buffer
-        } else {
-          // Default fallback
-          setTimeout(() => {
-            sound.unloadAsync().then(() => {
-              resolve();
-            });
-          }, 1500);
-        }
-      } catch (error) {
-        console.error('Error playing word audio:', error);
-        resolve(); // Always resolve to continue playback
+        const duration = (status.isLoaded && status.durationMillis) ? status.durationMillis : 1500;
+        setTimeout(() => {
+          if (currentWordSoundRef.current === sound) currentWordSoundRef.current = null;
+          sound.unloadAsync().catch(() => {});
+          safeResolve();
+        }, duration + 300);
+      } catch {
+        currentWordSoundRef.current = null;
+        safeResolve();
       }
     });
   };
@@ -501,17 +521,6 @@ export default function DuaDetailScreen() {
       return () => clearTimeout(timer);
     }
   }, [isLoading]); // intentionally only fires once when loading completes
-
-  // ✅ FIXED: Reset completion state when starting new playback
-  useEffect(() => {
-    if (isPlaying) {
-      // Only reset if we're actually starting fresh, not resuming
-      if (currentWordIndex === 0 && currentRepeatIteration === 0) {
-        setHasCompletedPlayback(false);
-        setHasPlayedTitleAudio(false); // Reset title audio for new playback
-      }
-    }
-  }, [isPlaying, currentWordIndex, currentRepeatIteration]);
 
   // Sync local isPlaying state with audio player
   useEffect(() => {
@@ -571,7 +580,7 @@ export default function DuaDetailScreen() {
       console.log(`🔊 Starting playback: iteration=${currentIteration}, words=${wordAudioPairs.length}`);
 
       // Play title audio only on first iteration (respects readDuaTitle setting)
-      if (currentIteration === 0 && !hasPlayedTitleAudio && titleAudioResId && readDuaTitle) {
+      if (currentIteration === 0 && !hasPlayedTitleAudioRef.current && titleAudioResId && readDuaTitle) {
         console.log('🎵 Playing title audio before dua...');
         await playTitleAudio();
         if (isCancelled || !isPlaying) return;
@@ -622,7 +631,7 @@ export default function DuaDetailScreen() {
             if (isPlaying && !isCancelled && !hasCompletedPlayback) {
               currentAudioIndex = 0;
               currentIteration = nextIteration;
-              setCurrentWordIndex(0);
+              setCurrentWordIndex(-1);
               console.log(`🔄 Starting repeat iteration ${nextIteration}`);
               continue;
             }
@@ -631,7 +640,7 @@ export default function DuaDetailScreen() {
             if (!isCancelled && !hasCompletedPlayback) {
               console.log('🎉 Word-by-word playback fully completed - showing celebration');
               setIsPlaying(false);
-              setCurrentWordIndex(0);
+              setCurrentWordIndex(-1);
               setCurrentRepeatIteration(0);
               triggerCelebration();
             }
@@ -647,8 +656,9 @@ export default function DuaDetailScreen() {
 
     return () => {
       isCancelled = true;
+      stopAllAudio();
     };
-  }, [isPlaying, currentMode, wordAudioPairs, currentRepeatIteration, checkShouldRepeat, getRepeatCount, hasCompletedPlayback, triggerCelebration, titleAudioResId, hasPlayedTitleAudio]);
+  }, [isPlaying, currentMode, wordAudioPairs, currentRepeatIteration, checkShouldRepeat, getRepeatCount, hasCompletedPlayback, triggerCelebration, titleAudioResId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -738,7 +748,7 @@ export default function DuaDetailScreen() {
     }
     
     resetCompletionState();
-    setCurrentWordIndex(0);
+    setCurrentWordIndex(-1);
     setCurrentDuaIndex(newIndex);
     currentDuaIndexRef.current = newIndex;
 
@@ -799,13 +809,13 @@ export default function DuaDetailScreen() {
             console.log('🔄 Restarting from completed state');
             resetCompletionState();
             // Play title audio first, then the dua
-            if (titleAudioResId && !hasPlayedTitleAudio) {
+            if (titleAudioResId && !hasPlayedTitleAudioRef.current) {
               await playTitleAudio();
             }
             await audioReplay();
           } else {
             // First time playing - play title audio then dua
-            if (titleAudioResId && !hasPlayedTitleAudio) {
+            if (titleAudioResId && !hasPlayedTitleAudioRef.current) {
               await playTitleAudio();
             }
             await audioPlay();
@@ -820,7 +830,7 @@ export default function DuaDetailScreen() {
           if (hasCompletedPlayback || currentWordIndex >= (wordAudioPairs?.length || words.length) - 1) {
             console.log('🔄 Restarting word playback from beginning');
             resetCompletionState();
-            setCurrentWordIndex(0);
+            setCurrentWordIndex(-1);
           }
           setIsPlaying(true);
         }
@@ -843,7 +853,7 @@ export default function DuaDetailScreen() {
     } catch (error) {
       console.error('Error handling play/pause:', error);
     }
-  }, [isPlaying, currentMode, hasCompletedPlayback, currentWordIndex, wordAudioPairs, words.length, audioReplay, audioPlay, audioPause, playButtonScale, resetCompletionState, titleAudioResId, hasPlayedTitleAudio]);
+  }, [isPlaying, currentMode, hasCompletedPlayback, currentWordIndex, wordAudioPairs, words.length, audioReplay, audioPlay, audioPause, playButtonScale, resetCompletionState, titleAudioResId]);
 
   const handleFavorite = useCallback(() => {
     if (settingsRef.current.hapticFeedback) Vibration.vibrate(50);
@@ -910,34 +920,18 @@ export default function DuaDetailScreen() {
   }, [repeatMode, repeatScale, resetCompletionState]);
 
   const handleBack = useCallback(() => {
-    // Stop audio when going back
-    if (isPlaying) {
-      if (currentMode === 'full') {
-        audioPause();
-      }
-      setIsPlaying(false);
-    }
-    // Stop title audio if playing
-    if (isPlayingTitleAudio && titleAudioSoundRef.current) {
-      titleAudioSoundRef.current.stopAsync();
-    }
+    if (currentMode === 'full' && isPlaying) audioPause();
+    setIsPlaying(false);
+    stopAllAudio();
     router.back();
-  }, [isPlaying, audioPause, router, currentMode, isPlayingTitleAudio]);
+  }, [isPlaying, audioPause, router, currentMode]);
 
   const handleHome = useCallback(() => {
-    // Stop audio when going home
-    if (isPlaying) {
-      if (currentMode === 'full') {
-        audioPause();
-      }
-      setIsPlaying(false);
-    }
-    // Stop title audio if playing
-    if (isPlayingTitleAudio && titleAudioSoundRef.current) {
-      titleAudioSoundRef.current.stopAsync();
-    }
+    if (currentMode === 'full' && isPlaying) audioPause();
+    setIsPlaying(false);
+    stopAllAudio();
     router.push('/');
-  }, [isPlaying, audioPause, router, currentMode, isPlayingTitleAudio]);
+  }, [isPlaying, audioPause, router, currentMode]);
 
   // ✅ UPDATED: Enhanced mode change handlers with smooth animations
   const handleWordMode = useCallback(() => {
@@ -950,7 +944,7 @@ export default function DuaDetailScreen() {
       setIsPlaying(false);
     }
     resetCompletionState();
-    setCurrentWordIndex(0);
+    setCurrentWordIndex(-1);
   }, [isPlaying, audioPause, currentMode, resetCompletionState, modeSlideAnim]);
 
   const handleFullMode = useCallback(() => {
@@ -960,7 +954,7 @@ export default function DuaDetailScreen() {
     setCurrentMode('full');
     if (isPlaying) setIsPlaying(false);
     resetCompletionState();
-    setCurrentWordIndex(0);
+    setCurrentWordIndex(-1);
   }, [isPlaying, resetCompletionState, currentMode, modeSlideAnim]);
 
   // ✅ ADDED: Display current repeat status in UI

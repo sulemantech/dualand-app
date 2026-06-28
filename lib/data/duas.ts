@@ -230,7 +230,7 @@ export const duas: Dua[] = [
     image_path: require('../../assets/images/dua_6.png')
   },
   {
-    id: '10', category_id: 6, title: 'After Waking Up',
+    id: '10', category_id: 7, title: 'After Waking Up',
     arabic_text: 'اَلْـحَمْدُ لِلّٰهِ الَّذِیْ اَحْيَانَا بَعْدَ مَا اَمَاتَنَا وَاِلَيْهِ النُّشُوْرُ',
     translation: 'All praise is for Allah ho gave us life after death (sleep) and to Him is the resurrection.',
     reference: '[Ṣaḥīḥ al-Bukhārī]',
@@ -249,7 +249,7 @@ export const duas: Dua[] = [
 
   // Category 7: Toilet Etiquette (2 duas)
   {
-    id: '11', category_id: 7, title: 'Before Entering Toilet',
+    id: '11', category_id: 8, title: 'Before Entering Toilet',
     arabic_text: 'اَللّٰھُمَّ اِنِّیْ اَعُوْذُبِکَ مِنَ الْخُبُثِ وَالْخَبَائِثِ',
     translation: 'O Allah, I seek refuge in You from the impure male jinns and impure female jinns.',
     reference: '[Ṣaḥīḥ al-Bukhārī]',
@@ -266,7 +266,7 @@ export const duas: Dua[] = [
     image_path: require('../../assets/images/dua_8.png')
   },
   {
-    id: '12', category_id: 7, title: 'After Leaving Toilet',
+    id: '12', category_id: 9, title: 'After Leaving Toilet',
     arabic_text: 'غُفْرَانَكَ',
     translation: 'I ask you (Allah) for forgiveness.',
     reference: '[Sunan Abu Dawud]',
@@ -285,7 +285,7 @@ export const duas: Dua[] = [
 
   // Category 8: Dressing (2 duas)
   {
-    id: '13', category_id: 8, title: 'Before Putting on Dress',
+    id: '13', category_id: 10, title: 'Before Putting on Dress',
     arabic_text: 'اَلْحَمْدُ لِلّٰهِ الَّذِىْ كَسَانِى هٰذَا الثَّوْبَ وَرَزَقَنِيْهِ مِنْ غَيْرِحَوْلٍ مِّنِّى وَلَا قُوَّةٍ',
     translation: 'All praise is for Allah Who has clothed me with this garment and provided it for me, with no power or might from myself.',
     reference: '[Sunan Abu Dawūd]',
@@ -302,7 +302,7 @@ export const duas: Dua[] = [
     image_path: require('../../assets/images/dua_10.png')
   },
   {
-    id: '14', category_id: 8, title: 'Before Taking off Dress',
+    id: '14', category_id: 11, title: 'Before Taking off Dress',
     arabic_text: 'بِسْمِ اللّٰہُِِِِ',
     translation: 'In the Name of Allah.',
     reference: '[Sahih al-Jami\' al-Saghir]',

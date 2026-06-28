@@ -168,7 +168,7 @@ export const WordByWordDisplay: React.FC<WordByWordDisplayProps> = ({
         )}
       </View>
 
-      {isPlaying && (
+      {isPlaying && currentWordIndex >= 0 && (
         <View style={styles.readingGuide}>
           <Text style={styles.readingGuideText}>
             👆 Listening to word {currentWordIndex + 1} of {words.length}
