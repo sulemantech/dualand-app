@@ -75,6 +75,16 @@ export const categories: Category[] = [
   { id: 30, name: 'Du\'a for Seeking Allah\'s Love', icon: 'praying-hands', color: '#2EC4B6', order_index: 30, image_path: require('../../assets/images/dua_31.png') },
   { id: 31, name: 'Du\'a: Sayyid-ul-Istighfar', icon: 'pray', color: '#E71D36', order_index: 31, image_path: require('../../assets/images/dua_32.png') },
   { id: 32, name: 'Seeking Refuge with Allah', icon: 'shield-alt', color: '#662E9B', order_index: 32, image_path: require('../../assets/images/dua_33.png') },
+  { id: 33, name: 'Ayat ul Kursi', icon: 'star', color: '#1A237E', order_index: 33, image_path: require('../../assets/images/kaaba.png') },
+  { id: 34, name: 'Darood Ibrahim', icon: 'peace', color: '#1B5E20', order_index: 34, image_path: require('../../assets/images/kaaba.png') },
+  { id: 35, name: "Du'a for Knowledge", icon: 'book', color: '#E65100', order_index: 35, image_path: require('../../assets/images/kaaba.png') },
+  { id: 36, name: "Du'a for Parents", icon: 'heart', color: '#880E4F', order_index: 36, image_path: require('../../assets/images/kaaba.png') },
+  { id: 37, name: "Du'a when Drinking Milk", icon: 'cup', color: '#01579B', order_index: 37, image_path: require('../../assets/images/kaaba.png') },
+  { id: 38, name: "Du'a for House in Jannah", icon: 'home', color: '#F57F17', order_index: 38, image_path: require('../../assets/images/kaaba.png') },
+  { id: 39, name: "Du'a from Hellfire", icon: 'shield', color: '#B71C1C', order_index: 39, image_path: require('../../assets/images/kaaba.png') },
+  { id: 40, name: "Du'a at Iftar", icon: 'moon', color: '#BF360C', order_index: 40, image_path: require('../../assets/images/kaaba.png') },
+  { id: 41, name: "Du'a for New Clothes", icon: 'tshirt', color: '#004D40', order_index: 41, image_path: require('../../assets/images/kaaba.png') },
+  { id: 42, name: "Du'a of Thanks", icon: 'praying-hands', color: '#4A148C', order_index: 42, image_path: require('../../assets/images/kaaba.png') },
 ];
 
 // All 43 Duas with image paths
@@ -806,6 +816,156 @@ export const duas: Dua[] = [
     backgroundResId: 'header_bg',
     statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_33.png')
+  },
+
+  // Category 33: Ayat ul Kursi
+  {
+    id: '44', category_id: 33, title: 'Ayat ul Kursi',
+    arabic_text: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ',
+    translation: 'Allah—there is no god worthy of worship except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is before them and what is behind them, and they encompass nothing of His knowledge except what He wills. His Kursi extends over the heavens and the earth, and preserving them does not tire Him. And He is the Most High, the Most Great.',
+    reference: '[Al-Quran 2:255]',
+    textheading: 'Ayat ul Kursi',
+    duaNumber: '33.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Recite after every obligatory prayer and before sleeping for protection.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 34: Darood Ibrahim
+  {
+    id: '45', category_id: 34, title: 'Darood Ibrahim',
+    arabic_text: 'اللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَىٰ إِبْرَاهِيمَ وَعَلَىٰ آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ\n\nاللَّهُمَّ بَارِكْ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَىٰ إِبْرَاهِيمَ وَعَلَىٰ آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ',
+    translation: 'O Allah, send Your blessings upon Muhammad and upon the family of Muhammad, as You sent blessings upon Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious.\n\nO Allah, bless Muhammad and the family of Muhammad, as You blessed Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious.',
+    reference: '[Sahih al-Bukhari]',
+    textheading: 'Darood Ibrahim',
+    duaNumber: '34.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Recite in the Tashahhud of Salah after the first sitting.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 35: Dua for Increase in Knowledge
+  {
+    id: '46', category_id: 35, title: "Du'a for Knowledge",
+    arabic_text: 'رَبِّ زِدْنِي عِلْمًا',
+    translation: 'My Lord, increase me in knowledge.',
+    reference: '[Al-Quran 20:114]',
+    textheading: "Du'a for Knowledge",
+    duaNumber: '35.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Raise your hands and ask Allah to increase your knowledge, especially before studying.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 36: Dua for Parents
+  {
+    id: '47', category_id: 36, title: "Du'a for Parents",
+    arabic_text: 'رَبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا',
+    translation: 'My Lord, have mercy upon them as they raised me when I was small.',
+    reference: '[Al-Quran 17:24]',
+    textheading: "Du'a for Parents",
+    duaNumber: '36.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Recite this dua for your parents regularly, especially after every prayer.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 37: Dua When Drinking Milk
+  {
+    id: '48', category_id: 37, title: "Du'a when Drinking Milk",
+    arabic_text: 'اللَّهُمَّ بَارِكْ لَنَا فِيهِ وَزِدْنَا مِنْهُ',
+    translation: 'O Allah, bless it for us and give us more of it.',
+    reference: '[Sunan Ibn Majah]',
+    textheading: "Du'a when Drinking Milk",
+    duaNumber: '37.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Say this dua when you drink milk.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 38: Dua for a House in Jannah
+  {
+    id: '49', category_id: 38, title: "Du'a for House in Jannah",
+    arabic_text: 'رَبِّ ابْنِ لِي عِنْدَكَ بَيْتًا فِي الْجَنَّةِ',
+    translation: 'My Lord, build for me, near You, a house in Paradise.',
+    reference: '[Al-Quran 66:11]',
+    textheading: "Du'a for House in Jannah",
+    duaNumber: '38.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Recite this dua with full faith and longing for Jannah.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 39: Dua for Protection from Hellfire
+  {
+    id: '50', category_id: 39, title: "Du'a from Hellfire",
+    arabic_text: 'اللَّهُمَّ أَجِرْنِي مِنَ النَّارِ',
+    translation: 'O Allah, protect me from the Hellfire.',
+    reference: '[Sunan Abu Dawud]',
+    textheading: "Du'a from Hellfire",
+    duaNumber: '39.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Say this 7 times in the morning and evening, and after Fajr and Maghrib prayers.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 40: Dua for Breaking the Fast
+  {
+    id: '51', category_id: 40, title: "Du'a at Iftar",
+    arabic_text: 'ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ',
+    translation: 'The thirst has gone, the veins are moistened, and the reward is assured, if Allah wills.',
+    reference: '[Sunan Abu Dawud]',
+    textheading: "Du'a at Iftar",
+    duaNumber: '40.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Say this dua when breaking your fast at iftar time.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 41: Dua for Someone Wearing New Clothes
+  {
+    id: '52', category_id: 41, title: "Du'a for New Clothes",
+    arabic_text: 'تُبْلِي وَيُخْلِفُ اللَّهُ تَعَالَى',
+    translation: 'May you wear it until it becomes old, and may Allah replace it for you with another.',
+    reference: '[Sunan Abu Dawud]',
+    textheading: "Du'a for New Clothes",
+    duaNumber: '41.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Say this to someone when you see them wearing new clothes.',
+    image_path: require('../../assets/images/kaaba.png'),
+  },
+
+  // Category 42: Dua to Thank Someone
+  {
+    id: '53', category_id: 42, title: "Du'a of Thanks",
+    arabic_text: 'جَزَاكَ اللَّهُ خَيْرًا',
+    translation: 'May Allah reward you with goodness.',
+    reference: '[Sunan al-Tirmidhi]',
+    textheading: "Du'a of Thanks",
+    duaNumber: '42.',
+    order_index: 1,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Say this to thank anyone who has done something good for you.',
+    image_path: require('../../assets/images/kaaba.png'),
   },
 ];
 

@@ -18,6 +18,7 @@ export type AppSettingsData = {
   hapticFeedback: boolean;
   notifications: boolean;
   cloudSync: boolean;
+  playbackMode: 'word' | 'full';
 };
 
 const DEFAULT_SETTINGS: AppSettingsData = {
@@ -35,6 +36,7 @@ const DEFAULT_SETTINGS: AppSettingsData = {
   hapticFeedback: true,
   notifications: true,
   cloudSync: false,
+  playbackMode: 'word',
 };
 
 interface AppSettingsState extends AppSettingsData {

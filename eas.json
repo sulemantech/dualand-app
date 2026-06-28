@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 16.0.0"
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -20,9 +21,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "shahsuliman@gmail.com",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "appleId": "iosdev@metafront.net",
+        "ascAppId": "6785278757",
+        "appleTeamId": "PK7P7QTFUA"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-key.json",

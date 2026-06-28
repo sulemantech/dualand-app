@@ -126,6 +126,8 @@ export default function DuaDetailScreen() {
   const enableRewards = useAppSettingsStore((s) => s.enableRewards);
   const hapticFeedback = useAppSettingsStore((s) => s.hapticFeedback);
   const autoNextDuas = useAppSettingsStore((s) => s.autoNextDuas);
+  const playbackMode = useAppSettingsStore((s) => s.playbackMode);
+  const updateSetting = useAppSettingsStore((s) => s.updateSetting);
 
   // Keep a ref copy of settings so async effects/callbacks always read fresh values
   const settingsRef = useRef({ hapticFeedback, enableRewards, wordByWordPause, pauseDuration, autoNextDuas });
@@ -134,6 +136,10 @@ export default function DuaDetailScreen() {
   // Ref kept in sync with navigateToNextDua so triggerCelebration can call it without circular deps
   const navigateToNextDuaRef = useRef<() => void>(() => {});
   const [repeatMode, setRepeatMode] = useState<'empty' | '1' | '2' | '3' | 'infinite'>('empty');
+  // Ref mirror — lets getRepeatCount stay stable so changing repeat mode mid-play
+  // never triggers a dep-array re-run of the word-by-word effect.
+  const repeatModeRef = useRef<'empty' | '1' | '2' | '3' | 'infinite'>('empty');
+  repeatModeRef.current = repeatMode;
   const [showRepeatBadge, setShowRepeatBadge] = useState(false);
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   
@@ -167,14 +173,14 @@ export default function DuaDetailScreen() {
 
   // ✅ FIXED: Helper functions for repeat logic
   const getRepeatCount = useCallback(() => {
-    switch (repeatMode) {
+    switch (repeatModeRef.current) {
       case '1': return 1;
       case '2': return 2;
       case '3': return 3;
       case 'infinite': return Infinity;
       default: return 0;
     }
-  }, [repeatMode]);
+  }, []); // stable — reads from ref, never forces an effect re-run
 
   const checkShouldRepeat = useCallback((currentIteration: number) => {
     const totalRepeats = getRepeatCount();
@@ -373,14 +379,11 @@ export default function DuaDetailScreen() {
     playPause: audioPlayPause,
     replay: audioReplay,
     status: audioStatus,
-    position: audioPosition,
-    duration: audioDuration,
     seekTo: audioSeekTo,
     setVolume: audioSetVolume,
     toggleMute: audioToggleMute,
     isMuted: audioIsMuted,
     currentVolume: audioCurrentVolume,
-    isBuffering: audioIsBuffering,
     didJustFinish: audioDidJustFinish,
     loadError,
   } = useCustomAudioPlayer(
@@ -389,6 +392,9 @@ export default function DuaDetailScreen() {
 
   const playButtonScale = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const ring1Anim = useRef(new Animated.Value(0)).current;
+  const ring2Anim = useRef(new Animated.Value(0)).current;
+  const ring3Anim = useRef(new Animated.Value(0)).current;
   const favoriteScale = useRef(new Animated.Value(1)).current;
   const imageScale = useRef(new Animated.Value(0.9)).current;
   const repeatScale = useRef(new Animated.Value(1)).current;
@@ -397,6 +403,15 @@ export default function DuaDetailScreen() {
   const [modeSegWidth, setModeSegWidth] = useState(0);
   const modeIconScale0 = useRef(modeSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [1.16, 0.82] })).current;
   const modeIconScale1 = useRef(modeSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1.16] })).current;
+
+  // Restore persisted mode once after screen data finishes loading.
+  // Keyed on isLoading so it fires exactly once per mount, after the store has hydrated.
+  useEffect(() => {
+    if (!isLoading && allDuas.length > 0) {
+      setCurrentMode(playbackMode);
+      modeSlideAnim.setValue(playbackMode === 'full' ? 1 : 0);
+    }
+  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // FIXED: Use the updated getLocalImage function with proper error handling
   const illustrationImage = getLocalImage(
@@ -695,7 +710,7 @@ export default function DuaDetailScreen() {
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.05,
+            toValue: 1.10,
             duration: 1000,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
@@ -714,6 +729,30 @@ export default function DuaDetailScreen() {
       pulseAnim.setValue(1);
     }
   }, [isPlaying, isPlayingTitleAudio, pulseAnim]);
+
+  // Expanding ring pulse — radiates outward from play button while audio is active
+  useEffect(() => {
+    let active = true;
+    if (!(isPlaying || isPlayingTitleAudio)) {
+      ring1Anim.setValue(0);
+      ring2Anim.setValue(0);
+      ring3Anim.setValue(0);
+      return;
+    }
+    const pulse = () => {
+      if (!active) return;
+      ring1Anim.setValue(0);
+      ring2Anim.setValue(0);
+      ring3Anim.setValue(0);
+      Animated.stagger(300, [
+        Animated.timing(ring1Anim, { toValue: 1, duration: 1000, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(ring2Anim, { toValue: 1, duration: 1000, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(ring3Anim, { toValue: 1, duration: 1000, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+      ]).start(() => { if (active) setTimeout(pulse, 200); });
+    };
+    pulse();
+    return () => { active = false; };
+  }, [isPlaying, isPlayingTitleAudio]);
 
   const cycleMemorizationStatus = useCallback(() => {
     const order: MemorizationStatus[] = ['not_started', 'learning', 'memorized'];
@@ -896,7 +935,11 @@ export default function DuaDetailScreen() {
     console.log(`🔄 Repeat mode changing: ${repeatMode} -> ${nextMode}`);
     
     setRepeatMode(nextMode);
-    resetCompletionState();
+    // Don't disturb in-progress playback — the new count takes effect after the
+    // current pass finishes. Only reset when idle so the user can replay.
+    if (!isPlaying && !isPlayingTitleAudio) {
+      resetCompletionState();
+    }
     setShowRepeatBadge(true);
 
     Animated.sequence([
@@ -917,7 +960,7 @@ export default function DuaDetailScreen() {
     setTimeout(() => {
       setShowRepeatBadge(false);
     }, 1500);
-  }, [repeatMode, repeatScale, resetCompletionState]);
+  }, [repeatMode, repeatScale, resetCompletionState, isPlaying, isPlayingTitleAudio]);
 
   const handleBack = useCallback(() => {
     if (currentMode === 'full' && isPlaying) audioPause();
@@ -939,49 +982,27 @@ export default function DuaDetailScreen() {
     // Animate the slider immediately on the native thread — no render cycle lag
     Animated.spring(modeSlideAnim, { toValue: 0, tension: 340, friction: 26, useNativeDriver: true }).start();
     setCurrentMode('word');
+    updateSetting('playbackMode', 'word');
     if (isPlaying) {
       if (currentMode === 'full') audioPause();
       setIsPlaying(false);
     }
     resetCompletionState();
     setCurrentWordIndex(-1);
-  }, [isPlaying, audioPause, currentMode, resetCompletionState, modeSlideAnim]);
+  }, [isPlaying, audioPause, currentMode, resetCompletionState, modeSlideAnim, updateSetting]);
 
   const handleFullMode = useCallback(() => {
     if (currentMode === 'full') return;
     // Animate the slider immediately on the native thread — no render cycle lag
     Animated.spring(modeSlideAnim, { toValue: 1, tension: 340, friction: 26, useNativeDriver: true }).start();
     setCurrentMode('full');
+    updateSetting('playbackMode', 'full');
     if (isPlaying) setIsPlaying(false);
     resetCompletionState();
     setCurrentWordIndex(-1);
-  }, [isPlaying, resetCompletionState, currentMode, modeSlideAnim]);
+  }, [isPlaying, resetCompletionState, currentMode, modeSlideAnim, updateSetting]);
 
-  // ✅ ADDED: Display current repeat status in UI
-  const getRepeatStatusText = () => {
-    if (repeatMode === 'empty' || currentRepeatIteration === 0) return '';
 
-    const totalRepeats = getRepeatCount();
-    if (totalRepeats === Infinity) {
-      return ` (Repeat ∞ - #${currentRepeatIteration})`;
-    } else {
-      return ` (Repeat ${currentRepeatIteration}/${totalRepeats})`;
-    }
-  };
-
-  // ✅ ADDED: Get current playback status text
-  const getPlaybackStatusText = () => {
-    if (isPlayingTitleAudio) {
-      return 'Playing Title...';
-    }
-    if (isPlaying && currentMode === 'word') {
-      return `Word ${currentWordIndex + 1} of ${wordAudioPairs.length}${getRepeatStatusText()}`;
-    }
-    if (isPlaying && currentMode === 'full' && audioFull) {
-      return `${audioIsBuffering ? 'Buffering...' : `Playing ${Math.round(audioPosition / 1000)}s / ${Math.round(audioDuration / 1000)}s`}${getRepeatStatusText()}`;
-    }
-    return '';
-  };
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -1290,24 +1311,44 @@ export default function DuaDetailScreen() {
             )}
           </View>
 
-          <Animated.View style={{
-            transform: [
-              { scale: playButtonScale },
-              { scale: (isPlaying || isPlayingTitleAudio) ? pulseAnim : 1 }
-            ]
-          }}>
-            <BouncingButton onPress={handlePlayPause}>
-              <LinearGradient
-                colors={['#4ECDC4', '#26C6DA']}
-                style={styles.gradientBorder}
-              >
-                <Image
-                  source={(isPlaying || isPlayingTitleAudio) ? BtnPause : BtnPlay}
-                  style={styles.playButton}
-                />
-              </LinearGradient>
-            </BouncingButton>
-          </Animated.View>
+          <View style={styles.playButtonWrapper}>
+            {(isPlaying || isPlayingTitleAudio) && [ring1Anim, ring2Anim, ring3Anim].map((ring, i) => (
+              <Animated.View
+                key={i}
+                pointerEvents="none"
+                style={[
+                  styles.playRing,
+                  {
+                    borderColor: isPlayingTitleAudio ? '#FFA726' : '#4ECDC4',
+                    opacity: ring.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.65, 0] }),
+                    transform: [{ scale: ring.interpolate({ inputRange: [0, 1], outputRange: [1, 2.5] }) }],
+                  },
+                ]}
+              />
+            ))}
+            <Animated.View style={{
+              transform: [
+                { scale: playButtonScale },
+                { scale: (isPlaying || isPlayingTitleAudio) ? pulseAnim : 1 }
+              ]
+            }}>
+              <BouncingButton onPress={handlePlayPause}>
+                <LinearGradient
+                  colors={
+                    isPlayingTitleAudio ? ['#FFA726', '#FF7043'] :
+                    isPlaying ? ['#4ECDC4', '#26C6DA'] :
+                    ['#7E57C2', '#9C77D9']
+                  }
+                  style={styles.gradientBorder}
+                >
+                  <Image
+                    source={(isPlaying || isPlayingTitleAudio) ? BtnPause : BtnPlay}
+                    style={styles.playButton}
+                  />
+                </LinearGradient>
+              </BouncingButton>
+            </Animated.View>
+          </View>
 
           <BouncingButton
             onPress={navigateToNextDua}
@@ -1735,6 +1776,28 @@ const styles = StyleSheet.create({
   },
   repeatButtonContainer: {
     position: 'relative',
+  },
+  playButtonWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playRing: {
+    position: 'absolute',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 2.5,
+  },
+  playStatusRow: {
+    marginTop: 6,
+    alignItems: 'center',
+  },
+  playStatusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: THEME.text.secondary,
+    letterSpacing: 0.2,
   },
   footer: {
     paddingHorizontal: 16,
