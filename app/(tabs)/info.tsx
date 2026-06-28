@@ -1,422 +1,601 @@
 import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  View
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/ui/AppHeader';
 
 const { width } = Dimensions.get('window');
-const THEME = {
-  primary: '#FF6B9D',      // Softer Pink
-  secondary: '#FFF7D0',    // Bright Lemon Yellow
-  tertiary: '#E8F4FF',     // Softer Sky Blue
-  neutral: '#FFFFFF',      // White
-  accent: '#FFD166',       // Sunny Yellow
-  success: '#4ECDC4',      // Mint Green
-  header: '#fcf8b1',       // Yellow Header Color
-  
-  // Kid-Friendly Text Colors - Softer and Warmer
-  text: {
-    primary: '#2D4A63',    // Soft Blue-Gray - Easy on eyes
-    secondary: '#6B7B8C',  // Warm Gray - Gentle contrast
-    light: '#FFFFFF',      // White
-    dark: '#4A5C6B',       // Soft Charcoal - Not too dark
-    accent: '#E53E3E',     // Red accent for important text
-  }
+const CARD_GAP  = 12;
+const GRID_PAD  = 16;
+const GRID_ITEM = (width - GRID_PAD * 2 - CARD_GAP) / 2;
+
+const PURPLE      = '#7E57C2';
+const PURPLE_DARK = '#4527A0';
+const PURPLE_DEEP = '#1A0A5C';
+const PURPLE_TINT = 'rgba(126,87,194,0.09)';
+const PURPLE_BORD = 'rgba(126,87,194,0.14)';
+
+const T = {
+  bg:   '#F5F3FB',
+  card: '#FFFFFF',
+  text: { primary: '#1A1A2E', secondary: '#6B7280', muted: '#A0AEC0', white: '#FFFFFF' },
 };
 
-// Animated Feature Item Component
-const AnimatedFeatureItem = ({ feature, emoji, delay = 0 }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const STATS = [
+  { value: 43,  suffix: '',  label: 'Duas'       },
+  { value: 32,  suffix: '',  label: 'Categories' },
+  { value: 200, suffix: '+', label: 'Audio Files' },
+];
+
+const FEATURES = [
+  { emoji: '🕌', title: '43 Duas',       desc: 'Complete collection across 32 categories' },
+  { emoji: '🎵', title: 'Audio',          desc: 'Listen for perfect pronunciation'        },
+  { emoji: '📖', title: 'Word by Word',   desc: 'Learn letter by letter at your pace'     },
+  { emoji: '⭐', title: 'Favourites',     desc: 'Save and revisit your top duas'          },
+  { emoji: '🔍', title: 'Search',         desc: 'Find any dua instantly'                  },
+  { emoji: '📊', title: 'Track Progress', desc: 'See how far you\'ve come'               },
+];
+
+// ─── Animated count-up stat ──────────────────────────────────────────────────
+
+const StatCounter = ({
+  value,
+  suffix,
+  label,
+  delay = 0,
+}: {
+  value: number;
+  suffix: string;
+  label: string;
+  delay?: number;
+}) => {
+  const [display, setDisplay] = useState(0);
+  const fade  = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.7)).current;
 
   useFocusEffect(
     useCallback(() => {
-      const animation = Animated.sequence([
-        Animated.delay(delay),
+      setDisplay(0);
+      const timer = setTimeout(() => {
+        const duration = 900;
+        const steps    = 40;
+        const interval = duration / steps;
+        let step       = 0;
+        const id = setInterval(() => {
+          step++;
+          const progress = step / steps;
+          // ease-out curve
+          setDisplay(Math.round(value * (1 - Math.pow(1 - progress, 3))));
+          if (step >= steps) clearInterval(id);
+        }, interval);
         Animated.parallel([
-          Animated.spring(fadeAnim, {
-            toValue: 1,
-            tension: 50,
-            friction: 7,
-            useNativeDriver: true,
-          }),
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            tension: 60,
-            friction: 8,
-            useNativeDriver: true,
-          })
-        ])
-      ]);
-
-      animation.start();
-
+          Animated.timing(fade,  { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.spring(scale, { toValue: 1, tension: 160, friction: 7, useNativeDriver: true }),
+        ]).start();
+        return () => clearInterval(id);
+      }, delay);
       return () => {
-        animation.stop();
-        fadeAnim.setValue(0);
-        slideAnim.setValue(50);
+        clearTimeout(timer);
+        setDisplay(0);
+        fade.setValue(0);
+        scale.setValue(0.7);
       };
-    }, [fadeAnim, slideAnim, delay])
+    }, [value, delay])
   );
 
   return (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateX: slideAnim }],
-      }}
-    >
-      <View style={styles.featureItem}>
-        <Text style={styles.featureEmoji}>{emoji}</Text>
-        <Text style={styles.featureText}>{feature}</Text>
-      </View>
+    <Animated.View style={[styles.statCell, { opacity: fade, transform: [{ scale }] }]}>
+      <Text style={styles.statNumber}>
+        {display}{suffix}
+      </Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </Animated.View>
   );
 };
 
-// Header Component with Animation
-const AnimatedHeader = () => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+// ─── Feature grid card ────────────────────────────────────────────────────────
+
+const FeatureCard = ({
+  emoji,
+  title,
+  desc,
+  delay = 0,
+}: {
+  emoji: string;
+  title: string;
+  desc: string;
+  delay?: number;
+}) => {
+  const fade  = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(20)).current;
 
   useFocusEffect(
     useCallback(() => {
-      const animation = Animated.parallel([
-        Animated.spring(fadeAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 60,
-          friction: 6,
-          useNativeDriver: true,
-        })
-      ]);
-
-      animation.start();
-
-      return () => {
-        animation.stop();
-        fadeAnim.setValue(0);
-        scaleAnim.setValue(0.8);
-      };
-    }, [fadeAnim, scaleAnim])
+      Animated.parallel([
+        Animated.timing(fade,  { toValue: 1, duration: 380, delay, useNativeDriver: true }),
+        Animated.spring(slide, { toValue: 0, tension: 100, friction: 10, delay, useNativeDriver: true }),
+      ]).start();
+      return () => { fade.setValue(0); slide.setValue(20); };
+    }, [delay])
   );
 
   return (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ scale: scaleAnim }],
-      }}
-    >
-      <View style={styles.header}>
-        <LinearGradient
-          colors={[THEME.secondary, '#9e904bff']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.headerEmoji}>📚</Text>
-              <View>
-                <Text style={styles.title}>About DuaLand</Text>
-                <Text style={styles.subtitle}>Learn Beautiful Duas</Text>
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
+    <Animated.View style={[styles.featureCard, { opacity: fade, transform: [{ translateY: slide }] }]}>
+      <View style={styles.featureIconWrap}>
+        <Text style={styles.featureEmoji}>{emoji}</Text>
       </View>
+      <Text style={styles.featureTitle}>{title}</Text>
+      <Text style={styles.featureDesc}>{desc}</Text>
     </Animated.View>
   );
 };
 
-export default function InfoScreen() {
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
+export default function InspireScreen() {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handleShare = () => {
+    Alert.alert(
+      '🌟 Share DuaLand',
+      'Every person you share with is a continuous act of sadaqah jariyah — a reward that keeps giving long after this life.',
+      [
+        { text: 'Maybe Later', style: 'cancel'  },
+        { text: 'Share Now',   style: 'default' },
+      ]
+    );
+  };
+
+  const handleSharePressIn = () =>
+    Animated.spring(scaleAnim, { toValue: 0.96, tension: 200, friction: 6, useNativeDriver: true }).start();
+
+  const handleSharePressOut = () =>
+    Animated.spring(scaleAnim, { toValue: 1, tension: 200, friction: 6, useNativeDriver: true }).start();
+
   return (
-    <ScreenWrapper bottomMargin={30}>
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
-      
-      {/* Background */}
-      <View style={styles.background} />
+    <ScreenWrapper bottomMargin={70}>
+      <SafeAreaView style={styles.screen} edges={['top']}>
+        <StatusBar barStyle="light-content" backgroundColor="#7E57C2" />
 
-      {/* Header */}
-      <AnimatedHeader />
+        <AppHeader icon="💡" title="Inspire" subtitle="Knowledge & Community" />
 
-      <ScrollView 
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Description Section */}
-        <View style={styles.section}>
-          <Text style={styles.description}>
-            DuaLand is a beautiful app designed to help you learn and memorize Islamic prayers and supplications (Duas) in an engaging and interactive way.
-          </Text>
-        </View>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
 
-        {/* Features Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionEmoji}>✨</Text>
-            <Text style={styles.sectionTitle}>Amazing Features</Text>
-          </View>
-          
-          <AnimatedFeatureItem 
-            feature="Learn beautiful Duas with translations"
-            emoji="🕌"
-            delay={100}
-          />
-          <AnimatedFeatureItem 
-            feature="Audio playback for proper pronunciation"
-            emoji="🎵"
-            delay={200}
-          />
-          <AnimatedFeatureItem 
-            feature="Word-by-word learning mode"
-            emoji="📖"
-            delay={300}
-          />
-          <AnimatedFeatureItem 
-            feature="Favorite your most-used Duas"
-            emoji="⭐"
-            delay={400}
-          />
-          <AnimatedFeatureItem 
-            feature="Kid-friendly interface with animations"
-            emoji="👶"
-            delay={500}
-          />
-          <AnimatedFeatureItem 
-            feature="Search and discover new Duas"
-            emoji="🔍"
-            delay={600}
-          />
-        </View>
+          {/* ── 1. Hadith Hero ─────────────────────────────────────────── */}
+          <LinearGradient
+            colors={[PURPLE, PURPLE_DARK]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            {/* decorative circles */}
+            <View style={styles.heroBubble1} />
+            <View style={styles.heroBubble2} />
 
-        {/* Mission Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionEmoji}>🎯</Text>
-            <Text style={styles.sectionTitle}>Our Mission</Text>
-          </View>
-          <Text style={styles.missionText}>
-            To make learning Islamic prayers accessible, engaging, and enjoyable for everyone, especially children and new Muslims.
-          </Text>
-        </View>
+            <Text style={styles.heroLabel}>HADITH</Text>
+            <Text style={styles.heroArabic}>
+              طَلَبُ الْعِلْمِ فَرِيضَةٌ عَلَى كُلِّ مُسْلِمٍ
+            </Text>
+            <View style={styles.heroDivider} />
+            <Text style={styles.heroEnglish}>
+              "Seeking knowledge is an obligation{'\n'}upon every Muslim."
+            </Text>
+            <Text style={styles.heroSource}>— Ibn Mājah</Text>
+          </LinearGradient>
 
-        {/* Contact Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionEmoji}>📞</Text>
-            <Text style={styles.sectionTitle}>Contact & Support</Text>
-          </View>
-          <Text style={styles.contactText}>
-            We'd love to hear from you! If you have any questions, feedback, or suggestions, please reach out to us:
-          </Text>
-          <View style={styles.contactInfo}>
-            <Text style={styles.contactDetail}>📧 Email: support@dualand.app</Text>
-            <Text style={styles.contactDetail}>🌐 Website: www.dualand.app</Text>
-          </View>
-        </View>
-
-        {/* App Info Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionEmoji}>ℹ️</Text>
-            <Text style={styles.sectionTitle}>App Information</Text>
-          </View>
-          <View style={styles.appInfo}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Version</Text>
-              <Text style={styles.infoValue}>1.0.0</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Last Updated</Text>
-              <Text style={styles.infoValue}>January 2024</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Developed With</Text>
-              <Text style={styles.infoValue}>❤️ & React Native</Text>
+          {/* ── 2. Live Stats ──────────────────────────────────────────── */}
+          <View style={styles.statsCard}>
+            {STATS.map((s, i) => (
+              <React.Fragment key={s.label}>
+                <StatCounter value={s.value} suffix={s.suffix} label={s.label} delay={i * 120} />
+                {i < STATS.length - 1 && <View style={styles.statSep} />}
+              </React.Fragment>
+            ))}
+            {/* progress bar — fill proportional to duas memorised (decorative) */}
+            <View style={styles.statsProgressTrack}>
+              <LinearGradient
+                colors={[PURPLE, '#22C55E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ height: 3, width: '65%', borderRadius: 2 }}
+              />
             </View>
           </View>
-        </View>
 
-        {/* Bottom Padding */}
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* ── 3. Feature Grid ────────────────────────────────────────── */}
+          <View style={styles.sectionHead}>
+            <View style={styles.sectionIconWrap}>
+              <Text style={styles.sectionIcon}>✨</Text>
+            </View>
+            <Text style={styles.sectionTitle}>What's Inside</Text>
+          </View>
+
+          <View style={styles.featureGrid}>
+            {FEATURES.map((f, i) => (
+              <FeatureCard
+                key={f.title}
+                emoji={f.emoji}
+                title={f.title}
+                desc={f.desc}
+                delay={100 + i * 70}
+              />
+            ))}
+          </View>
+
+          {/* ── 4. Sadaqah Jariyah Share CTA ───────────────────────────── */}
+          <LinearGradient
+            colors={[PURPLE_DARK, PURPLE_DEEP]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.shareCta}
+          >
+            <View style={styles.shareCtaBubble1} />
+            <View style={styles.shareCtaBubble2} />
+
+            <Text style={styles.shareCtaIcon}>🤲</Text>
+            <Text style={styles.shareCtaHeading}>Earn Sadaqah Jariyah</Text>
+            <Text style={styles.shareCtaBody}>
+              Every person who learns a dua through your share earns you
+              continuous reward — long after this life.
+            </Text>
+
+            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+              <TouchableOpacity
+                style={styles.shareCtaButton}
+                onPress={handleShare}
+                onPressIn={handleSharePressIn}
+                onPressOut={handleSharePressOut}
+                activeOpacity={1}
+              >
+                <Text style={styles.shareCtaButtonText}>↗  Share DuaLand</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </LinearGradient>
+
+          {/* ── 5. Contact ─────────────────────────────────────────────── */}
+          <View style={styles.contactCard}>
+            <View style={styles.sectionHead}>
+              <View style={styles.sectionIconWrap}>
+                <Text style={styles.sectionIcon}>📞</Text>
+              </View>
+              <Text style={styles.sectionTitle}>Get in Touch</Text>
+            </View>
+            <View style={styles.contactRow}>
+              <Text style={styles.contactIcon}>📧</Text>
+              <Text style={styles.contactText}>support@dualand.app</Text>
+            </View>
+            <View style={[styles.contactRow, { borderBottomWidth: 0 }]}>
+              <Text style={styles.contactIcon}>🌐</Text>
+              <Text style={styles.contactText}>www.dualand.app</Text>
+            </View>
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerHeart}>Made with ❤️ for the Muslim Ummah</Text>
+            <Text style={styles.footerVersion}>DuaLand v1.0.0 • © 2025</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </ScreenWrapper>
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#F0F9FF',
+    backgroundColor: T.bg,
   },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F0F9FF',
-  },
-  header: {
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    paddingTop: 20,
-    paddingBottom: 20,
-  },
-  headerContent: {
-    paddingHorizontal: 20,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerEmoji: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    alignContent: 'center',
-    color: THEME.text.dark,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: THEME.text.dark,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  content: {
-    flex: 1,
-  },
+  scroll: { flex: 1 },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: GRID_PAD,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
-  section: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 20,
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
+
+  // ── Hero ──
+  heroCard: {
+    borderRadius: 22,
+    padding: 28,
+    marginBottom: 14,
+    overflow: 'hidden',
+    alignItems: 'center',
+    shadowColor: PURPLE_DARK,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.30,
     shadowRadius: 16,
     elevation: 8,
   },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#374151',
+  heroBubble1: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    top: -50,
+    right: -40,
+  },
+  heroBubble2: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    bottom: -30,
+    left: -20,
+  },
+  heroLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 3,
+    color: 'rgba(255,255,255,0.55)',
+    marginBottom: 14,
+  },
+  heroArabic: {
+    fontSize: 22,
+    color: T.text.white,
     textAlign: 'center',
+    lineHeight: 36,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  heroDivider: {
+    width: 40,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    marginVertical: 16,
+  },
+  heroEnglish: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.90)',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontStyle: 'italic',
     fontWeight: '500',
   },
-  sectionHeader: {
+  heroSource: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.55)',
+    marginTop: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+
+  // ── Stats ──
+  statsCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: T.card,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+    overflow: 'hidden',
+    shadowColor: PURPLE_DARK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  statCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: PURPLE,
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: T.text.muted,
+    fontWeight: '600',
+    marginTop: 3,
+    letterSpacing: 0.2,
+  },
+  statSep: {
+    width: 1,
+    height: 36,
+    backgroundColor: PURPLE_BORD,
+  },
+  statsProgressTrack: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#EDE7F6',
+  },
+
+  // ── Section heading ──
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: PURPLE_TINT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  sectionIcon: { fontSize: 15 },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: T.text.primary,
+  },
+
+  // ── Feature grid ──
+  featureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: CARD_GAP,
     marginBottom: 20,
   },
-  sectionEmoji: {
-    fontSize: 24,
-    marginRight: 12,
+  featureCard: {
+    width: GRID_ITEM,
+    backgroundColor: T.card,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: PURPLE_DARK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
+  featureIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: PURPLE_TINT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
-  featureItem: {
+  featureEmoji: { fontSize: 20 },
+  featureTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: T.text.primary,
+    marginBottom: 4,
+  },
+  featureDesc: {
+    fontSize: 12,
+    color: T.text.secondary,
+    lineHeight: 17,
+  },
+
+  // ── Sadaqah Jariyah CTA ──
+  shareCta: {
+    borderRadius: 22,
+    padding: 28,
+    marginBottom: 20,
+    overflow: 'hidden',
+    alignItems: 'center',
+    shadowColor: PURPLE_DEEP,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  shareCtaBubble1: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    top: -60,
+    left: -50,
+  },
+  shareCtaBubble2: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    bottom: -30,
+    right: -20,
+  },
+  shareCtaIcon: {
+    fontSize: 40,
+    marginBottom: 14,
+  },
+  shareCtaHeading: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: T.text.white,
+    textAlign: 'center',
+    marginBottom: 10,
+    letterSpacing: 0.2,
+  },
+  shareCtaBody: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.82)',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  shareCtaButton: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.75)',
+    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 32,
+  },
+  shareCtaButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: T.text.white,
+    letterSpacing: 0.3,
+  },
+
+  // ── Contact ──
+  contactCard: {
+    backgroundColor: T.card,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 8,
+    shadowColor: PURPLE_DARK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139, 92, 246, 0.1)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: PURPLE_BORD,
+    gap: 12,
   },
-  featureEmoji: {
-    fontSize: 20,
-    marginRight: 16,
-    width: 30,
-  },
-  featureText: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
-    flex: 1,
-    lineHeight: 22,
-  },
-  missionText: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
+  contactIcon: { fontSize: 18 },
   contactText: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
-    marginBottom: 16,
-  },
-  contactInfo: {
-    backgroundColor: 'rgba(139, 92, 246, 0.05)',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#8B5CF6',
-  },
-  contactDetail: {
-    fontSize: 15,
-    color: '#7C3AED',
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 8,
-    lineHeight: 20,
+    color: PURPLE,
   },
-  appInfo: {
-    backgroundColor: 'rgba(139, 92, 246, 0.05)',
-    padding: 16,
-    borderRadius: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+
+  // ── Footer ──
+  footer: {
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139, 92, 246, 0.1)',
+    paddingVertical: 20,
+    gap: 4,
   },
-  infoLabel: {
-    fontSize: 15,
-    color: '#374151',
+  footerHeart: {
+    fontSize: 14,
+    color: T.text.secondary,
     fontWeight: '500',
   },
-  infoValue: {
-    fontSize: 15,
-    color: '#7C3AED',
-    fontWeight: '600',
-  },
-  bottomPadding: {
-    height: 20,
+  footerVersion: {
+    fontSize: 12,
+    color: T.text.muted,
   },
 });

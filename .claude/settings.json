@@ -4,7 +4,9 @@
       "Bash(git pull *)",
       "Bash(node -e \"const pkg = require\\('./package.json'\\); console.log\\(pkg.version, pkg.name\\)\")",
       "Bash(git checkout *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(del \"d:\\\\Projects\\\\dualand-app\\\\app\\\\\\(tabs\\)\\\\share.tsx\")",
+      "PowerShell(Remove-Item \"d:\\\\Projects\\\\dualand-app\\\\app\\\\\\(tabs\\)\\\\share.tsx\" -Confirm:$false)"
     ]
   }
 }

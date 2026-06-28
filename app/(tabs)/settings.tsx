@@ -1,14 +1,13 @@
-import { LinearGradient } from 'expo-linear-gradient';
+import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 import { useFocusEffect } from 'expo-router';
+import Slider from '@react-native-community/slider';
 import React, { useCallback, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppSettingsStore } from '../../stores/appSettingsStore';
 import { useUserProgressStore } from '../../stores/userProgressStore';
 import {
-  ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,1089 +17,710 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/ui/AppHeader';
 
-const { width } = Dimensions.get('window');
+const PURPLE = '#7E57C2';
+const PURPLE_DARK = '#4527A0';
+const PURPLE_LIGHT = '#EDE7F6';
+const PURPLE_TINT = 'rgba(126,87,194,0.10)';
 
-// Enhanced Theme System
-const THEME = {
-  primary: '#FF9A3D',
-  primaryLight: '#FFB366',
-  primaryDark: '#CC7A29',
-  secondary: '#FFF7D0',
-  tertiary: '#F8FAFF',
-  neutral: '#FFFFFF',
-  accent: '#FFD166',
-  success: '#4ECDC4',
-  error: '#FF6B6B',
-  warning: '#FFD166',
-  header: '#fcf8b1',
-  
+const T = {
+  bg: '#F5F3FB',
+  card: '#FFFFFF',
+  border: '#EEEBF8',
+  divider: '#F0EDF8',
   text: {
-    primary: '#1A1F36',
+    primary: '#1A1A2E',
     secondary: '#6B7280',
-    tertiary: '#9CA3AF',
-    light: '#FFFFFF',
-    inverted: '#FFFFFF',
+    muted: '#A0AEC0',
   },
-  
-  background: {
-    primary: '#FFFFFF',
-    secondary: '#F8FAFF',
-    tertiary: '#F1F5F9',
-    card: '#FFFFFF',
-  },
-  
-  border: {
-    light: '#F3F4F6',
-    medium: '#E5E7EB',
-    dark: '#D1D5DB',
-  }
 };
 
-
-// Language Options
 const LANGUAGE_OPTIONS = [
-  { id: 'en', name: 'English', available: true, emoji: '🇺🇸' },
-  { id: 'ur', name: 'Urdu', available: false, emoji: '🇵🇰' },
-  { id: 'ar', name: 'Arabic', available: false, emoji: '🇸🇦' },
-  { id: 'hi', name: 'Hindi', available: false, emoji: '🇮🇳' },
+  { id: 'en', name: 'English',  emoji: '🇺🇸', available: true  },
+  { id: 'ur', name: 'Urdu',     emoji: '🇵🇰', available: false },
+  { id: 'ar', name: 'Arabic',   emoji: '🇸🇦', available: false },
+  { id: 'hi', name: 'Hindi',    emoji: '🇮🇳', available: false },
 ];
 
-// Enhanced Section Component
-const SettingsSection = ({ title, icon, children, delay = 0 }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+// ─── Section ────────────────────────────────────────────────────────────────
 
-  useFocusEffect(
-    useCallback(() => {
-      const animation = Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          delay,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 500,
-          delay,
-          useNativeDriver: true,
-        })
-      ]);
-
-      animation.start();
-
-      return () => {
-        fadeAnim.setValue(0);
-        slideAnim.setValue(20);
-      };
-    }, [fadeAnim, slideAnim, delay])
-  );
-
-  return (
-    <Animated.View
-      style={[
-        styles.sectionContainer,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }
-      ]}
-    >
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionIcon}>
-          <Text style={styles.sectionIconText}>{icon}</Text>
-        </View>
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      <View style={styles.sectionContent}>
-        {children}
-      </View>
-    </Animated.View>
-  );
-};
-
-// Enhanced Setting Row Component
-const SettingRow = ({ 
-  title, 
-  subtitle,
+const Section = ({
+  title,
   icon,
-  rightElement,
-  onPress,
-  disabled = false,
-  showDivider = true,
-  isFirst = false,
-  isLast = false,
+  children,
+  delay = 0,
+}: {
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+  delay?: number;
 }) => {
-  const [isPressed, setIsPressed] = useState(false);
-  
-  return (
-    <TouchableOpacity
-      style={[
-        styles.settingRow,
-        isFirst && styles.settingRowFirst,
-        isLast && styles.settingRowLast,
-        showDivider && !isLast && styles.settingRowWithDivider,
-        disabled && styles.settingRowDisabled,
-        isPressed && styles.settingRowPressed,
-      ]}
-      onPress={onPress}
-      disabled={disabled || !onPress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
-      activeOpacity={0.8}
-    >
-      <View style={styles.settingLeft}>
-        {icon && (
-          <View style={[
-            styles.settingIcon,
-            disabled && styles.settingIconDisabled
-          ]}>
-            <Text style={styles.settingIconText}>{icon}</Text>
-          </View>
-        )}
-        <View style={styles.settingTextContainer}>
-          <Text style={[
-            styles.settingTitle,
-            disabled && styles.settingTitleDisabled
-          ]}>
-            {title}
-          </Text>
-          {subtitle && (
-            <Text style={[
-              styles.settingSubtitle,
-              disabled && styles.settingSubtitleDisabled
-            ]}>
-              {subtitle}
-            </Text>
-          )}
-        </View>
-      </View>
-      
-      <View style={styles.settingRight}>
-        {rightElement}
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// Enhanced Switch Component
-const SettingSwitch = ({ 
-  title, 
-  subtitle, 
-  icon,
-  value, 
-  onValueChange,
-  disabled = false,
-}) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      })
-    ]).start();
-    
-    onValueChange(!value);
-  };
-
-  return (
-    <SettingRow
-      title={title}
-      subtitle={subtitle}
-      icon={icon}
-      onPress={handlePress}
-      disabled={disabled}
-      rightElement={
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <Switch
-            value={value}
-            onValueChange={onValueChange}
-            trackColor={{ 
-              false: THEME.border.light, 
-              true: THEME.primaryLight 
-            }}
-            thumbColor={value ? THEME.primary : THEME.neutral}
-            ios_backgroundColor={THEME.border.light}
-            disabled={disabled}
-          />
-        </Animated.View>
-      }
-    />
-  );
-};
-
-// Language Selector Component
-const LanguageSelector = ({ currentLanguage, onLanguageChange }) => {
-  const currentLang = LANGUAGE_OPTIONS.find(lang => lang.id === currentLanguage);
-
-  return (
-    <View>
-      <SettingRow
-        title="App Language"
-        subtitle="Change the app display language"
-        icon="🌐"
-        onPress={() => {
-          Alert.alert(
-            'Select Language',
-            'Choose your preferred language',
-            LANGUAGE_OPTIONS.map(lang => ({
-              text: `${lang.emoji} ${lang.name}${!lang.available ? ' (Coming Soon)' : ''}`,
-              onPress: lang.available ? () => onLanguageChange(lang.id) : null,
-              style: lang.available ? 'default' : 'cancel',
-            }))
-          );
-        }}
-        rightElement={
-          <View style={styles.languageSelector}>
-            <Text style={styles.currentLanguage}>
-              {currentLang?.emoji} {currentLang?.name}
-            </Text>
-            <Text style={styles.chevron}>›</Text>
-          </View>
-        }
-      />
-    </View>
-  );
-};
-
-// Font Size Selector Component
-const FontSizeSelector = ({ size, onSizeChange }) => {
-  return (
-    <View style={styles.fontSizeContainer}>
-      <View style={styles.fontSizeHeader}>
-        <Text style={styles.fontSizeLabel}>Arabic Font Size</Text>
-        <Text style={styles.fontSizeValue}>{size.toFixed(1)}</Text>
-      </View>
-      
-      <View style={styles.fontSizeSliderContainer}>
-        <View style={styles.fontSizeLabels}>
-          <Text style={styles.fontSizeMinMax}>A</Text>
-          <Text style={styles.fontSizeMinMax}>A</Text>
-        </View>
-        
-        <View style={styles.fontSizeSlider}>
-          {[16, 20, 24, 28, 32].map((fontSize) => (
-            <TouchableOpacity
-              key={fontSize}
-              style={[
-                styles.fontSizeOption,
-                size >= fontSize && styles.fontSizeOptionActive,
-              ]}
-              onPress={() => onSizeChange(fontSize)}
-            />
-          ))}
-        </View>
-      </View>
-    </View>
-  );
-};
-
-// Data Management Section
-const DataManagementSection = ({ onExport, onImport, onViewInfo, onReset, isExporting }) => {
-  return (
-    <View style={styles.dataManagementGrid}>
-      <TouchableOpacity
-        style={[styles.dataActionCard, isExporting && styles.dataActionCardDisabled]}
-        onPress={onExport}
-        disabled={isExporting}
-      >
-        <View style={[styles.dataActionIcon, { backgroundColor: '#10B981' }]}>
-          {isExporting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.dataActionIconText}>💾</Text>
-          )}
-        </View>
-        <Text style={styles.dataActionTitle}>
-          {isExporting ? 'Exporting...' : 'Export Data'}
-        </Text>
-        <Text style={styles.dataActionDescription}>
-          Backup your progress and settings
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.dataActionCard}
-        onPress={onViewInfo}
-      >
-        <View style={[styles.dataActionIcon, { backgroundColor: '#8B5CF6' }]}>
-          <Text style={styles.dataActionIconText}>📊</Text>
-        </View>
-        <Text style={styles.dataActionTitle}>Database Info</Text>
-        <Text style={styles.dataActionDescription}>
-          View storage and usage statistics
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.dataActionCard, styles.dataActionCardDisabled]}
-        onPress={onImport}
-        disabled
-      >
-        <View style={[styles.dataActionIcon, { backgroundColor: '#6B7280' }]}>
-          <Text style={styles.dataActionIconText}>📥</Text>
-        </View>
-        <Text style={styles.dataActionTitle}>Import Data</Text>
-        <Text style={styles.dataActionDescription}>
-          Coming in next update
-        </Text>
-        <View style={styles.comingSoonBadge}>
-          <Text style={styles.comingSoonText}>SOON</Text>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.dataActionCard}
-        onPress={() => Alert.alert('Reset Data', 'This will reset all your favorites and memorization progress. Are you sure?', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Reset', style: 'destructive', onPress: () => onReset() },
-        ])}
-      >
-        <View style={[styles.dataActionIcon, { backgroundColor: '#EF4444' }]}>
-          <Text style={styles.dataActionIconText}>🔄</Text>
-        </View>
-        <Text style={styles.dataActionTitle}>Reset Data</Text>
-        <Text style={styles.dataActionDescription}>
-          Clear all progress and start fresh
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-// Enhanced Header Component
-const SettingsHeader = () => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-50)).current;
+  const fade  = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(16)).current;
 
   useFocusEffect(
     useCallback(() => {
       Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        })
+        Animated.timing(fade,  { toValue: 1, duration: 350, delay, useNativeDriver: true }),
+        Animated.timing(slide, { toValue: 0, duration: 400, delay, useNativeDriver: true }),
       ]).start();
-    }, [fadeAnim, slideAnim])
+      return () => { fade.setValue(0); slide.setValue(16); };
+    }, [fade, slide, delay])
   );
 
   return (
-    <Animated.View
-      style={[
-        styles.header,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }
-      ]}
-    >
-      <LinearGradient
-        colors={['#FF9E7D', '#FF6B9D']}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerIcon}>
-            <Text style={styles.headerIconText}>⚙️</Text>
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Settings</Text>
-            <Text style={styles.headerSubtitle}>
-              Customize your DuaLand experience
-            </Text>
-          </View>
+    <Animated.View style={[styles.section, { opacity: fade, transform: [{ translateY: slide }] }]}>
+      <View style={styles.sectionHead}>
+        <View style={styles.sectionIconWrap}>
+          <Text style={styles.sectionIconText}>{icon}</Text>
         </View>
-      </LinearGradient>
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
+      <View style={styles.card}>{children}</View>
     </Animated.View>
   );
 };
 
-// Main Settings Screen Component
-export default function EnhancedSettingsScreen() {
-  // useShallow prevents re-renders when unrelated store fields change
+// ─── Row ─────────────────────────────────────────────────────────────────────
+
+const Row = ({
+  icon,
+  title,
+  subtitle,
+  right,
+  onPress,
+  disabled = false,
+  divider = true,
+}: {
+  icon: string;
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+  onPress?: () => void;
+  disabled?: boolean;
+  divider?: boolean;
+}) => {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <TouchableOpacity
+      style={[
+        styles.row,
+        divider && styles.rowDivider,
+        disabled && styles.rowDisabled,
+        pressed && styles.rowPressed,
+      ]}
+      onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      disabled={disabled || !onPress}
+      activeOpacity={1}
+    >
+      <View style={styles.rowIconWrap}>
+        <Text style={styles.rowIcon}>{icon}</Text>
+      </View>
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.rowSub}>{subtitle}</Text> : null}
+      </View>
+      {right ? <View style={styles.rowRight}>{right}</View> : null}
+    </TouchableOpacity>
+  );
+};
+
+// ─── Toggle row ──────────────────────────────────────────────────────────────
+
+const ToggleRow = ({
+  icon,
+  title,
+  subtitle,
+  value,
+  onChange,
+  disabled = false,
+  divider = true,
+}: {
+  icon: string;
+  title: string;
+  subtitle?: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  divider?: boolean;
+}) => (
+  <Row
+    icon={icon}
+    title={title}
+    subtitle={subtitle}
+    disabled={disabled}
+    divider={divider}
+    onPress={disabled ? undefined : () => onChange(!value)}
+    right={
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: '#D1D5DB', true: PURPLE }}
+        thumbColor={value ? '#FFFFFF' : '#F3F4F6'}
+        ios_backgroundColor="#D1D5DB"
+        disabled={disabled}
+      />
+    }
+  />
+);
+
+// ─── Font size picker ─────────────────────────────────────────────────────────
+
+const FontSizePicker = ({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) => {
+  const [preview, setPreview] = useState(value);
+
+  // Sync local preview when persisted value loads from storage after mount
+  React.useEffect(() => { setPreview(value); }, [value]);
+
+  return (
+    <View style={styles.fontRow}>
+      <View style={styles.fontRowIconWrap}>
+        <Text style={styles.rowIcon}>✏️</Text>
+      </View>
+      <View style={styles.fontTextBlock}>
+        <View style={styles.fontRowHeader}>
+          <Text style={styles.rowTitle}>Arabic Font Size</Text>
+          <View style={styles.fontBadge}>
+            <Text style={styles.fontBadgeText}>{preview}px</Text>
+          </View>
+        </View>
+
+        {/* live Arabic preview */}
+        <Text style={[styles.fontPreview, { fontSize: preview }]} numberOfLines={1}>
+          بِسْمِ اللَّهِ
+        </Text>
+
+        <Slider
+          style={styles.slider}
+          minimumValue={16}
+          maximumValue={38}
+          step={1}
+          value={preview}
+          onValueChange={setPreview}
+          onSlidingComplete={onChange}
+          minimumTrackTintColor={PURPLE}
+          maximumTrackTintColor={T.border}
+          thumbTintColor={PURPLE}
+        />
+
+        <View style={styles.fontSliderLabels}>
+          <Text style={styles.fontSliderLabel}>A</Text>
+          <Text style={[styles.fontSliderLabel, { fontSize: 18 }]}>A</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
+
+export default function SettingsScreen() {
   const {
     language, arabicFontSize, darkMode, readDuaTitle, readDuaTranslation,
     autoPlayAudio, wordByWordPause, enableRewards,
     autoNextDuas, hapticFeedback, notifications,
     updateSetting,
-  } = useAppSettingsStore(useShallow((s) => s));
-  const resetAllProgress = useUserProgressStore((s) => s.resetAllProgress);
+  } = useAppSettingsStore(useShallow(s => s));
 
-  const [isExporting, setIsExporting] = useState(false);
+  const resetAllProgress = useUserProgressStore(s => s.resetAllProgress);
 
-  const handleExport = useCallback(async () => {
-    setIsExporting(true);
-    // Simulate export process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsExporting(false);
-    Alert.alert(
-      '✅ Export Complete',
-      'Your DuaLand data has been successfully exported and saved to your device.',
-      [{ text: 'OK', style: 'default' }]
-    );
-  }, []);
+  const currentLang = LANGUAGE_OPTIONS.find(l => l.id === language);
 
-  const handleImport = useCallback(() => {
-    Alert.alert(
-      '🚧 Coming Soon',
-      'The data import feature will be available in our next major update. Stay tuned!',
-      [{ text: 'Got It', style: 'default' }]
-    );
-  }, []);
-
-  const handleViewInfo = useCallback(() => {
-    const { favorites, memorization } = useUserProgressStore.getState();
-    const favCount = Object.values(favorites).filter(Boolean).length;
-    const memorizedCount = Object.values(memorization).filter(v => v === 'memorized').length;
-    const learningCount = Object.values(memorization).filter(v => v === 'learning').length;
-    Alert.alert(
-      '📊 App Information',
-      `Here's your current progress:\n\n• Total Duas: 43\n• Categories: 32\n• Favorites: ${favCount}\n• Memorized: ${memorizedCount}\n• Learning: ${learningCount}`,
-      [{ text: 'Close', style: 'cancel' }]
-    );
-  }, []);
-
-  const handleSupport = useCallback((action) => {
-    const actions = {
-      rate: () => Alert.alert(
+  const handleSupport = useCallback((action: 'rate' | 'feedback' | 'help' | 'about') => {
+    const map = {
+      rate: [
         '⭐ Rate DuaLand',
         'Thank you for using DuaLand! If you enjoy the app, please consider rating us on the App Store.',
-        [
-          { text: 'Maybe Later', style: 'cancel' },
-          { text: 'Rate Now', style: 'default' }
-        ]
-      ),
-      feedback: () => Alert.alert(
+        [{ text: 'Maybe Later', style: 'cancel' as const }, { text: 'Rate Now', style: 'default' as const }],
+      ],
+      feedback: [
         '💌 Send Feedback',
-        'We\'d love to hear your thoughts! Your feedback helps us improve DuaLand for everyone.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Send Feedback', style: 'default' }
-        ]
-      ),
-      help: () => Alert.alert(
+        "We'd love to hear your thoughts! Your feedback helps us improve DuaLand for everyone.",
+        [{ text: 'Cancel', style: 'cancel' as const }, { text: 'Send Feedback', style: 'default' as const }],
+      ],
+      help: [
         '❓ Help & Support',
         'Need help with DuaLand? Visit our help center or contact our support team.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Get Help', style: 'default' }
-        ]
-      ),
-      about: () => Alert.alert(
+        [{ text: 'Cancel', style: 'cancel' as const }, { text: 'Get Help', style: 'default' as const }],
+      ],
+      about: [
         '📱 About DuaLand',
         'DuaLand v1.0.0\n\nA beautiful, kid-friendly app for learning and memorizing Islamic duas. Built with love for the Muslim community.',
-        [{ text: 'Close', style: 'cancel' }]
-      )
-    };
-    
-    actions[action]?.();
+        [{ text: 'Close', style: 'cancel' as const }],
+      ],
+    } as const;
+    const [title, msg, buttons] = map[action];
+    Alert.alert(title, msg, [...buttons]);
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={THEME.primary} />
-      
-      {/* Header */}
-      <SettingsHeader />
+    <ScreenWrapper bottomMargin={70}>
+      <SafeAreaView style={styles.screen} edges={['top']}>
+        <StatusBar barStyle="light-content" backgroundColor="#7E57C2" />
 
-      {/* Content */}
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Language & Display */}
-        <SettingsSection title="Language & Display" icon="🌐" delay={100}>
-          <LanguageSelector
-            currentLanguage={language}
-            onLanguageChange={(lang) => updateSetting('language', lang)}
-          />
-          <FontSizeSelector
-            size={arabicFontSize}
-            onSizeChange={(size) => updateSetting('arabicFontSize', size)}
-          />
-          <SettingSwitch
-            title="Dark Mode"
-            subtitle="Coming soon in the next update"
-            icon="🌙"
-            value={darkMode}
-            onValueChange={(value) => updateSetting('darkMode', value)}
-            disabled={true}
-          />
-        </SettingsSection>
+        <AppHeader icon="⚙️" title="Settings" subtitle="Customize your experience" />
 
-        {/* Audio & Playback */}
-        <SettingsSection title="Audio & Playback" icon="🔊" delay={200}>
-          <SettingSwitch
-            title="Read Dua Titles"
-            subtitle="Announce dua titles automatically"
-            icon="📖"
-            value={readDuaTitle}
-            onValueChange={(value) => updateSetting('readDuaTitle', value)}
-          />
-          <SettingSwitch
-            title="Read Translations"
-            subtitle="Read translation after Arabic"
-            icon="🔤"
-            value={readDuaTranslation}
-            onValueChange={(value) => updateSetting('readDuaTranslation', value)}
-          />
-          <SettingSwitch
-            title="Auto-play Audio"
-            subtitle="Play audio when opening a dua"
-            icon="🎵"
-            value={autoPlayAudio}
-            onValueChange={(value) => updateSetting('autoPlayAudio', value)}
-          />
-          <SettingSwitch
-            title="Word-by-Word Pause"
-            subtitle="Pause between words for learning"
-            icon="⏸️"
-            value={wordByWordPause}
-            onValueChange={(value) => updateSetting('wordByWordPause', value)}
-          />
-          <SettingRow
-            title="Reciter Voice"
-            subtitle="Multiple reciters coming in next update"
-            icon="🎙️"
-            disabled={true}
-            onPress={undefined}
-            rightElement={
-              <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>SOON</Text>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Language & Display */}
+          <Section title="Language & Display" icon="🌐" delay={80}>
+            <Row
+              icon="🌐"
+              title="App Language"
+              subtitle="Change the app display language"
+              divider={true}
+              onPress={() =>
+                Alert.alert(
+                  'Select Language',
+                  'Choose your preferred language',
+                  LANGUAGE_OPTIONS.map(lang => ({
+                    text: `${lang.emoji} ${lang.name}${!lang.available ? ' (Coming Soon)' : ''}`,
+                    onPress: lang.available ? () => updateSetting('language', lang.id) : undefined,
+                    style: lang.available ? ('default' as const) : ('cancel' as const),
+                  }))
+                )
+              }
+              right={
+                <View style={styles.langPill}>
+                  <Text style={styles.langPillText}>
+                    {currentLang?.emoji} {currentLang?.name}
+                  </Text>
+                  <Text style={styles.chevron}>›</Text>
+                </View>
+              }
+            />
+            <FontSizePicker
+              value={arabicFontSize}
+              onChange={v => updateSetting('arabicFontSize', v)}
+            />
+            <ToggleRow
+              icon="🌙"
+              title="Dark Mode"
+              subtitle="Coming soon in the next update"
+              value={darkMode}
+              onChange={v => updateSetting('darkMode', v)}
+              disabled
+              divider={false}
+            />
+          </Section>
+
+          {/* Audio & Playback */}
+          <Section title="Audio & Playback" icon="🔊" delay={160}>
+            <ToggleRow
+              icon="📖"
+              title="Read Dua Titles"
+              subtitle="Announce dua titles automatically"
+              value={readDuaTitle}
+              onChange={v => updateSetting('readDuaTitle', v)}
+            />
+            <ToggleRow
+              icon="🔤"
+              title="Read Translations"
+              subtitle="Read translation after Arabic"
+              value={readDuaTranslation}
+              onChange={v => updateSetting('readDuaTranslation', v)}
+            />
+            <ToggleRow
+              icon="🎵"
+              title="Auto-play Audio"
+              subtitle="Play audio when opening a dua"
+              value={autoPlayAudio}
+              onChange={v => updateSetting('autoPlayAudio', v)}
+            />
+            <ToggleRow
+              icon="⏸️"
+              title="Word-by-Word Pause"
+              subtitle="Pause between words for learning"
+              value={wordByWordPause}
+              onChange={v => updateSetting('wordByWordPause', v)}
+              divider={true}
+            />
+            <Row
+              icon="🎙️"
+              title="Reciter Voice"
+              subtitle="Multiple reciters coming soon"
+              disabled
+              divider={false}
+              right={
+                <View style={styles.soonBadge}>
+                  <Text style={styles.soonText}>SOON</Text>
+                </View>
+              }
+            />
+          </Section>
+
+          {/* Features */}
+          <Section title="Features" icon="✨" delay={240}>
+            <ToggleRow
+              icon="🏆"
+              title="Rewards System"
+              subtitle="Earn rewards for completing duas"
+              value={enableRewards}
+              onChange={v => updateSetting('enableRewards', v)}
+            />
+            <ToggleRow
+              icon="➡️"
+              title="Auto Next Dua"
+              subtitle="Automatically proceed to next dua"
+              value={autoNextDuas}
+              onChange={v => updateSetting('autoNextDuas', v)}
+            />
+            <ToggleRow
+              icon="📳"
+              title="Haptic Feedback"
+              subtitle="Vibrate on interactions"
+              value={hapticFeedback}
+              onChange={v => updateSetting('hapticFeedback', v)}
+            />
+            <ToggleRow
+              icon="🔔"
+              title="Push Notifications"
+              subtitle="Coming soon in the next update"
+              value={notifications}
+              onChange={v => updateSetting('notifications', v)}
+              disabled
+              divider={false}
+            />
+          </Section>
+
+          {/* App Info */}
+          <Section title="App Information" icon="📱" delay={320}>
+            {[
+              { label: 'Version',    value: '1.0.0'        },
+              { label: 'Duas',       value: '43'           },
+              { label: 'Categories', value: '32'           },
+              { label: 'Platform',   value: 'iOS / Android'},
+            ].map((item, i, arr) => (
+              <View
+                key={item.label}
+                style={[styles.infoRow, i < arr.length - 1 && styles.rowDivider]}
+              >
+                <Text style={styles.infoLabel}>{item.label}</Text>
+                <View style={styles.infoBadge}>
+                  <Text style={styles.infoBadgeText}>{item.value}</Text>
+                </View>
               </View>
+            ))}
+          </Section>
+
+          {/* Support */}
+          <Section title="Support" icon="❤️" delay={400}>
+            <Row icon="⭐" title="Rate DuaLand"   subtitle="Share your experience" onPress={() => handleSupport('rate')}     />
+            <Row icon="💌" title="Send Feedback"  subtitle="Help us improve the app" onPress={() => handleSupport('feedback')} />
+            <Row icon="❓" title="Help & Support" subtitle="Get help with the app"  onPress={() => handleSupport('help')}     />
+            <Row icon="📱" title="About DuaLand"  subtitle="Learn more about the app" onPress={() => handleSupport('about')} divider={false} />
+          </Section>
+
+          {/* Reset — destructive, standalone */}
+          <TouchableOpacity
+            style={styles.resetButton}
+            activeOpacity={0.75}
+            onPress={() =>
+              Alert.alert(
+                'Reset Progress',
+                'This will clear all your favorites and memorization progress. This cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Reset', style: 'destructive', onPress: () => resetAllProgress() },
+                ]
+              )
             }
-          />
-        </SettingsSection>
+          >
+            <Text style={styles.resetIcon}>🔄</Text>
+            <Text style={styles.resetText}>Reset All Progress</Text>
+          </TouchableOpacity>
 
-        {/* Features */}
-        <SettingsSection title="Features" icon="✨" delay={300}>
-          <SettingSwitch
-            title="Rewards System"
-            subtitle="Earn rewards for completing duas"
-            icon="🏆"
-            value={enableRewards}
-            onValueChange={(value) => updateSetting('enableRewards', value)}
-          />
-          <SettingSwitch
-            title="Auto Next Dua"
-            subtitle="Automatically proceed to next dua"
-            icon="➡️"
-            value={autoNextDuas}
-            onValueChange={(value) => updateSetting('autoNextDuas', value)}
-          />
-          <SettingSwitch
-            title="Haptic Feedback"
-            subtitle="Vibrate on interactions"
-            icon="📱"
-            value={hapticFeedback}
-            onValueChange={(value) => updateSetting('hapticFeedback', value)}
-          />
-          <SettingSwitch
-            title="Push Notifications"
-            subtitle="Coming soon in the next update"
-            icon="🔔"
-            value={notifications}
-            onValueChange={(value) => updateSetting('notifications', value)}
-            disabled={true}
-          />
-        </SettingsSection>
-
-        {/* Data Management */}
-        <SettingsSection title="Data Management" icon="💾" delay={400}>
-          <DataManagementSection
-            onExport={handleExport}
-            onImport={handleImport}
-            onViewInfo={handleViewInfo}
-            onReset={resetAllProgress}
-            isExporting={isExporting}
-          />
-        </SettingsSection>
-
-        {/* App Information */}
-        <SettingsSection title="App Information" icon="📱" delay={500}>
-          <View style={styles.appInfoGrid}>
-            <View style={styles.appInfoItem}>
-              <Text style={styles.appInfoLabel}>Version</Text>
-              <Text style={styles.appInfoValue}>1.0.0</Text>
-            </View>
-            <View style={styles.appInfoItem}>
-              <Text style={styles.appInfoLabel}>Duas</Text>
-              <Text style={styles.appInfoValue}>43</Text>
-            </View>
-            <View style={styles.appInfoItem}>
-              <Text style={styles.appInfoLabel}>Categories</Text>
-              <Text style={styles.appInfoValue}>32</Text>
-            </View>
-            <View style={styles.appInfoItem}>
-              <Text style={styles.appInfoLabel}>Platform</Text>
-              <Text style={styles.appInfoValue}>iOS / Android</Text>
-            </View>
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerHeart}>Made with ❤️ for the Muslim Ummah</Text>
+            <Text style={styles.footerVersion}>DuaLand v1.0.0 • © 2025</Text>
           </View>
-        </SettingsSection>
-
-        {/* Support Section */}
-        <SettingsSection title="Support" icon="❤️" delay={600}>
-          <SettingRow
-            title="Rate DuaLand"
-            subtitle="Share your experience with us"
-            icon="⭐"
-            onPress={() => handleSupport('rate')}
-          />
-          <SettingRow
-            title="Send Feedback"
-            subtitle="Help us improve the app"
-            icon="💌"
-            onPress={() => handleSupport('feedback')}
-          />
-          <SettingRow
-            title="Help & Support"
-            subtitle="Get help with the app"
-            icon="❓"
-            onPress={() => handleSupport('help')}
-          />
-          <SettingRow
-            title="About DuaLand"
-            subtitle="Learn more about the app"
-            icon="📱"
-            onPress={() => handleSupport('about')}
-          />
-        </SettingsSection>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Made with ❤️ for the Muslim Ummah
-          </Text>
-          <Text style={styles.footerSubtext}>
-            DuaLand v1.4.2 • © 2024
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: THEME.background.secondary,
+    backgroundColor: T.bg,
   },
-  scrollView: {
+  scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingVertical: 20,
     paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
-  header: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+
+  // Section
+  section: {
+    marginBottom: 20,
   },
-  headerGradient: {
-    paddingTop: 20,
-    paddingBottom: 30,
-    paddingHorizontal: 24,
-  },
-  headerContent: {
+  sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
-  headerIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  sectionIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: PURPLE_TINT,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
-  },
-  headerIconText: {
-    fontSize: 28,
-  },
-  headerText: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: THEME.text.inverted,
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
-  },
-  sectionContainer: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 8,
-  },
-  sectionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: THEME.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   sectionIconText: {
-    fontSize: 18,
+    fontSize: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: THEME.text.primary,
+    fontSize: 15,
+    fontWeight: '700',
+    color: T.text.primary,
+    letterSpacing: 0.1,
   },
-  sectionContent: {
-    backgroundColor: THEME.background.card,
+  card: {
+    backgroundColor: T.card,
     borderRadius: 16,
-    shadowColor: '#000',
+    overflow: 'hidden',
+    shadowColor: PURPLE_DARK,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
-    overflow: 'hidden',
   },
-  settingRow: {
+
+  // Row
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: THEME.background.card,
-    minHeight: 68,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: T.card,
+    minHeight: 60,
   },
-  settingRowFirst: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+  rowDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: T.divider,
   },
-  settingRowLast: {
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+  rowDisabled: {
+    opacity: 0.45,
   },
-  settingRowWithDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border.light,
+  rowPressed: {
+    backgroundColor: PURPLE_LIGHT,
   },
-  settingRowDisabled: {
-    opacity: 0.5,
-  },
-  settingRowPressed: {
-    backgroundColor: THEME.background.tertiary,
-  },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  settingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: THEME.primary + '10',
+  rowIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: PURPLE_TINT,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 14,
+    flexShrink: 0,
   },
-  settingIconDisabled: {
-    backgroundColor: THEME.border.light,
+  rowIcon: {
+    fontSize: 17,
   },
-  settingIconText: {
-    fontSize: 18,
-  },
-  settingTextContainer: {
+  rowText: {
     flex: 1,
   },
-  settingTitle: {
-    fontSize: 16,
+  rowTitle: {
+    fontSize: 15,
     fontWeight: '600',
-    color: THEME.text.primary,
-    marginBottom: 2,
+    color: T.text.primary,
+    marginBottom: 1,
   },
-  settingTitleDisabled: {
-    color: THEME.text.tertiary,
+  rowSub: {
+    fontSize: 13,
+    color: T.text.secondary,
+    lineHeight: 17,
   },
-  settingSubtitle: {
-    fontSize: 14,
-    color: THEME.text.secondary,
-    lineHeight: 18,
-  },
-  settingSubtitleDisabled: {
-    color: THEME.text.tertiary,
-  },
-  settingRight: {
+  rowRight: {
     marginLeft: 12,
+    flexShrink: 0,
   },
-  languageSelector: {
+
+  // Language pill
+  langPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: THEME.primary + '10',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    backgroundColor: PURPLE_TINT,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    gap: 4,
   },
-  currentLanguage: {
-    fontSize: 14,
+  langPillText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: THEME.primary,
-    marginRight: 4,
+    color: PURPLE,
   },
   chevron: {
     fontSize: 16,
-    color: THEME.primary,
-    fontWeight: 'bold',
+    color: PURPLE,
+    fontWeight: '700',
   },
-  fontSizeContainer: {
-    padding: 20,
-  },
-  fontSizeHeader: {
+
+  // Font size picker
+  fontRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: T.divider,
+    backgroundColor: T.card,
+  },
+  fontRowIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: PURPLE_TINT,
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    marginRight: 14,
+    flexShrink: 0,
   },
-  fontSizeLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: THEME.text.primary,
+  fontTextBlock: {
+    flex: 1,
   },
-  fontSizeValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: THEME.primary,
-    backgroundColor: THEME.primary + '10',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+  fontRowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  fontBadge: {
+    backgroundColor: PURPLE_TINT,
     borderRadius: 8,
-  },
-  fontSizeSliderContainer: {
-    marginTop: 8,
-  },
-  fontSizeLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  fontSizeMinMax: {
-    fontSize: 14,
-    color: THEME.text.secondary,
-    fontWeight: '500',
-  },
-  fontSizeSlider: {
-    flexDirection: 'row',
-    height: 4,
-    backgroundColor: THEME.border.light,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  fontSizeOption: {
-    flex: 1,
-    height: 4,
-    backgroundColor: THEME.border.light,
-    marginHorizontal: 1,
-  },
-  fontSizeOptionActive: {
-    backgroundColor: THEME.primary,
-  },
-  voiceSection: {
-    paddingVertical: 8,
-  },
-  voiceSectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: THEME.text.secondary,
-    marginBottom: 12,
-    paddingHorizontal: 20,
-  },
-  voiceOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: THEME.background.card,
-  },
-  voiceOptionLast: {
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  voiceOptionSelected: {
-    backgroundColor: THEME.primary + '08',
-  },
-  voiceInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  voiceEmojiContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: THEME.primary + '10',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  voiceEmoji: {
-    fontSize: 20,
-  },
-  voiceDetails: {
-    flex: 1,
-  },
-  voiceName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    marginBottom: 2,
-  },
-  voiceMeta: {
-    fontSize: 13,
-    color: THEME.text.secondary,
-  },
-  voiceSelectedIndicator: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: THEME.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  voiceSelectedDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: THEME.primary,
-  },
-  dataManagementGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 8,
-    gap: 12,
-  },
-  dataActionCard: {
-    width: (width - 64) / 2,
-    backgroundColor: THEME.background.card,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  dataActionCardDisabled: {
-    opacity: 0.6,
-  },
-  dataActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  dataActionIconText: {
-    fontSize: 20,
-  },
-  dataActionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: THEME.text.primary,
-    marginBottom: 4,
-  },
-  dataActionDescription: {
-    fontSize: 13,
-    color: THEME.text.secondary,
-    lineHeight: 16,
-  },
-  comingSoonBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: THEME.warning,
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingVertical: 3,
   },
-  comingSoonText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#000',
+  fontBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: PURPLE,
   },
-  appInfoGrid: {
-    padding: 16,
-  },
-  appInfoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border.light,
-  },
-  appInfoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  appInfoLabel: {
-    fontSize: 15,
-    color: THEME.text.primary,
+  fontPreview: {
+    color: T.text.primary,
+    textAlign: 'center',
+    marginBottom: 4,
     fontWeight: '500',
   },
-  appInfoValue: {
-    fontSize: 15,
-    color: THEME.primary,
-    fontWeight: '600',
-    backgroundColor: THEME.primary + '10',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
+  slider: {
+    width: '100%',
+    height: 36,
+    marginVertical: 2,
   },
+  fontSliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: -2,
+  },
+  fontSliderLabel: {
+    fontSize: 13,
+    color: T.text.muted,
+    fontWeight: '600',
+  },
+
+  // Coming soon badge
+  soonBadge: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  soonText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#D97706',
+    letterSpacing: 0.5,
+  },
+
+  // App info rows
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    backgroundColor: T.card,
+  },
+  infoLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: T.text.primary,
+  },
+  infoBadge: {
+    backgroundColor: PURPLE_TINT,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  infoBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: PURPLE,
+  },
+
+  // Reset button
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 0,
+    marginBottom: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+    gap: 8,
+  },
+  resetIcon: {
+    fontSize: 16,
+  },
+  resetText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#EF4444',
+  },
+
+  // Footer
   footer: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
+    paddingVertical: 24,
+    gap: 4,
   },
-  footerText: {
-    fontSize: 16,
-    color: THEME.text.secondary,
+  footerHeart: {
+    fontSize: 14,
+    color: T.text.secondary,
     fontWeight: '500',
-    marginBottom: 4,
     textAlign: 'center',
   },
-  footerSubtext: {
-    fontSize: 14,
-    color: THEME.text.tertiary,
+  footerVersion: {
+    fontSize: 12,
+    color: T.text.muted,
     textAlign: 'center',
   },
 });

@@ -1,5 +1,4 @@
 import { ScreenWrapper } from '@/components/common/ScreenWrapper';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchIcon } from '../../Icons';
+import { AppHeader } from '../../components/ui/AppHeader';
 import { BouncingButton } from '../../components/ui/BouncingButton';
 
 
@@ -393,23 +393,6 @@ const CategoryCard = React.memo(({ category, index, onPress }: {
   );
 });
 
-// All Mode Grid Component
-const AllModeGrid = ({ onCategoryPress, categories }) => {
-  return (
-    <View style={styles.allModeContainer}>
-      <View style={styles.gridContainer}>
-        {categories.map((category, index) => (
-          <CategoryCard
-            key={category.id}
-            category={category}
-            index={index}
-            onPress={onCategoryPress}
-          />
-        ))}
-      </View>
-    </View>
-  );
-};
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -418,8 +401,6 @@ export default function DashboardScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false); // No loading needed for in-memory data
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'kids' | 'all'>('kids');
-
   const searchOpacityAnim = useRef(new Animated.Value(0)).current;
   const searchScaleAnim = useRef(new Animated.Value(0)).current;
 
@@ -604,80 +585,23 @@ export default function DashboardScreen() {
       }
     }} accessible={false}>
       <ScreenWrapper>
-        <SafeAreaView style={styles.container}>
-          <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
+        <SafeAreaView style={styles.container} edges={['top']}>
+          <StatusBar barStyle="light-content" backgroundColor="#7E57C2" />
 
           <FloatingParticles />
 
-          {/* Header with better text contrast */}
-          <View style={styles.header}>
-            <LinearGradient
-              colors={[THEME.header, '#fef9c3']}
-              style={styles.headerGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <View style={styles.headerContent}>
-                <View style={styles.logoContainer}>
-                  <Image
-                    source={{ uri: 'https://i.ibb.co/L5wK60b/dualand-logo.png' }}
-                    style={styles.logo}
-                  />
-                  <View>
-                    <Text style={styles.title}>DUALAND 🎨</Text>
-                    <Text style={styles.subtitle}>
-                      {mode === 'kids' ? `${filteredCategories.length} Beautiful Categories to Explore!` : 'All Categories for Everyone'}
-                    </Text>
-                  </View>
+          <AppHeader
+            icon="🕌"
+            title="DuaLand"
+            subtitle={`${filteredCategories.length} categories to explore`}
+            rightElement={
+              <BouncingButton onPress={toggleSearch}>
+                <View style={styles.searchToggleInner}>
+                  <SearchIcon size={20} color="#7E57C2" />
                 </View>
-
-                <BouncingButton>
-                  <TouchableOpacity
-                    style={styles.searchToggleButton}
-                    onPress={toggleSearch}
-                  >
-                    <View style={styles.searchToggleInner}>
-                      <SearchIcon size={22} color={THEME.text.dark} />
-                    </View>
-                  </TouchableOpacity>
-                </BouncingButton>
-              </View>
-            </LinearGradient>
-          </View>
-
-          {/* Mode Toggle */}
-          <View style={styles.modeToggleContainer}>
-            <View style={styles.modeToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.modeButton,
-                  mode === 'kids' && styles.modeButtonActive
-                ]}
-                onPress={() => setMode('kids')}
-              >
-                <Text style={[
-                  styles.modeButtonText,
-                  mode === 'kids' && styles.modeButtonTextActive
-                ]}>
-                  👶 Kids
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modeButton,
-                  mode === 'all' && styles.modeButtonActive
-                ]}
-                onPress={() => setMode('all')}
-              >
-                <Text style={[
-                  styles.modeButtonText,
-                  mode === 'all' && styles.modeButtonTextActive
-                ]}>
-                  🌍 All
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+              </BouncingButton>
+            }
+          />
 
           {isSearchExpanded && (
             <Animated.View
@@ -720,46 +644,25 @@ export default function DashboardScreen() {
             ]}
             keyboardShouldPersistTaps="handled"
           >
-            {mode === 'kids' ? (
-              // Kids Mode - Category cards
-              <>
-                {/* {!searchQuery && (
-                  <View style={styles.welcomeSection}>
-                    <Text style={styles.welcomeText}>
-                      Discover {categories.length} Beautiful Categories 🌟
-                    </Text>
-                    <Text style={styles.welcomeSubtext}>
-                      Each category contains special Duas • Tap to explore! 📚
-                    </Text>
-                  </View>
-                )} */}
-
-                {filteredCategories.length === 0 && searchQuery && (
-                  <View style={styles.noResultsContainer}>
-                    <Text style={styles.noResultsEmoji}>🔍</Text>
-                    <Text style={styles.noResultsText}>No categories found for "{searchQuery}"</Text>
-                    <Text style={styles.noResultsSubtext}>
-                      Try different words or explore all categories! 🌈
-                    </Text>
-                  </View>
-                )}
-
-                {filteredCategories.length > 0 && (
-                  <View style={styles.gridContainer}>
-                    {filteredCategories.map((category, index) => (
-                      <CategoryCard
-                        key={category.id}
-                        category={category}
-                        index={index}
-                        onPress={handleCategoryPress}
-                      />
-                    ))}
-                  </View>
-                )}
-              </>
+            {filteredCategories.length === 0 && searchQuery ? (
+              <View style={styles.noResultsContainer}>
+                <Text style={styles.noResultsEmoji}>🔍</Text>
+                <Text style={styles.noResultsText}>No categories found for "{searchQuery}"</Text>
+                <Text style={styles.noResultsSubtext}>
+                  Try different words or explore all categories! 🌈
+                </Text>
+              </View>
             ) : (
-              // All Mode - Category cards in grid layout
-              <AllModeGrid onCategoryPress={handleCategoryPress} categories={filteredCategories} />
+              <View style={styles.gridContainer}>
+                {filteredCategories.map((category, index) => (
+                  <CategoryCard
+                    key={category.id}
+                    category={category}
+                    index={index}
+                    onPress={handleCategoryPress}
+                  />
+                ))}
+              </View>
             )}
 
             <View style={styles.bottomPadding} />
@@ -822,96 +725,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  header: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-    overflow: 'hidden',
-  },
-  headerGradient: {
-    paddingTop: 20,
-    paddingBottom: 15,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 45,
-    height: 45,
-    marginRight: 12,
-    borderRadius: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: THEME.text.dark,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: THEME.text.primary,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  // Mode Toggle Styles
-  modeToggleContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  modeToggle: {
-    flexDirection: 'row',
-    backgroundColor: THEME.neutral,
-    borderRadius: 25,
-    padding: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  modeButton: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  modeButtonActive: {
-    backgroundColor: THEME.primary,
-    shadowColor: THEME.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  modeButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: THEME.text.secondary,
-  },
-  modeButtonTextActive: {
-    color: THEME.text.light,
-  },
-  searchToggleButton: {
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
   searchToggleInner: {
-    padding: 12,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     paddingHorizontal: 20,
@@ -1010,10 +830,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  // All Mode Styles
-  allModeContainer: {
     paddingHorizontal: 16,
   },
   // Category Card Styles

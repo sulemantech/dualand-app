@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -32,8 +32,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCustomAudioPlayer } from '../lib/audio/useCustomAudioPlayer';
 import { Dua, getAllDuas, getWordAudioPairsByDua } from '../lib/data/duas';
-import { useUserProgressStore, MemorizationStatus } from '../stores/userProgressStore';
 import { useAppSettingsStore } from '../stores/appSettingsStore';
+import { MemorizationStatus, useUserProgressStore } from '../stores/userProgressStore';
 
 // Import PNG images for buttons
 const BtnPrevious = require('../assets/btns/btn_back.png');
@@ -69,58 +69,27 @@ const customLayoutAnimation = {
 
 // FIXED: Updated getLocalImage function to handle undefined imagePath
 const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: string, imagePath?: string | any) => {
-  console.log('🖼️ getLocalImage called with:', {
-    duaId,
-    duaNumber,
-    localImageIndex,
-    imagePath,
-    imagePathType: typeof imagePath
-  });
+  if (imagePath && typeof imagePath === 'number') return imagePath;
 
-  // Case 1: If imagePath is already a require statement (number), return it directly
-  if (imagePath && typeof imagePath === 'number') {
-    console.log('✅ Using direct require statement from imagePath');
-    return imagePath;
-  }
-
-  // Case 2: If imagePath is a string path
   if (imagePath && typeof imagePath === 'string') {
     try {
-      const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
-      const imageKey = imageName as keyof typeof localImages;
-      if (localImages[imageKey]) {
-        console.log('✅ Found image from imagePath string:', imageName);
-        return localImages[imageKey];
-      }
-    } catch (error) {
-      console.log('❌ Error processing imagePath string:', error);
-    }
+      const imageKey = (imagePath.split('/').pop()?.replace('.png', '') || 'kaaba') as keyof typeof localImages;
+      if (localImages[imageKey]) return localImages[imageKey];
+    } catch {}
   }
 
-  // Case 3: Try localImageIndex
-  if (localImageIndex && typeof localImageIndex === 'string') {
+  if (localImageIndex) {
     const imageKey = `dua_${localImageIndex}` as keyof typeof localImages;
-    if (localImages[imageKey]) {
-      console.log('✅ Found image from localImageIndex:', localImageIndex);
-      return localImages[imageKey];
-    }
+    if (localImages[imageKey]) return localImages[imageKey];
   }
 
-  // Case 4: Try duaNumber
-  if (duaNumber && typeof duaNumber === 'string') {
+  if (duaNumber) {
     const imageKey = `dua_${duaNumber}` as keyof typeof localImages;
-    if (localImages[imageKey]) {
-      console.log('✅ Found image from duaNumber:', duaNumber);
-      return localImages[imageKey];
-    }
+    if (localImages[imageKey]) return localImages[imageKey];
   }
 
-  // Case 5: Fallback to duaId-based image
   const imageIndex = (parseInt(duaId || '1') % 32) || 1;
-  const fallbackImageKey = `dua_${imageIndex}` as keyof typeof localImages;
-  const fallbackImage = localImages[fallbackImageKey] || localImages.kaaba;
-  console.log('🔄 Using fallback image based on duaId:', imageIndex);
-  return fallbackImage;
+  return localImages[`dua_${imageIndex}` as keyof typeof localImages] || localImages.kaaba;
 };
 
 export default function DuaDetailScreen() {
@@ -317,55 +286,39 @@ export default function DuaDetailScreen() {
   // Get current dua data
   const currentDua = allDuas[currentDuaIndex];
 
-  // ✅ FIXED: Safe data extraction with fallbacks
-  const getDuaData = () => {
+  // Memoized — only recomputes when the active dua record changes, not on every re-render
+  const { arabic, translation, reference, title, duaNumber, id, categoryName, steps, imagePath, audioFull, titleAudioResId } = useMemo(() => {
     if (currentDua) {
-      const data = {
+      return {
         arabic: currentDua.arabic_text || "بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْمِ",
         translation: currentDua.translation || "Translation not available",
         reference: currentDua.reference || "Reference not available",
         title: currentDua.title || "Beautiful Dua",
         duaNumber: currentDua.duaNumber || currentDua.order_index?.toString() || "1",
-        id: currentDua.id || '',
-        categoryName: currentDua.textheading || '',
-        steps: currentDua.steps || '',
+        id: currentDua.id || "",
+        categoryName: currentDua.textheading || "",
+        steps: currentDua.steps || "",
         imagePath: currentDua.image_path,
-        audioFull: currentDua.audio_full || '',
-        audioWordByWord: currentDua.audio_word_by_word || '',
-        titleAudioResId: currentDua.titleAudioResId || null
+        audioFull: currentDua.audio_full || "",
+        audioWordByWord: currentDua.audio_word_by_word || "",
+        titleAudioResId: currentDua.titleAudioResId || null,
       };
-
-      console.log('📋 Current Dua Data:', {
-        id: data.id,
-        title: data.title,
-        audioFull: data.audioFull,
-        audioWordByWord: data.audioWordByWord,
-        hasTitleAudio: !!data.titleAudioResId
-      });
-
-      return data;
     }
-
-    // Fallback for initial load
-    const fallbackData = {
+    return {
       arabic: getStringParam(params.arabic) || "بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْمِ",
       translation: getStringParam(params.translation) || "Translation not available",
       reference: getStringParam(params.reference) || "Reference not available",
       title: getStringParam(params.title) || "Beautiful Dua",
       duaNumber: getStringParam(params.duaNumber) || "1",
-      id: getStringParam(params.id) || '',
-      categoryName: getStringParam(params.categoryName) || '',
-      steps: getStringParam(params.steps) || '',
-      imagePath: getStringParam(params.imagePath) || '',
-      audioFull: getStringParam(params.audio_full) || '',
-      audioWordByWord: getStringParam(params.audio_word_by_word) || '',
-      titleAudioResId: null
+      id: getStringParam(params.id) || "",
+      categoryName: getStringParam(params.categoryName) || "",
+      steps: getStringParam(params.steps) || "",
+      imagePath: getStringParam(params.imagePath) || "",
+      audioFull: getStringParam(params.audio_full) || "",
+      audioWordByWord: getStringParam(params.audio_word_by_word) || "",
+      titleAudioResId: null,
     };
-
-    return fallbackData;
-  };
-
-  const { arabic, translation, reference, title, duaNumber, id, categoryName, steps, imagePath, audioFull, audioWordByWord, titleAudioResId } = getDuaData();
+  }, [currentDua]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Derived from persisted context (auto-updates when dua changes or user toggles)
   const isFavorite = favorites[id] ?? false;
@@ -375,7 +328,6 @@ export default function DuaDetailScreen() {
     if (id) {
       try {
         const pairs = getWordAudioPairsByDua(id);
-        console.log(`🔊 Loaded ${pairs?.length || 0} word audio pairs for dua ${id}`);
         setWordAudioPairs(pairs || []);
       } catch (error) {
         console.error('Error loading word audio pairs:', error);
@@ -391,15 +343,6 @@ export default function DuaDetailScreen() {
     // For word mode, we don't need a single audio file since we're using wordAudioPairs
     const audioSource = currentMode === 'full' ? audioFull : undefined;
 
-    console.log('🎵 Audio source for mode:', {
-      mode: currentMode,
-      source: audioSource,
-      type: typeof audioSource,
-      hasValue: !!audioSource,
-      wordAudioPairsCount: wordAudioPairs?.length || 0
-    });
-
-    // Return undefined for word mode - we'll handle it with wordAudioPairs
     return audioSource;
   }, [currentMode, audioFull, wordAudioPairs]);
 
@@ -430,7 +373,11 @@ export default function DuaDetailScreen() {
   const favoriteScale = useRef(new Animated.Value(1)).current;
   const imageScale = useRef(new Animated.Value(0.9)).current;
   const repeatScale = useRef(new Animated.Value(1)).current;
-  const swipeHintOpacity = useRef(new Animated.Value(1)).current;
+  const swipeHintOpacity  = useRef(new Animated.Value(1)).current;
+  const modeSlideAnim     = useRef(new Animated.Value(0)).current; // 0=word, 1=full
+  const [modeSegWidth, setModeSegWidth] = useState(0);
+  const modeIconScale0 = useRef(modeSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [1.16, 0.82] })).current;
+  const modeIconScale1 = useRef(modeSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1.16] })).current;
 
   // FIXED: Use the updated getLocalImage function with proper error handling
   const illustrationImage = getLocalImage(
@@ -717,32 +664,6 @@ export default function DuaDetailScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // FIXED: Debug current state
-  useEffect(() => {
-    if (!isLoading) {
-      console.log('🔄 STATE UPDATE:', {
-        currentDuaIndex,
-        totalDuas: allDuas.length,
-        currentDuaTitle: currentDua?.title,
-        isLoading,
-        isPlaying: audioIsPlaying,
-        currentMode,
-        audioFull,
-        audioWordByWord,
-        wordAudioPairsCount: wordAudioPairs?.length || 0,
-        loadError,
-        repeatMode,
-        currentRepeatIteration,
-        hasCompletedPlayback,
-        isCelebrationVisible,
-        showCelebration,
-        hasTitleAudio: !!titleAudioResId,
-        isPlayingTitleAudio,
-        hasPlayedTitleAudio
-      });
-    }
-  }, [currentDuaIndex, allDuas.length, isLoading, audioIsPlaying, currentDua, currentMode, audioFull, audioWordByWord, wordAudioPairs, loadError, repeatMode, currentRepeatIteration, hasCompletedPlayback, isCelebrationVisible, showCelebration, titleAudioResId, isPlayingTitleAudio, hasPlayedTitleAudio]);
-
   useEffect(() => {
     Animated.sequence([
       Animated.timing(imageScale, {
@@ -783,6 +704,13 @@ export default function DuaDetailScreen() {
       pulseAnim.setValue(1);
     }
   }, [isPlaying, isPlayingTitleAudio, pulseAnim]);
+
+  const cycleMemorizationStatus = useCallback(() => {
+    const order: MemorizationStatus[] = ['not_started', 'learning', 'memorized'];
+    const currentIdx = order.indexOf(memorizationStatus);
+    const nextStatus = order[(currentIdx + 1) % order.length];
+    handleMemorizationChange(nextStatus);
+  }, [memorizationStatus, handleMemorizationChange]);
 
   // FIXED: Navigation functions using useCallback to avoid stale closures
   const changeCurrentDua = useCallback((newIndex: number) => {
@@ -1013,65 +941,27 @@ export default function DuaDetailScreen() {
 
   // ✅ UPDATED: Enhanced mode change handlers with smooth animations
   const handleWordMode = useCallback(() => {
-    if (currentMode === 'word') return; // Prevent unnecessary updates
-    
-    LayoutAnimation.configureNext(customLayoutAnimation);
-    
-    // Button press animation
-    Animated.sequence([
-      Animated.spring(wordModeScale, {
-        toValue: 0.95,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-      Animated.spring(wordModeScale, {
-        toValue: 1,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
+    if (currentMode === 'word') return;
+    // Animate the slider immediately on the native thread — no render cycle lag
+    Animated.spring(modeSlideAnim, { toValue: 0, tension: 340, friction: 26, useNativeDriver: true }).start();
     setCurrentMode('word');
     if (isPlaying) {
-      if (currentMode === 'full') {
-        audioPause();
-      }
+      if (currentMode === 'full') audioPause();
       setIsPlaying(false);
     }
     resetCompletionState();
     setCurrentWordIndex(0);
-  }, [isPlaying, audioPause, currentMode, resetCompletionState, wordModeScale]);
+  }, [isPlaying, audioPause, currentMode, resetCompletionState, modeSlideAnim]);
 
   const handleFullMode = useCallback(() => {
-    if (currentMode === 'full') return; // Prevent unnecessary updates
-    
-    LayoutAnimation.configureNext(customLayoutAnimation);
-    
-    // Button press animation
-    Animated.sequence([
-      Animated.spring(fullModeScale, {
-        toValue: 0.95,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-      Animated.spring(fullModeScale, {
-        toValue: 1,
-        tension: 100,
-        friction: 3,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
+    if (currentMode === 'full') return;
+    // Animate the slider immediately on the native thread — no render cycle lag
+    Animated.spring(modeSlideAnim, { toValue: 1, tension: 340, friction: 26, useNativeDriver: true }).start();
     setCurrentMode('full');
-    if (isPlaying) {
-      setIsPlaying(false);
-    }
+    if (isPlaying) setIsPlaying(false);
     resetCompletionState();
     setCurrentWordIndex(0);
-  }, [isPlaying, resetCompletionState, currentMode, fullModeScale]);
+  }, [isPlaying, resetCompletionState, currentMode, modeSlideAnim]);
 
   // ✅ ADDED: Display current repeat status in UI
   const getRepeatStatusText = () => {
@@ -1248,6 +1138,31 @@ export default function DuaDetailScreen() {
                 </LinearGradient>
               </BouncingButton>
             </Animated.View>
+
+            {/* Memorization status badge — bottom-left of image, tap to cycle */}
+            {(() => {
+              const cfg = {
+                not_started: { icon: '○', label: 'Not Started', from: 'rgba(0,0,0,0.42)', to: 'rgba(0,0,0,0.60)' },
+                learning:    { icon: '📖', label: 'Learning',     from: 'rgba(245,158,11,0.88)', to: 'rgba(180,110,0,0.95)' },
+                memorized:   { icon: '✅', label: 'Memorized',    from: 'rgba(16,185,129,0.88)', to: 'rgba(5,120,80,0.95)' },
+              }[memorizationStatus];
+              return (
+                <TouchableOpacity
+                  style={styles.statusBadgeContainer}
+                  onPress={cycleMemorizationStatus}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={[cfg.from, cfg.to]}
+                    style={styles.statusBadge}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.statusBadgeText}>{cfg.icon}  {cfg.label}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })()}
           </Animated.View>
 
           {steps && (
@@ -1257,74 +1172,52 @@ export default function DuaDetailScreen() {
             </View>
           )}
 
-          <View style={styles.modeContainer}>
-            <View style={styles.modePills}>
-              <TouchableOpacity
+          {/* ── Mode segmented control ── */}
+          <View
+            style={styles.modeTrack}
+            onLayout={(e) => setModeSegWidth((e.nativeEvent.layout.width - 6) / 2)}
+          >
+            {/* Sliding white thumb */}
+            {modeSegWidth > 0 && (
+              <Animated.View
                 style={[
-                  styles.modePill,
-                  currentMode === 'word' && styles.modePillActive
+                  styles.modeThumb,
+                  { width: modeSegWidth },
+                  {
+                    transform: [{
+                      translateX: modeSlideAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, modeSegWidth],
+                      }),
+                    }],
+                  },
                 ]}
-                onPress={handleWordMode}
-              >
-                <Text style={[
-                  styles.modePillText,
-                  currentMode === 'word' && styles.modePillTextActive
-                ]}>
-                  🎯 Word by Word
-                </Text>
-              </TouchableOpacity>
+              />
+            )}
 
-              <TouchableOpacity
-                style={[
-                  styles.modePill,
-                  currentMode === 'full' && styles.modePillActive
-                ]}
-                onPress={handleFullMode}
-              >
-                <Text style={[
-                  styles.modePillText,
-                  currentMode === 'full' && styles.modePillTextActive
-                ]}>
-                  📖 Full Dua
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            {/* Word by Word segment */}
+            <TouchableOpacity
+              style={styles.modeSegment}
+              onPress={handleWordMode}
+              activeOpacity={0.75}
+            >
+              <Animated.Text style={[styles.modeSegIcon, { transform: [{ scale: modeIconScale0 }] }]}>🎯</Animated.Text>
+              <Text style={[styles.modeSegLabel, currentMode === 'word' && styles.modeSegLabelActive]}>
+                Word by Word
+              </Text>
+            </TouchableOpacity>
 
-          {/* Memorization Status Tracker */}
-          <View style={styles.memorizationRow}>
-            {(
-              [
-                { status: 'not_started', label: '○  Not Started', activeColors: ['#E5E7EB', '#D1D5DB'] as const, textColor: '#6B7280' },
-                { status: 'learning', label: '📖  Learning', activeColors: ['#FCD34D', '#F59E0B'] as const, textColor: '#92400E' },
-                { status: 'memorized', label: '✅  Memorized', activeColors: ['#6EE7B7', '#10B981'] as const, textColor: '#065F46' },
-              ] as const
-            ).map(({ status, label, activeColors, textColor }) => {
-              const isActive = memorizationStatus === status;
-              return (
-                <TouchableOpacity
-                  key={status}
-                  onPress={() => handleMemorizationChange(status)}
-                  activeOpacity={0.8}
-                  style={styles.memorizationPillWrapper}
-                >
-                  <LinearGradient
-                    colors={isActive ? activeColors : ['#F9FAFB', '#F3F4F6']}
-                    style={[
-                      styles.memorizationPill,
-                      isActive && styles.memorizationPillActive,
-                    ]}
-                  >
-                    <Text style={[
-                      styles.memorizationPillText,
-                      isActive && { color: textColor, fontWeight: '700' },
-                    ]}>
-                      {label}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              );
-            })}
+            {/* Full Dua segment */}
+            <TouchableOpacity
+              style={styles.modeSegment}
+              onPress={handleFullMode}
+              activeOpacity={0.75}
+            >
+              <Animated.Text style={[styles.modeSegIcon, { transform: [{ scale: modeIconScale1 }] }]}>📖</Animated.Text>
+              <Text style={[styles.modeSegLabel, currentMode === 'full' && styles.modeSegLabelActive]}>
+                Complete Dua
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Audio Error Display */}
@@ -1354,40 +1247,6 @@ export default function DuaDetailScreen() {
               />
             )}
           </View>
-
-          {/* ✅ UPDATED: Progress display for both modes */}
-          {(isPlaying || isPlayingTitleAudio) && (
-            <View style={styles.wordProgress}>
-              <Text style={styles.wordProgressText}>
-                {getPlaybackStatusText()}
-              </Text>
-              <View style={styles.wordProgressBar}>
-                <View
-                  style={[
-                    styles.wordProgressFill,
-                    {
-                      width: isPlayingTitleAudio ? '100%' : 
-                             currentMode === 'word' ? 
-                             `${((currentWordIndex + 1) / wordAudioPairs.length) * 100}%` :
-                             audioDuration > 0 ? `${(audioPosition / audioDuration) * 100}%` : '0%'
-                    }
-                  ]}
-                />
-              </View>
-              {/* ✅ NEW: Show current word being played or title audio status */}
-              {isPlayingTitleAudio ? (
-                <Text style={styles.currentWordText}>
-                  🔊 Playing Title...
-                </Text>
-              ) : (
-                currentMode === 'word' && wordAudioPairs[currentWordIndex] && (
-                  <Text style={styles.currentWordText}>
-                    🔊 {wordAudioPairs[currentWordIndex].word_text}
-                  </Text>
-                )
-              )}
-            </View>
-          )}
 
           <View style={styles.bottomPadding} />
         </ScrollView>
@@ -1628,6 +1487,32 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 10,
   },
+  statusBadgeContainer: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    zIndex: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.30,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
   favoriteButton: {
     width: 40,
     height: 40,
@@ -1668,77 +1553,51 @@ const styles = StyleSheet.create({
     color: THEME.text.primary,
     lineHeight: 20,
   },
-  modeContainer: {
-    marginTop: 0,
-    marginHorizontal: 10,
-    zIndex: 10,
-  },
-  modePills: {
+  // ── Mode segmented control ──────────────────────────────────────
+  modeTrack: {
     flexDirection: 'row',
-    backgroundColor: THEME.neutral,
-    borderRadius: 20,
-    padding: 4,
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 2,
+    height: 42,
+    backgroundColor: '#4527A0',
+    borderRadius: 12,
+    padding: 3,
+    position: 'relative',
+  },
+  modeThumb: {
+    position: 'absolute',
+    top: 3,
+    bottom: 3,
+    left: 3,
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  modePill: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  modePillActive: {
-    backgroundColor: THEME.primary,
-    shadowColor: THEME.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
-    elevation: 4,
+    elevation: 5,
   },
-  modePillText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: THEME.text.secondary,
-  },
-  modePillTextActive: {
-    color: THEME.text.light,
-  },
-  memorizationRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 6,
-  },
-  memorizationPillWrapper: {
+  modeSegment: {
     flex: 1,
-  },
-  memorizationPill: {
-    paddingVertical: 7,
-    paddingHorizontal: 4,
-    borderRadius: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    justifyContent: 'center',
+    gap: 6,
+    zIndex: 1,
   },
-  memorizationPillActive: {
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+  modeSegIcon: {
+    fontSize: 15,
+    lineHeight: 18,
   },
-  memorizationPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    textAlign: 'center',
+  modeSegLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.60)',
+    letterSpacing: 0.1,
+  },
+  modeSegLabelActive: {
+    color: '#3D1D8A',
   },
   errorContainer: {
     margin: 16,
@@ -1752,13 +1611,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#E53E3E',
     fontWeight: '500',
-  },
-  currentWordText: {
-    fontSize: 16,
-    color: THEME.primary,
-    fontWeight: 'bold',
-    marginTop: 8,
-    textAlign: 'center',
   },
   duaTextContainer: {
     margin: 16,
@@ -1829,29 +1681,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: THEME.text.primary,
     fontWeight: '600',
-  },
-  wordProgress: {
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 24,
-  },
-  wordProgressText: {
-    fontSize: 14,
-    color: THEME.text.secondary,
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  wordProgressBar: {
-    width: '100%',
-    height: 6,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  wordProgressFill: {
-    height: '100%',
-    backgroundColor: THEME.success,
-    borderRadius: 3,
   },
   repeatBadge: {
     position: 'absolute',
