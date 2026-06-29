@@ -74,15 +74,14 @@ export const categories: Category[] = [
   { id: 31, name: 'Du\'a: Sayyid-ul-Istighfar', icon: 'pray', color: '#E71D36', order_index: 31, image_path: require('../../assets/images/dua_31.png') },
   { id: 32, name: 'Seeking Refuge with Allah', icon: 'shield-alt', color: '#662E9B', order_index: 32, image_path: require('../../assets/images/dua_32.png') },
   { id: 33, name: 'Ayat ul Kursi', icon: 'star', color: '#1A237E', order_index: 33, image_path: require('../../assets/images/dua_1.png') },
-  { id: 34, name: 'Darood Ibrahim', icon: 'peace', color: '#1B5E20', order_index: 34, image_path: require('../../assets/images/dua_1.png') },
-  { id: 35, name: "Du'a for Knowledge", icon: 'book', color: '#E65100', order_index: 35, image_path: require('../../assets/images/dua_1.png') },
-  { id: 36, name: "Du'a for Parents", icon: 'heart', color: '#880E4F', order_index: 36, image_path: require('../../assets/images/dua_1.png') },
-  { id: 37, name: "Du'a when Drinking Milk", icon: 'cup', color: '#01579B', order_index: 37, image_path: require('../../assets/images/dua_1.png') },
-  { id: 38, name: "Du'a for House in Jannah", icon: 'home', color: '#F57F17', order_index: 38, image_path: require('../../assets/images/dua_1.png') },
-  { id: 39, name: "Du'a from Hellfire", icon: 'shield', color: '#B71C1C', order_index: 39, image_path: require('../../assets/images/dua_1.png') },
-  { id: 40, name: "Du'a at Iftar", icon: 'moon', color: '#BF360C', order_index: 40, image_path: require('../../assets/images/dua_1.png') },
-  { id: 41, name: "Du'a for New Clothes", icon: 'tshirt', color: '#004D40', order_index: 41, image_path: require('../../assets/images/dua_1.png') },
-  { id: 42, name: "Du'a of Thanks", icon: 'praying-hands', color: '#4A148C', order_index: 42, image_path: require('../../assets/images/dua_1.png') },
+  { id: 35, name: "Du'a for Knowledge", icon: 'book', color: '#E65100', order_index: 35, image_path: require('../../assets/images/dua_34.png') },
+  { id: 36, name: "Du'a for Parents", icon: 'heart', color: '#880E4F', order_index: 36, image_path: require('../../assets/images/dua_35.png') },
+  { id: 37, name: "Du'a when Drinking Milk", icon: 'cup', color: '#01579B', order_index: 37, image_path: require('../../assets/images/dua_36.png') },
+  { id: 38, name: "Du'a for House in Jannah", icon: 'home', color: '#F57F17', order_index: 38, image_path: require('../../assets/images/dua_37.png') },
+  { id: 39, name: "Du'a from Hellfire", icon: 'shield', color: '#B71C1C', order_index: 39, image_path: require('../../assets/images/dua_38.png') },
+  { id: 40, name: "Du'a at Iftar", icon: 'moon', color: '#BF360C', order_index: 40, image_path: require('../../assets/images/dua_39.png') },
+  { id: 41, name: "Du'a for New Clothes", icon: 'tshirt', color: '#004D40', order_index: 41, image_path: require('../../assets/images/dua_40.png') },
+  { id: 42, name: "Du'a of Thanks", icon: 'praying-hands', color: '#4A148C', order_index: 42, image_path: require('../../assets/images/dua_41.png') },
 ];
 
 // All 43 Duas with image paths
@@ -149,6 +148,22 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua02_part02_audio01_complete.mp3'),
     image_path: require('../../assets/images/dua_2.png')
+  },
+  {
+    id: '45', category_id: 2, title: 'Darood Ibrahim',
+    arabic_text: 'اللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَىٰ إِبْرَاهِيمَ وَعَلَىٰ آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ\n\nاللَّهُمَّ بَارِكْ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَىٰ إِبْرَاهِيمَ وَعَلَىٰ آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ',
+    translation: 'O Allah, send Your blessings upon Muhammad and upon the family of Muhammad, as You sent blessings upon Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious.\n\nO Allah, bless Muhammad and the family of Muhammad, as You blessed Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious.',
+    urdu: 'اے اللہ! محمد ﷺ پر اور آلِ محمد ﷺ پر رحمت نازل فرما جیسا کہ تو نے ابراہیم ؑ پر اور آلِ ابراہیم ؑ پر رحمت نازل فرمائی، بے شک تو تعریف کے لائق اور بزرگ ہے۔ اے اللہ! محمد ﷺ پر اور آلِ محمد ﷺ پر برکت نازل فرما جیسا کہ تو نے ابراہیم ؑ پر اور آلِ ابراہیم ؑ پر برکت نازل فرمائی، بے شک تو تعریف کے لائق اور بزرگ ہے',
+    hinditranslation: 'ए अल्लाह! मुहम्मद ﷺ पर और आले मुहम्मद ﷺ पर रहमत नाज़िल फरमा जैसे तूने इब्राहीम ﷺ पर और आले इब्राहीम ﷺ पर रहमत नाज़िल फरमाई, बेशक तू तारीफ़ के लायक़ और बुज़ुर्ग है। ए अल्लाह! मुहम्मद ﷺ पर और आले मुहम्मद ﷺ पर बरकत नाज़िल फरमा जैसे तूने इब्राहीम ﷺ पर और आले इब्राहीम ﷺ पर बरकत नाज़िल फरमाई, बेशक तू तारीफ़ के लायक़ और बुज़ुर्ग है',
+    reference: '[Sahih al-Bukhari]',
+    textheading: 'Peace and Blessing upon Muhammad ﷺ',
+    duaNumber: '2.',
+    order_index: 3,
+    is_favorited: false,
+    memorization_status: 'not_started',
+    steps: 'Recite in the Tashahhud of Salah after the first sitting.',
+    audio_full: require('../../assets/audio/complete/dua02-part01-audio03-complete.mp3'),
+    image_path: require('../../assets/images/dua_2.png'),
   },
 
   // Category 3: Morning Duas (1 dua)
@@ -831,23 +846,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Recite after every obligatory prayer and before sleeping for protection.',
-    image_path: require('../../assets/images/dua_1.png'),
-  },
-
-  // Category 34: Darood Ibrahim
-  {
-    id: '45', category_id: 34, title: 'Darood Ibrahim',
-    arabic_text: 'اللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَىٰ إِبْرَاهِيمَ وَعَلَىٰ آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ\n\nاللَّهُمَّ بَارِكْ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَىٰ إِبْرَاهِيمَ وَعَلَىٰ آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ',
-    translation: 'O Allah, send Your blessings upon Muhammad and upon the family of Muhammad, as You sent blessings upon Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious.\n\nO Allah, bless Muhammad and the family of Muhammad, as You blessed Ibrahim and the family of Ibrahim. Indeed, You are Praiseworthy, Glorious.',
-    urdu: 'اے اللہ! محمد ﷺ پر اور آلِ محمد ﷺ پر رحمت نازل فرما جیسا کہ تو نے ابراہیم ؑ پر اور آلِ ابراہیم ؑ پر رحمت نازل فرمائی، بے شک تو تعریف کے لائق اور بزرگ ہے۔ اے اللہ! محمد ﷺ پر اور آلِ محمد ﷺ پر برکت نازل فرما جیسا کہ تو نے ابراہیم ؑ پر اور آلِ ابراہیم ؑ پر برکت نازل فرمائی، بے شک تو تعریف کے لائق اور بزرگ ہے',
-    hinditranslation: 'ए अल्लाह! मुहम्मद ﷺ पर और आले मुहम्मद ﷺ पर रहमत नाज़िल फरमा जैसे तूने इब्राहीम ﷺ पर और आले इब्राहीम ﷺ पर रहमत नाज़िल फरमाई, बेशक तू तारीफ़ के लायक़ और बुज़ुर्ग है। ए अल्लाह! मुहम्मद ﷺ पर और आले मुहम्मद ﷺ पर बरकत नाज़िल फरमा जैसे तूने इब्राहीम ﷺ पर और आले इब्राहीम ﷺ पर बरकत नाज़िल फरमाई, बेशक तू तारीफ़ के लायक़ और बुज़ुर्ग है',
-    reference: '[Sahih al-Bukhari]',
-    textheading: 'Darood Ibrahim',
-    duaNumber: '34.',
-    order_index: 1,
-    is_favorited: false,
-    memorization_status: 'not_started',
-    steps: 'Recite in the Tashahhud of Salah after the first sitting.',
+    audio_full: require('../../assets/audio/complete/dua33_part01_audio01_complete.mp3'),
     image_path: require('../../assets/images/dua_1.png'),
   },
 
@@ -865,7 +864,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Raise your hands and ask Allah to increase your knowledge, especially before studying.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua34_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_34.png'),
   },
 
   // Category 36: Dua for Parents
@@ -882,7 +882,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Recite this dua for your parents regularly, especially after every prayer.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua35_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_35.png'),
   },
 
   // Category 37: Dua When Drinking Milk
@@ -899,7 +900,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this dua when you drink milk.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua36_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_36.png'),
   },
 
   // Category 38: Dua for a House in Jannah
@@ -916,7 +918,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Recite this dua with full faith and longing for Jannah.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua37_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_37.png'),
   },
 
   // Category 39: Dua for Protection from Hellfire
@@ -933,7 +936,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this 7 times in the morning and evening, and after Fajr and Maghrib prayers.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua38_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_38.png'),
   },
 
   // Category 40: Dua for Breaking the Fast
@@ -950,7 +954,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this dua when breaking your fast at iftar time.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua39_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_39.png'),
   },
 
   // Category 41: Dua for Someone Wearing New Clothes
@@ -967,7 +972,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this to someone when you see them wearing new clothes.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua40_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_40.png'),
   },
 
   // Category 42: Dua to Thank Someone
@@ -984,7 +990,8 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this to thank anyone who has done something good for you.',
-    image_path: require('../../assets/images/dua_1.png'),
+    audio_full: require('../../assets/audio/complete/dua41_part01_audio01_complete.mp3'),
+    image_path: require('../../assets/images/dua_41.png'),
   },
 ];
 
@@ -1258,6 +1265,87 @@ export const wordAudioPairs: WordAudioPair[] = [
   { id: '181', dua_id: '43', word_text: 'مِنْ شَرِّ مَا', audio_res_id: require('../../assets/audio/word-by-word/dua32_part01_audio13.mp3'), sequence_order: 11 },
   { id: '182', dua_id: '43', word_text: 'خَلَقَ', audio_res_id: require('../../assets/audio/word-by-word/dua32_part01_audio14.mp3'), sequence_order: 12 },
   { id: '183', dua_id: '43', word_text: 'وَبَرَاَ وَذَرَاَ', audio_res_id: require('../../assets/audio/word-by-word/dua32_part01_audio15.mp3'), sequence_order: 13 },
+
+  // ==================== DU'A 44 (Ayat ul Kursi) ====================
+  { id: '184', dua_id: '44', word_text: 'اللَّهُ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '185', dua_id: '44', word_text: 'لَا إِلَٰهَ إِلَّا هُوَ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '186', dua_id: '44', word_text: 'الْحَيُّ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio03.mp3.opus'), sequence_order: 2 },
+  { id: '187', dua_id: '44', word_text: 'الْقَيُّومُ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio04.mp3.opus'), sequence_order: 3 },
+  { id: '188', dua_id: '44', word_text: 'لَا تَأْخُذُهُ سِنَةٌ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio05.mp3.opus'), sequence_order: 4 },
+  { id: '189', dua_id: '44', word_text: 'وَلَا نَوْمٌ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio06.mp3.opus'), sequence_order: 5 },
+  { id: '190', dua_id: '44', word_text: 'لَهُ مَا فِي السَّمَاوَاتِ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio07.mp3.opus'), sequence_order: 6 },
+  { id: '191', dua_id: '44', word_text: 'وَمَا فِي الْأَرْضِ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio08.mp3.opus'), sequence_order: 7 },
+  { id: '192', dua_id: '44', word_text: 'مَنْ ذَا الَّذِي', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio09.mp3.opus'), sequence_order: 8 },
+  { id: '193', dua_id: '44', word_text: 'يَشْفَعُ عِنْدَهُ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio10.mp3.opus'), sequence_order: 9 },
+  { id: '194', dua_id: '44', word_text: 'إِلَّا بِإِذْنِهِ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio11.mp3.opus'), sequence_order: 10 },
+  { id: '195', dua_id: '44', word_text: 'يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio12.mp3.opus'), sequence_order: 11 },
+  { id: '196', dua_id: '44', word_text: 'وَمَا خَلْفَهُمْ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio13.mp3.opus'), sequence_order: 12 },
+  { id: '197', dua_id: '44', word_text: 'وَلَا يُحِيطُونَ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio14.mp3.opus'), sequence_order: 13 },
+  { id: '198', dua_id: '44', word_text: 'بِشَيْءٍ مِنْ عِلْمِهِ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio15.mp3.opus'), sequence_order: 14 },
+  { id: '199', dua_id: '44', word_text: 'إِلَّا بِمَا شَاءَ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio16.mp3.opus'), sequence_order: 15 },
+  { id: '200', dua_id: '44', word_text: 'وَسِعَ كُرْسِيُّهُ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio17.mp3.opus'), sequence_order: 16 },
+  { id: '201', dua_id: '44', word_text: 'السَّمَاوَاتِ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio18.mp3.opus'), sequence_order: 17 },
+  { id: '202', dua_id: '44', word_text: 'وَالْأَرْضَ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio19.mp3.opus'), sequence_order: 18 },
+  { id: '203', dua_id: '44', word_text: 'وَلَا يَئُودُهُ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio20.mp3.opus'), sequence_order: 19 },
+  { id: '204', dua_id: '44', word_text: 'حِفْظُهُمَا', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio21.mp3.opus'), sequence_order: 20 },
+  { id: '205', dua_id: '44', word_text: 'وَهُوَ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio22.mp3.opus'), sequence_order: 21 },
+  { id: '206', dua_id: '44', word_text: 'الْعَلِيُّ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio23.mp3.opus'), sequence_order: 22 },
+  { id: '207', dua_id: '44', word_text: 'الْعَظِيمُ', audio_res_id: require('../../assets/audio/word-by-word/dua33_part01_audio24.mp3.opus'), sequence_order: 23 },
+
+  // ==================== DU'A 45 (Darood Ibrahim) ====================
+  { id: '208', dua_id: '45', word_text: 'اللَّهُمَّ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '209', dua_id: '45', word_text: 'صَلِّ عَلَىٰ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '210', dua_id: '45', word_text: 'مُحَمَّدٍ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio03.mp3.opus'), sequence_order: 2 },
+  { id: '211', dua_id: '45', word_text: 'وَعَلَىٰ آلِ مُحَمَّدٍ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio04.mp3.opus'), sequence_order: 3 },
+  { id: '212', dua_id: '45', word_text: 'كَمَا صَلَّيْتَ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio05.mp3.opus'), sequence_order: 4 },
+  { id: '213', dua_id: '45', word_text: 'عَلَىٰ إِبْرَاهِيمَ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio06.mp3.opus'), sequence_order: 5 },
+  { id: '214', dua_id: '45', word_text: 'وَعَلَىٰ آلِ إِبْرَاهِيمَ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio07.mp3.opus'), sequence_order: 6 },
+  { id: '215', dua_id: '45', word_text: 'إِنَّكَ حَمِيدٌ مَجِيدٌ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio08.mp3.opus'), sequence_order: 7 },
+  { id: '216', dua_id: '45', word_text: 'اللَّهُمَّ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio09.mp3.opus'), sequence_order: 8 },
+  { id: '217', dua_id: '45', word_text: 'بَارِكْ عَلَىٰ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio10.mp3.opus'), sequence_order: 9 },
+  { id: '218', dua_id: '45', word_text: 'مُحَمَّدٍ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio11.mp3.opus'), sequence_order: 10 },
+  { id: '219', dua_id: '45', word_text: 'وَعَلَىٰ آلِ مُحَمَّدٍ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio12.mp3.opus'), sequence_order: 11 },
+  { id: '220', dua_id: '45', word_text: 'كَمَا بَارَكْتَ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio13.mp3.opus'), sequence_order: 12 },
+  { id: '221', dua_id: '45', word_text: 'عَلَىٰ إِبْرَاهِيمَ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03__audio14.mp3.opus'), sequence_order: 13 },
+  { id: '222', dua_id: '45', word_text: 'وَعَلَىٰ آلِ إِبْرَاهِيمَ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio15.mp3.opus'), sequence_order: 14 },
+  { id: '223', dua_id: '45', word_text: 'إِنَّكَ حَمِيدٌ مَجِيدٌ', audio_res_id: require('../../assets/audio/word-by-word/dua02_part03_audio16.mp3.opus'), sequence_order: 15 },
+
+  // ==================== DU'A 46 (Du'a for Knowledge) ====================
+  { id: '224', dua_id: '46', word_text: 'رَبِّ', audio_res_id: require('../../assets/audio/word-by-word/dua34_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '225', dua_id: '46', word_text: 'زِدْنِي', audio_res_id: require('../../assets/audio/word-by-word/dua34_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '226', dua_id: '46', word_text: 'عِلْمًا', audio_res_id: require('../../assets/audio/word-by-word/dua34_part01_audio03.mp3.opus'), sequence_order: 2 },
+
+  // ==================== DU'A 47 (Du'a for Parents) ====================
+  { id: '227', dua_id: '47', word_text: 'رَبِّ ارْحَمْهُمَا', audio_res_id: require('../../assets/audio/word-by-word/dua35_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '228', dua_id: '47', word_text: 'كَمَا رَبَّيَانِي', audio_res_id: require('../../assets/audio/word-by-word/dua35_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '229', dua_id: '47', word_text: 'صَغِيرًا', audio_res_id: require('../../assets/audio/word-by-word/dua35_part01_audio03.mp3.opus'), sequence_order: 2 },
+
+  // ==================== DU'A 48 (Du'a when Drinking Milk) ====================
+  { id: '230', dua_id: '48', word_text: 'اللَّهُمَّ بَارِكْ', audio_res_id: require('../../assets/audio/word-by-word/dua36_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '231', dua_id: '48', word_text: 'لَنَا فِيهِ', audio_res_id: require('../../assets/audio/word-by-word/dua36_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '232', dua_id: '48', word_text: 'وَزِدْنَا', audio_res_id: require('../../assets/audio/word-by-word/dua36_part01_audio03.mp3.opus'), sequence_order: 2 },
+  { id: '233', dua_id: '48', word_text: 'مِنْهُ', audio_res_id: require('../../assets/audio/word-by-word/dua36_part01_audio04.mp3.opus'), sequence_order: 3 },
+
+  // ==================== DU'A 49 (Du'a for House in Jannah) ====================
+  { id: '234', dua_id: '49', word_text: 'رَبِّ ابْنِ لِي', audio_res_id: require('../../assets/audio/word-by-word/dua37_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '235', dua_id: '49', word_text: 'عِنْدَكَ بَيْتًا', audio_res_id: require('../../assets/audio/word-by-word/dua37_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '236', dua_id: '49', word_text: 'فِي الْجَنَّةِ', audio_res_id: require('../../assets/audio/word-by-word/dua37_part01_audio03.mp3.opus'), sequence_order: 2 },
+
+  // ==================== DU'A 50 (Du'a from Hellfire) ====================
+  { id: '237', dua_id: '50', word_text: 'اللَّهُمَّ', audio_res_id: require('../../assets/audio/word-by-word/dua38_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '238', dua_id: '50', word_text: 'أَجِرْنِي', audio_res_id: require('../../assets/audio/word-by-word/dua38_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '239', dua_id: '50', word_text: 'مِنَ النَّارِ', audio_res_id: require('../../assets/audio/word-by-word/dua38_part01_audio03.mp3.opus'), sequence_order: 2 },
+
+  // ==================== DU'A 51 (Du'a at Iftar) ====================
+  { id: '240', dua_id: '51', word_text: 'ذَهَبَ الظَّمَأُ', audio_res_id: require('../../assets/audio/word-by-word/dua39_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '241', dua_id: '51', word_text: 'وَابْتَلَّتِ الْعُرُوقُ', audio_res_id: require('../../assets/audio/word-by-word/dua39_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '242', dua_id: '51', word_text: 'وَثَبَتَ الْأَجْرُ', audio_res_id: require('../../assets/audio/word-by-word/dua39_part01_audio03.mp3.opus'), sequence_order: 2 },
+  { id: '243', dua_id: '51', word_text: 'إِنْ شَاءَ اللَّهُ', audio_res_id: require('../../assets/audio/word-by-word/dua39_part01_audio04.mp3.opus'), sequence_order: 3 },
+
+  // ==================== DU'A 52 (Du'a for New Clothes) ====================
+  { id: '244', dua_id: '52', word_text: 'تُبْلِي', audio_res_id: require('../../assets/audio/word-by-word/dua40_part01_audio01.mp3.opus'), sequence_order: 0 },
+  { id: '245', dua_id: '52', word_text: 'وَيُخْلِفُ اللَّهُ', audio_res_id: require('../../assets/audio/word-by-word/dua40_part01_audio02.mp3.opus'), sequence_order: 1 },
+  { id: '246', dua_id: '52', word_text: 'تَعَالَى', audio_res_id: require('../../assets/audio/word-by-word/dua40_part01_audio03.mp3.opus'), sequence_order: 2 },
 ];
 
 // Helper functions

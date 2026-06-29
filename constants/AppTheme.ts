@@ -48,6 +48,14 @@ export const localImages = {
   dua_30: require('../assets/images/dua_30.png'),
   dua_31: require('../assets/images/dua_31.png'),
   dua_32: require('../assets/images/dua_32.png'),
+  dua_34: require('../assets/images/dua_34.png'),
+  dua_35: require('../assets/images/dua_35.png'),
+  dua_36: require('../assets/images/dua_36.png'),
+  dua_37: require('../assets/images/dua_37.png'),
+  dua_38: require('../assets/images/dua_38.png'),
+  dua_39: require('../assets/images/dua_39.png'),
+  dua_40: require('../assets/images/dua_40.png'),
+  dua_41: require('../assets/images/dua_41.png'),
 };
 
 export const BUTTON_IMAGES = {

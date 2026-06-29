@@ -180,6 +180,14 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       'dua_30': require('../../assets/images/dua_30.png'),
       'dua_31': require('../../assets/images/dua_31.png'),
       'dua_32': require('../../assets/images/dua_32.png'),
+      'dua_34': require('../../assets/images/dua_34.png'),
+      'dua_35': require('../../assets/images/dua_35.png'),
+      'dua_36': require('../../assets/images/dua_36.png'),
+      'dua_37': require('../../assets/images/dua_37.png'),
+      'dua_38': require('../../assets/images/dua_38.png'),
+      'dua_39': require('../../assets/images/dua_39.png'),
+      'dua_40': require('../../assets/images/dua_40.png'),
+      'dua_41': require('../../assets/images/dua_41.png'),
     };
 
     const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'dua_1';
@@ -224,6 +232,14 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       30: require('../../assets/images/dua_30.png'),
       31: require('../../assets/images/dua_31.png'),
       32: require('../../assets/images/dua_32.png'),
+      35: require('../../assets/images/dua_34.png'),
+      36: require('../../assets/images/dua_35.png'),
+      37: require('../../assets/images/dua_36.png'),
+      38: require('../../assets/images/dua_37.png'),
+      39: require('../../assets/images/dua_38.png'),
+      40: require('../../assets/images/dua_39.png'),
+      41: require('../../assets/images/dua_40.png'),
+      42: require('../../assets/images/dua_41.png'),
     };
 
     const fallbackImage = categoryBasedImages[categoryId as keyof typeof categoryBasedImages] || require('../../assets/images/dua_1.png');

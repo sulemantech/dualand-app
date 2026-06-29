@@ -362,6 +362,17 @@ export default function DuaDetailScreen() {
     };
   }, [currentDua]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Category position — how many duas share this category_id, and which one we're on.
+  // Used to show "Part 2 of 3" dots when a category has multiple sub-duas.
+  const { categoryTotal, categoryPos } = useMemo(() => {
+    if (!currentDua) return { categoryTotal: 1, categoryPos: 1 };
+    const siblings = allDuas.filter(d => d.category_id === currentDua.category_id);
+    return {
+      categoryTotal: siblings.length,
+      categoryPos: currentDua.order_index ?? 1,
+    };
+  }, [allDuas, currentDuaIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Derived from persisted context (auto-updates when dua changes or user toggles)
   const isFavorite = favorites[id] ?? false;
   const memorizationStatus: MemorizationStatus = memorization[id] ?? 'not_started';
@@ -1094,7 +1105,9 @@ useEffect(() => {
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>{title}</Text>
             <Text style={styles.headerSubtitle}>
-              {`Dua ${currentDuaIndex + 1} of ${allDuas.length}`}
+              {categoryTotal > 1
+                ? `Part ${categoryPos} of ${categoryTotal}`
+                : `Dua ${currentDuaIndex + 1} of ${allDuas.length}`}
             </Text>
           </View>
 
@@ -1253,6 +1266,17 @@ useEffect(() => {
             <View style={styles.stepsContainer}>
               <Text style={styles.stepsTitle}>Steps:</Text>
               <Text style={styles.stepsText}>{steps}</Text>
+            </View>
+          )}
+
+          {categoryTotal > 1 && (
+            <View style={styles.categoryDotsRow}>
+              {Array.from({ length: categoryTotal }, (_, i) => (
+                <View
+                  key={i}
+                  style={[styles.categoryDot, i + 1 === categoryPos && styles.categoryDotActive]}
+                />
+              ))}
             </View>
           )}
 
@@ -1706,6 +1730,25 @@ const styles = StyleSheet.create({
   },
   modeSegLabelActive: {
     color: '#3D1D8A',
+  },
+  categoryDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#C9BBEE',
+  },
+  categoryDotActive: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#7E57C2',
   },
   errorContainer: {
     margin: 16,
