@@ -407,6 +407,14 @@ export default function DuaDetailScreen() {
     currentMode === 'full' ? getAudioUrlForCurrentMode() : undefined
   );
 
+  // Single derived bool — true whenever ANY audio is actively playing.
+  // Full mode: hook's audioIsPlaying is the source of truth (isPlaying is never set).
+  // Word mode: isPlaying drives the word-by-word loop.
+  // Title audio: isPlayingTitleAudio covers both modes during the intro clip.
+  const isAnythingPlaying =
+    isPlayingTitleAudio ||
+    (currentMode === 'full' ? audioIsPlaying : isPlaying);
+
   const playButtonScale = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const ring1Anim = useRef(new Animated.Value(0)).current;
@@ -766,7 +774,7 @@ useEffect(() => {
   }, [currentDuaIndex]);
 
   useEffect(() => {
-    if (isPlaying && !isPlayingTitleAudio) {
+    if (isAnythingPlaying && !isPlayingTitleAudio) {
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -788,12 +796,12 @@ useEffect(() => {
     } else {
       pulseAnim.setValue(1);
     }
-  }, [isPlaying, isPlayingTitleAudio, pulseAnim]);
+  }, [isAnythingPlaying, isPlayingTitleAudio, pulseAnim]);
 
   // Expanding ring pulse — radiates outward from play button while audio is active
   useEffect(() => {
     let active = true;
-    if (!(isPlaying || isPlayingTitleAudio)) {
+    if (!isAnythingPlaying) {
       ring1Anim.setValue(0);
       ring2Anim.setValue(0);
       ring3Anim.setValue(0);
@@ -812,7 +820,7 @@ useEffect(() => {
     };
     pulse();
     return () => { active = false; };
-  }, [isPlaying, isPlayingTitleAudio]);
+  }, [isAnythingPlaying, isPlayingTitleAudio]);
 
   const cycleMemorizationStatus = useCallback(() => {
     const order: MemorizationStatus[] = ['not_started', 'learning', 'memorized'];
@@ -1373,7 +1381,7 @@ useEffect(() => {
           </View>
 
           <View style={styles.playButtonWrapper}>
-            {(isPlaying || isPlayingTitleAudio) && [ring1Anim, ring2Anim, ring3Anim].map((ring, i) => (
+            {isAnythingPlaying && [ring1Anim, ring2Anim, ring3Anim].map((ring, i) => (
               <Animated.View
                 key={i}
                 pointerEvents="none"
@@ -1390,20 +1398,20 @@ useEffect(() => {
             <Animated.View style={{
               transform: [
                 { scale: playButtonScale },
-                { scale: (isPlaying || isPlayingTitleAudio) ? pulseAnim : 1 }
+                { scale: isAnythingPlaying ? pulseAnim : 1 }
               ]
             }}>
               <BouncingButton onPress={handlePlayPause}>
                 <LinearGradient
                   colors={
                     isPlayingTitleAudio ? ['#FFA726', '#FF7043'] :
-                    isPlaying ? ['#4ECDC4', '#26C6DA'] :
+                    isAnythingPlaying   ? ['#4ECDC4', '#26C6DA'] :
                     ['#7E57C2', '#9C77D9']
                   }
                   style={styles.gradientBorder}
                 >
                   <Image
-                    source={(isPlaying || isPlayingTitleAudio) ? BtnPause : BtnPlay}
+                    source={isAnythingPlaying ? BtnPause : BtnPlay}
                     style={styles.playButton}
                   />
                 </LinearGradient>

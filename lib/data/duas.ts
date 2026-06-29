@@ -1,4 +1,4 @@
-// duas.ts - Complete data structure for all 43 duas and categories
+﻿// duas.ts - Complete data structure for all 43 duas and categories
 
 export interface Category {
   id: number;
@@ -52,27 +52,27 @@ export const categories: Category[] = [
   { id: 9, name: 'Du\'a after Leaving the Toilet', icon: 'exit', color: '#744210', order_index: 9, image_path: require('../../assets/images/dua_9.png') },
   { id: 10, name: 'Du\'a before Putting on Dress', icon: 'tshirt', color: '#6a234dff', order_index: 10, image_path: require('../../assets/images/dua_10.png') },
   { id: 11, name: 'Du\'a before Taking off Dress', icon: 'tshirt', color: '#E53E3E', order_index: 11, image_path: require('../../assets/images/dua_11.png') },
-  { id: 12, name: 'Du\'a for Traveller', icon: 'airplane', color: '#2B6CB0', order_index: 12, image_path: require('../../assets/images/dua_15.png') },
+  { id: 12, name: 'Du\'a for Traveller', icon: 'airplane', color: '#2B6CB0', order_index: 12, image_path: require('../../assets/images/dua_12.png') },
   { id: 13, name: 'Du\'a while Entering the Home', icon: 'home', color: '#234E52', order_index: 13, image_path: require('../../assets/images/dua_13.png') },
   { id: 14, name: 'Du\'a for protection from Bad Akhlaq', icon: 'heart', color: '#521B41', order_index: 14, image_path: require('../../assets/images/dua_14.png') },
-  { id: 15, name: 'Du\'a for Journey', icon: 'road', color: '#1A365D', order_index: 15, image_path: require('../../assets/images/dua_16.png') },
-  { id: 16, name: 'Du\'a When Meeting a Muslim', icon: 'handshake', color: '#742A2A', order_index: 16, image_path: require('../../assets/images/dua_17.png') },
-  { id: 17, name: 'Du\'a at the End of a Gathering', icon: 'users', color: '#2D3748', order_index: 17, image_path: require('../../assets/images/dua_18.png') },
-  { id: 18, name: 'Du\'a When Entering the Market', icon: 'shopping-cart', color: '#C53030', order_index: 18, image_path: require('../../assets/images/dua_19.png') },
-  { id: 19, name: 'Du\'a When Entering the Masjid', icon: 'mosque', color: '#2F855A', order_index: 19, image_path: require('../../assets/images/dua_20.png') },
-  { id: 20, name: 'Du\'a When Leaving the Masjid', icon: 'mosque', color: '#2C5AA0', order_index: 20, image_path: require('../../assets/images/dua_21.png') },
-  { id: 21, name: 'Du\'a Before Eating & Drinking', icon: 'utensils', color: '#9C4221', order_index: 21, image_path: require('../../assets/images/dua_22.png') },
-  { id: 22, name: 'Du\'a after Eating & Drinking', icon: 'utensils', color: '#553C9A', order_index: 22, image_path: require('../../assets/images/dua_23.png') },
-  { id: 23, name: 'Du\'a When Visiting the Sick', icon: 'stethoscope', color: '#805AD5', order_index: 23, image_path: require('../../assets/images/dua_24.png') },
-  { id: 24, name: 'Du\'a for one Afflicted by a Calamity', icon: 'sad-tear', color: '#FF6B6B', order_index: 24, image_path: require('../../assets/images/dua_25.png') },
-  { id: 25, name: 'Du\'a upon Seeing Someone in Calamity', icon: 'eye', color: '#4ECDC4', order_index: 25, image_path: require('../../assets/images/dua_26.png') },
-  { id: 26, name: 'Du\'a when Angry', icon: 'angry', color: '#FFD166', order_index: 26, image_path: require('../../assets/images/dua_27.png') },
-  { id: 27, name: 'Du\'a when Sneezing', icon: 'wind', color: '#6A0572', order_index: 27, image_path: require('../../assets/images/dua_28.png') },
-  { id: 28, name: 'Du\'a when it Rains', icon: 'cloud-rain', color: '#1A535C', order_index: 28, image_path: require('../../assets/images/dua_29.png') },
-  { id: 29, name: 'Du\'a upon Sighting the Crescent Moon', icon: 'moon', color: '#FF9F1C', order_index: 29, image_path: require('../../assets/images/dua_30.png') },
-  { id: 30, name: 'Du\'a for Seeking Allah\'s Love', icon: 'praying-hands', color: '#2EC4B6', order_index: 30, image_path: require('../../assets/images/dua_31.png') },
-  { id: 31, name: 'Du\'a: Sayyid-ul-Istighfar', icon: 'pray', color: '#E71D36', order_index: 31, image_path: require('../../assets/images/dua_32.png') },
-  { id: 32, name: 'Seeking Refuge with Allah', icon: 'shield-alt', color: '#662E9B', order_index: 32, image_path: require('../../assets/images/dua_33.png') },
+  { id: 15, name: 'Du\'a for Journey', icon: 'road', color: '#1A365D', order_index: 15, image_path: require('../../assets/images/dua_15.png') },
+  { id: 16, name: 'Du\'a When Meeting a Muslim', icon: 'handshake', color: '#742A2A', order_index: 16, image_path: require('../../assets/images/dua_16.png') },
+  { id: 17, name: 'Du\'a at the End of a Gathering', icon: 'users', color: '#2D3748', order_index: 17, image_path: require('../../assets/images/dua_17.png') },
+  { id: 18, name: 'Du\'a When Entering the Market', icon: 'shopping-cart', color: '#C53030', order_index: 18, image_path: require('../../assets/images/dua_18.png') },
+  { id: 19, name: 'Du\'a When Entering the Masjid', icon: 'mosque', color: '#2F855A', order_index: 19, image_path: require('../../assets/images/dua_19.png') },
+  { id: 20, name: 'Du\'a When Leaving the Masjid', icon: 'mosque', color: '#2C5AA0', order_index: 20, image_path: require('../../assets/images/dua_20.png') },
+  { id: 21, name: 'Du\'a Before Eating & Drinking', icon: 'utensils', color: '#9C4221', order_index: 21, image_path: require('../../assets/images/dua_21.png') },
+  { id: 22, name: 'Du\'a after Eating & Drinking', icon: 'utensils', color: '#553C9A', order_index: 22, image_path: require('../../assets/images/dua_22.png') },
+  { id: 23, name: 'Du\'a When Visiting the Sick', icon: 'stethoscope', color: '#805AD5', order_index: 23, image_path: require('../../assets/images/dua_23.png') },
+  { id: 24, name: 'Du\'a for one Afflicted by a Calamity', icon: 'sad-tear', color: '#FF6B6B', order_index: 24, image_path: require('../../assets/images/dua_24.png') },
+  { id: 25, name: 'Du\'a upon Seeing Someone in Calamity', icon: 'eye', color: '#4ECDC4', order_index: 25, image_path: require('../../assets/images/dua_25.png') },
+  { id: 26, name: 'Du\'a when Angry', icon: 'angry', color: '#FFD166', order_index: 26, image_path: require('../../assets/images/dua_26.png') },
+  { id: 27, name: 'Du\'a when Sneezing', icon: 'wind', color: '#6A0572', order_index: 27, image_path: require('../../assets/images/dua_27.png') },
+  { id: 28, name: 'Du\'a when it Rains', icon: 'cloud-rain', color: '#1A535C', order_index: 28, image_path: require('../../assets/images/dua_28.png') },
+  { id: 29, name: 'Du\'a upon Sighting the Crescent Moon', icon: 'moon', color: '#FF9F1C', order_index: 29, image_path: require('../../assets/images/dua_29.png') },
+  { id: 30, name: 'Du\'a for Seeking Allah\'s Love', icon: 'praying-hands', color: '#2EC4B6', order_index: 30, image_path: require('../../assets/images/dua_30.png') },
+  { id: 31, name: 'Du\'a: Sayyid-ul-Istighfar', icon: 'pray', color: '#E71D36', order_index: 31, image_path: require('../../assets/images/dua_31.png') },
+  { id: 32, name: 'Seeking Refuge with Allah', icon: 'shield-alt', color: '#662E9B', order_index: 32, image_path: require('../../assets/images/dua_32.png') },
   { id: 33, name: 'Ayat ul Kursi', icon: 'star', color: '#1A237E', order_index: 33, image_path: require('../../assets/images/dua_1.png') },
   { id: 34, name: 'Darood Ibrahim', icon: 'peace', color: '#1B5E20', order_index: 34, image_path: require('../../assets/images/dua_1.png') },
   { id: 35, name: "Du'a for Knowledge", icon: 'book', color: '#E65100', order_index: 35, image_path: require('../../assets/images/dua_1.png') },
@@ -342,7 +342,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_traveler.mp3'),
     audio_full: require('../../assets/audio/complete/dua12_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_15.png')
+    image_path: require('../../assets/images/dua_12.png')
   },
 
   // Category 10: Journey (3 duas)
@@ -360,7 +360,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_journey.mp3'),
     audio_full: require('../../assets/audio/complete/dua15_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_16.png')
+    image_path: require('../../assets/images/dua_15.png')
   },
   {
     id: '20', category_id: 15, title: 'For Journey - Praise',
@@ -374,7 +374,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua15_part02_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_16.png')
+    image_path: require('../../assets/images/dua_15.png')
   },
   {
     id: '21', category_id: 15, title: 'For Journey - Transportation',
@@ -388,7 +388,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua15_part03_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_16.png')
+    image_path: require('../../assets/images/dua_15.png')
   },
 
   // Category 11: Home (2 duas)
@@ -457,7 +457,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_meeting_muslim.mp3'),
     audio_full: require('../../assets/audio/complete/dua16_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_17.png')
+    image_path: require('../../assets/images/dua_16.png')
   },
   {
     id: '23', category_id: 16, title: 'Reply to Greeting',
@@ -472,7 +472,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: 'Reply to the Greeting:',
     audio_full: require('../../assets/audio/complete/dua16_part02_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_17.png')
+    image_path: require('../../assets/images/dua_16.png')
   },
 
   // Category 14: Gatherings (1 dua)
@@ -490,7 +490,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_gathering.mp3'),
     audio_full: require('../../assets/audio/complete/dua17_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_18.png')
+    image_path: require('../../assets/images/dua_17.png')
   },
 
   // Category 15: Market (1 dua)
@@ -508,7 +508,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_market.mp3'),
     audio_full: require('../../assets/audio/complete/dua18_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_19.png')
+    image_path: require('../../assets/images/dua_18.png')
   },
 
   // Category 16: Masjid (2 duas)
@@ -527,7 +527,7 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_entering_masjid.mp3'),
     audio_full: require('../../assets/audio/complete/dua19_part01_audio01_complete.mp3'),
     steps: 'Enter the Masjid with the right foot and say:',
-    image_path: require('../../assets/images/dua_20.png')
+    image_path: require('../../assets/images/dua_19.png')
   },
   {
     id: '27', category_id: 20, title: 'Leaving Masjid',
@@ -544,7 +544,7 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_leaving_masjid.mp3'),
     audio_full: require('../../assets/audio/complete/dua20_part01_audio01_complete.mp3'),
     steps: 'Leave the masjid with the left foot and say:',
-    image_path: require('../../assets/images/dua_21.png')
+    image_path: require('../../assets/images/dua_20.png')
   },
 
   // Category 17: Eating & Drinking (3 duas)
@@ -563,7 +563,7 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_eating_drinking.mp3'),
     audio_full: require('../../assets/audio/complete/dua21_part01_audio01_complete.mp3'),
     steps: '1. Sit while eating and drinking\n2. Eat with your right hand and eat from what is in front of you and say:',
-    image_path: require('../../assets/images/dua_22.png')
+    image_path: require('../../assets/images/dua_21.png')
   },
   {
     id: '29', category_id: 21, title: 'If Forgot Before Eating',
@@ -578,7 +578,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: '3. If you forgot to read the Du\'a at the beginning then upon remembering say:',
     audio_full: require('../../assets/audio/complete/dua21_part02_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_22.png')
+    image_path: require('../../assets/images/dua_21.png')
   },
   {
     id: '30', category_id: 22, title: 'After Eating',
@@ -594,7 +594,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_after_eating.mp3'),
     audio_full: require('../../assets/audio/complete/dua22_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_23.png')
+    image_path: require('../../assets/images/dua_22.png')
   },
 
   // Category 18: Visiting Sick (2 duas)
@@ -612,7 +612,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_sick.mp3'),
     audio_full: require('../../assets/audio/complete/dua23_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_24.png')
+    image_path: require('../../assets/images/dua_23.png')
   },
   {
     id: '32', category_id: 23, title: 'Visiting Sick - Healing',
@@ -626,7 +626,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua23_part02_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_24.png')
+    image_path: require('../../assets/images/dua_23.png')
   },
 
   // Category 19: Calamity (2 duas)
@@ -644,7 +644,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_calamity.mp3'),
     audio_full: require('../../assets/audio/complete/dua24_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_25.png')
+    image_path: require('../../assets/images/dua_24.png')
   },
   {
     id: '34', category_id: 25, title: 'Seeing Someone in Calamity',
@@ -660,7 +660,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_seeing_in_calamity.mp3'),
     audio_full: require('../../assets/audio/complete/dua25_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_26.png')
+    image_path: require('../../assets/images/dua_25.png')
   },
 
   // Category 20: Anger (1 dua)
@@ -679,7 +679,7 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_angry.mp3'),
     audio_full: require('../../assets/audio/complete/dua26_part01_audio01_complete.mp3'),
     steps: 'Seek refuge with Allah from the Satan:',
-    image_path: require('../../assets/images/dua_27.png')
+    image_path: require('../../assets/images/dua_26.png')
   },
 
   // Category 21: Sneezing (3 duas)
@@ -698,7 +698,7 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_sneezing.mp3'),
     audio_full: require('../../assets/audio/complete/dua27_part01_audio01_complete.mp3'),
     steps: 'Say after sneezing:',
-    image_path: require('../../assets/images/dua_28.png')
+    image_path: require('../../assets/images/dua_27.png')
   },
   {
     id: '37', category_id: 27, title: 'Response to Sneezing',
@@ -713,7 +713,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: 'Dua by one who hears someone saying اَلْحَمْدُ لِلّٰہِ',
     audio_full: require('../../assets/audio/complete/dua27_part02_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_28.png')
+    image_path: require('../../assets/images/dua_27.png')
   },
   {
     id: '38', category_id: 27, title: 'Reply to Response',
@@ -728,7 +728,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: 'Du\'a in reply by the person who sneezes:',
     audio_full: require('../../assets/audio/complete/dua27_part03_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_28.png')
+    image_path: require('../../assets/images/dua_27.png')
   },
 
   // Category 22: Nature (2 duas)
@@ -746,7 +746,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_rains.mp3'),
     audio_full: require('../../assets/audio/complete/dua28_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_29.png')
+    image_path: require('../../assets/images/dua_28.png')
   },
   {
     id: '40', category_id: 29, title: 'Sighting Crescent Moon',
@@ -762,7 +762,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_moon.mp3'),
     audio_full: require('../../assets/audio/complete/dua29_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_30.png')
+    image_path: require('../../assets/images/dua_29.png')
   },
 
   // Category 23: Love of Allah (1 dua)
@@ -780,7 +780,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_seeking_love.mp3'),
     audio_full: require('../../assets/audio/complete/dua30_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_31.png')
+    image_path: require('../../assets/images/dua_30.png')
   },
 
   // Category 24: Seeking Refuge (2 duas)
@@ -798,7 +798,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_istighfar.mp3'),
     audio_full: require('../../assets/audio/complete/dua31_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_32.png')
+    image_path: require('../../assets/images/dua_31.png')
   },
   {
     id: '43', category_id: 32, title: 'Seeking Refuge with Allah',
@@ -814,7 +814,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_refuse_with_allah.mp3'),
     audio_full: require('../../assets/audio/complete/dua32_part01_audio01_complete.mp3'),
-    image_path: require('../../assets/images/dua_33.png')
+    image_path: require('../../assets/images/dua_32.png')
   },
 
   // Category 33: Ayat ul Kursi

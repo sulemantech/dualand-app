@@ -1,4 +1,4 @@
-import { ScreenWrapper } from '@/components/common/ScreenWrapper';
+﻿import { ScreenWrapper } from '@/components/common/ScreenWrapper';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -159,6 +159,7 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       'dua_9': require('../../assets/images/dua_9.png'),
       'dua_10': require('../../assets/images/dua_10.png'),
       'dua_11': require('../../assets/images/dua_11.png'),
+      'dua_12': require('../../assets/images/dua_12.png'),
       'dua_13': require('../../assets/images/dua_13.png'),
       'dua_14': require('../../assets/images/dua_14.png'),
       'dua_15': require('../../assets/images/dua_15.png'),
@@ -179,7 +180,6 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       'dua_30': require('../../assets/images/dua_30.png'),
       'dua_31': require('../../assets/images/dua_31.png'),
       'dua_32': require('../../assets/images/dua_32.png'),
-      'dua_33': require('../../assets/images/dua_33.png'),
     };
 
     const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'dua_1';
@@ -203,27 +203,27 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       9: require('../../assets/images/dua_9.png'),
       10: require('../../assets/images/dua_10.png'),
       11: require('../../assets/images/dua_11.png'),
-      12: require('../../assets/images/dua_15.png'),
-      13: require('../../assets/images/dua_13.png'),
-      14: require('../../assets/images/dua_14.png'),
-      15: require('../../assets/images/dua_16.png'),
-      16: require('../../assets/images/dua_17.png'),
-      17: require('../../assets/images/dua_18.png'),
-      18: require('../../assets/images/dua_19.png'),
-      19: require('../../assets/images/dua_20.png'),
-      20: require('../../assets/images/dua_21.png'),
-      21: require('../../assets/images/dua_22.png'),
-      22: require('../../assets/images/dua_23.png'),
-      23: require('../../assets/images/dua_24.png'),
-      24: require('../../assets/images/dua_25.png'),
-      25: require('../../assets/images/dua_26.png'),
-      26: require('../../assets/images/dua_27.png'),
-      27: require('../../assets/images/dua_28.png'),
-      28: require('../../assets/images/dua_29.png'),
-      29: require('../../assets/images/dua_30.png'),
-      30: require('../../assets/images/dua_31.png'),
-      31: require('../../assets/images/dua_32.png'),
-      32: require('../../assets/images/dua_33.png'),
+      12: require('../../assets/images/dua_14.png'),
+      13: require('../../assets/images/dua_12.png'),
+      14: require('../../assets/images/dua_13.png'),
+      15: require('../../assets/images/dua_15.png'),
+      16: require('../../assets/images/dua_16.png'),
+      17: require('../../assets/images/dua_17.png'),
+      18: require('../../assets/images/dua_18.png'),
+      19: require('../../assets/images/dua_19.png'),
+      20: require('../../assets/images/dua_20.png'),
+      21: require('../../assets/images/dua_21.png'),
+      22: require('../../assets/images/dua_22.png'),
+      23: require('../../assets/images/dua_23.png'),
+      24: require('../../assets/images/dua_24.png'),
+      25: require('../../assets/images/dua_25.png'),
+      26: require('../../assets/images/dua_26.png'),
+      27: require('../../assets/images/dua_27.png'),
+      28: require('../../assets/images/dua_28.png'),
+      29: require('../../assets/images/dua_29.png'),
+      30: require('../../assets/images/dua_30.png'),
+      31: require('../../assets/images/dua_31.png'),
+      32: require('../../assets/images/dua_32.png'),
     };
 
     const fallbackImage = categoryBasedImages[categoryId as keyof typeof categoryBasedImages] || require('../../assets/images/dua_1.png');
