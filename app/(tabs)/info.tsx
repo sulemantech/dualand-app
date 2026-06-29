@@ -7,7 +7,6 @@ import {
   Animated,
   Dimensions,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -167,9 +166,8 @@ export default function InspireScreen() {
     Animated.spring(scaleAnim, { toValue: 1, tension: 200, friction: 6, useNativeDriver: true }).start();
 
   return (
-    <ScreenWrapper bottomMargin={70}>
+    <ScreenWrapper>
       <SafeAreaView style={styles.screen} edges={['top']}>
-        <StatusBar barStyle="light-content" backgroundColor="#7E57C2" />
 
         <AppHeader icon="💡" title="Inspire" subtitle="Knowledge & Community" />
 

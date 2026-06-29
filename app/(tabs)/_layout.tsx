@@ -1,10 +1,21 @@
-import { Tabs } from 'expo-router';
-import { Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Easing,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const PURPLE = '#7E57C2';
 const WHITE  = '#FFFFFF';
+
+// Base tab bar content height (does NOT include bottom safe-area inset)
+export const TAB_BAR_BASE_HEIGHT = 80;
 
 // Per-tab colour palette — all in the purple/violet family for cohesion
 const TAB_COLORS = {
@@ -35,22 +46,27 @@ const TabIcon = ({
   const scale = useRef(new Animated.Value(1)).current;
   const lift  = useRef(new Animated.Value(0)).current;
   const glow  = useRef(new Animated.Value(0)).current;
+  const floatLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (focused) {
+      floatLoop.current?.stop();
       Animated.parallel([
         Animated.spring(scale, { toValue: 1.12, tension: 300, friction: 6,  useNativeDriver: true }),
         Animated.spring(lift,  { toValue: -5,   tension: 240, friction: 7,  useNativeDriver: true }),
         Animated.timing(glow,  { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]).start();
-      // gentle float once settled
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(lift, { toValue: -7, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(lift, { toValue: -5, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        ])
-      ).start();
+      ]).start(() => {
+        floatLoop.current = Animated.loop(
+          Animated.sequence([
+            Animated.timing(lift, { toValue: -7, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(lift, { toValue: -5, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          ])
+        );
+        floatLoop.current.start();
+      });
     } else {
+      floatLoop.current?.stop();
+      floatLoop.current = null;
       Animated.parallel([
         Animated.spring(scale, { toValue: 1, tension: 260, friction: 7, useNativeDriver: true }),
         Animated.spring(lift,  { toValue: 0, tension: 240, friction: 7, useNativeDriver: true }),
@@ -104,22 +120,28 @@ const HomeTabIcon = ({ focused }: { focused: boolean }) => {
   const lift   = useRef(new Animated.Value(0)).current;
   const glow   = useRef(new Animated.Value(0.2)).current;
   const rotate = useRef(new Animated.Value(0)).current;
+  const floatLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     if (focused) {
+      floatLoop.current?.stop();
       Animated.parallel([
         Animated.spring(scale,  { toValue: 1.18, tension: 280, friction: 5,  useNativeDriver: true }),
         Animated.spring(lift,   { toValue: -6,   tension: 220, friction: 6,  useNativeDriver: true }),
         Animated.timing(glow,   { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
         Animated.timing(rotate, { toValue: 1, duration: 420, easing: Easing.out(Easing.back), useNativeDriver: true }),
-      ]).start();
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(lift, { toValue: -9, duration: 950, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(lift, { toValue: -6, duration: 950, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        ])
-      ).start();
+      ]).start(() => {
+        floatLoop.current = Animated.loop(
+          Animated.sequence([
+            Animated.timing(lift, { toValue: -9, duration: 950, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(lift, { toValue: -6, duration: 950, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          ])
+        );
+        floatLoop.current.start();
+      });
     } else {
+      floatLoop.current?.stop();
+      floatLoop.current = null;
       Animated.parallel([
         Animated.spring(scale,  { toValue: 1,   tension: 260, friction: 7, useNativeDriver: true }),
         Animated.spring(lift,   { toValue: 0,   tension: 220, friction: 7, useNativeDriver: true }),
@@ -129,8 +151,8 @@ const HomeTabIcon = ({ focused }: { focused: boolean }) => {
     }
   }, [focused]);
 
-  const deg         = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-  const glowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.1, 0.45] });
+  const deg          = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const glowOpacity  = glow.interpolate({ inputRange: [0, 1], outputRange: [0.1, 0.45] });
   const labelOpacity = glow.interpolate({ inputRange: [0.2, 1], outputRange: [0.55, 1] });
 
   return (
@@ -173,13 +195,54 @@ const HomeTabIcon = ({ focused }: { focused: boolean }) => {
 // ─── Tab layout ───────────────────────────────────────────────────────────────
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
+  // True bottom inset (home indicator on iOS, gesture bar on Android)
+  const bottomInset = insets.bottom;
+
   return (
     <Tabs
       initialRouteName="index"
       screenOptions={{
         tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
+        tabBarHideOnKeyboard: true,
         headerShown: false,
+        // Allow our icon components to fill the width of each tab slot so
+        // labels like "Tracker" are never clipped.
+        tabBarItemStyle: {
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'visible',
+        },
+        tabBarIconStyle: {
+          width: '100%',
+          alignItems: 'center',
+          overflow: 'visible',
+        },
+        tabBarStyle: {
+          height: TAB_BAR_BASE_HEIGHT + bottomInset,
+          borderTopWidth: 0,
+          backgroundColor: WHITE,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          elevation: 24,
+          shadowColor: PURPLE,
+          shadowOffset: { width: 0, height: -5 },
+          shadowOpacity: 0.13,
+          shadowRadius: 18,
+          paddingHorizontal: 4,
+          // On Android, bottomInset is now reliable (SafeAreaProvider is in the tree).
+          // Use a generous minimum (24 px) to absorb any device-specific rounding.
+          paddingBottom: Platform.OS === 'android'
+            ? Math.max(bottomInset, 24)
+            : bottomInset + 4,
+          paddingTop: 6,
+          borderWidth: 1,
+          borderColor: 'rgba(126,87,194,0.10)',
+        },
       }}
     >
       <Tabs.Screen
@@ -226,39 +289,19 @@ export default function TabLayout() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  tabBar: {
-    height: Platform.OS === 'ios' ? 94 : 82,
-    borderTopWidth: 0,
-    backgroundColor: WHITE,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    elevation: 24,
-    shadowColor: PURPLE,
-    shadowOffset: { width: 0, height: -5 },
-    shadowOpacity: 0.13,
-    shadowRadius: 18,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    paddingHorizontal: 4,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-    paddingTop: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(126,87,194,0.10)',
-  },
-
   // ── Regular tab ──
   iconWrap: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 76,
     paddingVertical: 4,
     position: 'relative',
+    overflow: 'visible',
   },
   glow: {
     position: 'absolute',
     top: -4,
+    alignSelf: 'center',
     width: 58,
     height: 58,
     borderRadius: 29,
@@ -266,6 +309,7 @@ const styles = StyleSheet.create({
   bgPill: {
     position: 'absolute',
     top: -2,
+    alignSelf: 'center',
     width: 54,
     height: 54,
     borderRadius: 27,
@@ -320,15 +364,17 @@ const styles = StyleSheet.create({
 
   // ── Home tab ──
   homeWrap: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 76,
     paddingVertical: 4,
     position: 'relative',
+    overflow: 'visible',
   },
   homeGlow: {
     position: 'absolute',
     top: -6,
+    alignSelf: 'center',
     width: 68,
     height: 68,
     borderRadius: 34,

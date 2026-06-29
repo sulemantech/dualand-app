@@ -7,7 +7,6 @@ import {
   Image,
   Keyboard,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -592,8 +591,6 @@ export default function DashboardScreen() {
     }} accessible={false}>
       <ScreenWrapper>
         <SafeAreaView style={styles.container} edges={['top']}>
-          <StatusBar barStyle="light-content" backgroundColor="#7E57C2" />
-
           <FloatingParticles />
 
           <AppHeader

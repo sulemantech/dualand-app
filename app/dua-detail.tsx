@@ -158,6 +158,9 @@ export default function DuaDetailScreen() {
 
   // Use ref to track current index to avoid stale closures
   const currentDuaIndexRef = useRef(currentDuaIndex);
+  // Ref mirror for currentMode — lets async callbacks (timeouts, promises) read the
+  // live mode without capturing a stale closure value.
+  const currentModeRef = useRef(currentMode);
   const celebrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const titleAudioSoundRef = useRef<Audio.Sound | null>(null);
   // Single source of truth for the currently playing word sound
@@ -170,10 +173,14 @@ export default function DuaDetailScreen() {
   const wordModeScale = useRef(new Animated.Value(1)).current;
   const fullModeScale = useRef(new Animated.Value(1)).current;
 
-  // Update ref whenever currentDuaIndex changes
+  // Update refs whenever their state counterparts change
   useEffect(() => {
     currentDuaIndexRef.current = currentDuaIndex;
   }, [currentDuaIndex]);
+
+  useEffect(() => {
+    currentModeRef.current = currentMode;
+  }, [currentMode]);
 
   // ✅ FIXED: Helper functions for repeat logic
   const getRepeatCount = useCallback(() => {
@@ -533,18 +540,61 @@ export default function DuaDetailScreen() {
     resetCompletionState();
   }, [currentMode, currentDuaIndex, resetCompletionState]);
 
-  // Auto-play when a dua finishes loading (respects autoPlayAudio setting)
-  useEffect(() => {
-    if (!isLoading && autoPlayAudio && allDuas.length > 0) {
-      const timer = setTimeout(() => setIsPlaying(true), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading]); // intentionally only fires once when loading completes
+  // Auto-play when a dua finishes loading (word mode only).
+  // We read currentModeRef.current inside the callback so we see the live mode value
+  // at fire-time (600 ms later), not the stale closure value from when the effect ran.
+  // Complete Dua mode must never be auto-started this way — that would set isPlaying=true
+  // while the hook's sound is still silent, permanently jamming the play button into the
+  // "pause" path on every subsequent tap.
+  // Auto-play when a dua finishes loading - supports both modes with title audio
+useEffect(() => {
+  let isCancelled = false;
 
-  // Sync local isPlaying state with audio player
-  useEffect(() => {
-    setIsPlaying(audioIsPlaying);
-  }, [audioIsPlaying]);
+  if (!isLoading && autoPlayAudio && allDuas.length > 0) {
+    const timer = setTimeout(() => {
+      if (isCancelled) return;
+
+      const mode = currentModeRef.current;
+      console.log(`🎵 Auto-play triggered for mode: ${mode}`);
+
+      if (mode === 'word') {
+        // Word mode: use existing word playback
+        setIsPlaying(true);
+      } else if (mode === 'full') {
+        // Full mode: play title audio first (if enabled), then the complete dua
+        const playFullWithTitle = async () => {
+          try {
+            // Reset completion state before playing
+            resetCompletionState();
+            
+            // Check if we should play title audio
+            if (readDuaTitle && titleAudioResId && !hasPlayedTitleAudioRef.current) {
+              console.log('🎵 Auto-play: Playing title audio before full dua...');
+              await playTitleAudio();
+              
+              // Check if auto-play was cancelled during title playback
+              if (isCancelled) return;
+            }
+            
+            // Now play the complete dua audio
+            console.log('🎵 Auto-play: Starting full dua audio...');
+            await audioPlay();
+            
+          } catch (error) {
+            console.error('❌ Auto-play full mode error:', error);
+          }
+        };
+
+        playFullWithTitle();
+      }
+    }, 600);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }
+}, [isLoading, autoPlayAudio, allDuas.length, audioPlay, readDuaTitle, titleAudioResId, resetCompletionState]);
 
   // ✅ FIXED: Enhanced audio completion handler for full mode
   useEffect(() => {
@@ -844,7 +894,10 @@ export default function DuaDetailScreen() {
 
     try {
       if (currentMode === 'full') {
-        if (isPlaying) {
+        // Use the hook's actual playing state as the source of truth.
+        // Local `isPlaying` can be incorrectly set to true by the autoPlay mechanism
+        // (which fires 600 ms after load) even though no audio is playing yet.
+        if (audioIsPlaying || isPlayingTitleAudio) {
           await audioPause();
         } else {
           // If we've completed playback and user presses play again, treat as restart
@@ -896,7 +949,7 @@ export default function DuaDetailScreen() {
     } catch (error) {
       console.error('Error handling play/pause:', error);
     }
-  }, [isPlaying, currentMode, hasCompletedPlayback, currentWordIndex, wordAudioPairs, words.length, audioReplay, audioPlay, audioPause, playButtonScale, resetCompletionState, titleAudioResId]);
+  }, [audioIsPlaying, isPlayingTitleAudio, isPlaying, currentMode, hasCompletedPlayback, currentWordIndex, wordAudioPairs, words.length, audioReplay, audioPlay, audioPause, playButtonScale, resetCompletionState, titleAudioResId]);
 
   const handleFavorite = useCallback(() => {
     if (settingsRef.current.hapticFeedback) Vibration.vibrate(50);
@@ -977,7 +1030,7 @@ export default function DuaDetailScreen() {
     if (currentMode === 'full' && isPlaying) audioPause();
     setIsPlaying(false);
     stopAllAudio();
-    router.push('/');
+    router.push('/(tabs)/settings');
   }, [isPlaying, audioPause, router, currentMode]);
 
   // ✅ UPDATED: Enhanced mode change handlers with smooth animations

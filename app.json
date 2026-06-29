@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.dualand.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIRequiresFullScreen": true
       }
     },
     "android": {

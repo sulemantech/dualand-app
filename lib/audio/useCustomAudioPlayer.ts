@@ -1,18 +1,22 @@
 import { Audio } from 'expo-av';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const useCustomAudioPlayer = (audioSource?: string | number | any) => {
-  const [sound, setSound] = useState<Audio.Sound>();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isBuffering, setIsBuffering] = useState(false);
-  const [didJustFinish, setDidJustFinish] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [currentVolume, setCurrentVolume] = useState(1);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Ref — always holds the live sound object regardless of when a closure was created.
+  // Functions that act on the sound (play, pause, replay…) read soundRef.current so they
+  // are never stale, even if they were captured in a useCallback before the sound loaded.
+  const soundRef = useRef<Audio.Sound | null>(null);
 
-  // Configure audio mode on mount
+  const [isPlaying,     setIsPlaying]     = useState(false);
+  const [position,      setPosition]      = useState(0);
+  const [duration,      setDuration]      = useState(0);
+  const [isBuffering,   setIsBuffering]   = useState(false);
+  const [didJustFinish, setDidJustFinish] = useState(false);
+  const [isMuted,       setIsMuted]       = useState(false);
+  const [currentVolume, setCurrentVolume] = useState(1);
+  const [loadError,     setLoadError]     = useState<string | null>(null);
+
+  // Configure audio session once on mount
   useEffect(() => {
     Audio.setAudioModeAsync({
       allowsRecordingIOS: false,
@@ -23,225 +27,181 @@ export const useCustomAudioPlayer = (audioSource?: string | number | any) => {
     });
   }, []);
 
-  // Load audio when source changes
+  // Stable callback — uses only stable state setters, safe to pass to createAsync
+  const onPlaybackStatusUpdate = useCallback((status: any) => {
+    if (!status.isLoaded) return;
+    setIsPlaying(status.isPlaying ?? false);
+    setPosition(status.positionMillis ?? 0);
+    setDuration(status.durationMillis ?? 0);
+    setIsBuffering(status.isBuffering ?? false);
+    setDidJustFinish(!!status.didJustFinish);
+    if (status.isMuted  !== undefined) setIsMuted(status.isMuted);
+    if (status.volume   !== undefined) setCurrentVolume(status.volume);
+  }, []);
+
+  // Load / reload sound whenever audioSource changes
   useEffect(() => {
-    console.log('🔊 Audio source changed:', { 
-      source: audioSource, 
-      type: typeof audioSource 
-    });
+    let cancelled = false;
 
-    if (audioSource) {
-      loadSound(audioSource);
-    } else {
-      unloadSound();
-    }
-
-    return () => {
-      unloadSound();
-    };
-  }, [audioSource]);
-
-  const loadSound = async (source: string | number | any) => {
-    try {
-      setLoadError(null);
-      
-      // Unload any existing sound first
-      if (sound) {
-        await sound.unloadAsync();
+    const load = async () => {
+      // Stop and unload whatever was playing before
+      const prev = soundRef.current;
+      soundRef.current = null;
+      if (prev) {
+        try { await prev.stopAsync();   } catch {}
+        try { await prev.unloadAsync(); } catch {}
       }
 
-      let soundSource;
-      
-      if (typeof source === 'number') {
-        // Local require statement
-        soundSource = source;
-        console.log('🔊 Loading local audio file');
-      } else if (typeof source === 'string' && source.trim() !== '') {
-        // URI string
-        soundSource = { uri: source };
-        console.log('🔊 Loading audio from URI:', source);
+      // Reset UI state
+      setIsPlaying(false);
+      setPosition(0);
+      setDuration(0);
+      setDidJustFinish(false);
+      setLoadError(null);
+
+      if (!audioSource) return;
+
+      let soundSource: any;
+      if (typeof audioSource === 'number') {
+        soundSource = audioSource;                 // local require() resource
+      } else if (typeof audioSource === 'string' && audioSource.trim() !== '') {
+        soundSource = { uri: audioSource };
       } else {
-        console.log('❌ Invalid audio source:', source);
         setLoadError('Invalid audio source');
         return;
       }
 
-      console.log('🔊 Creating sound...');
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        soundSource,
-        { 
-          shouldPlay: false,
-          progressUpdateIntervalMillis: 500,
-        },
-        onPlaybackStatusUpdate
-      );
+      try {
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          soundSource,
+          { shouldPlay: false, progressUpdateIntervalMillis: 500 },
+          onPlaybackStatusUpdate,
+        );
 
-      setSound(newSound);
-      console.log('✅ Audio loaded successfully');
+        if (cancelled) {
+          try { await newSound.unloadAsync(); } catch {}
+          return;
+        }
 
-    } catch (error) {
-      console.error('❌ Error loading audio:', error);
-      setLoadError(`Failed to load audio: ${error}`);
-    }
-  };
+        soundRef.current = newSound;
+      } catch (error) {
+        if (!cancelled) {
+          console.error('❌ Error loading audio:', error);
+          setLoadError(`Failed to load audio: ${error}`);
+        }
+      }
+    };
 
-  const unloadSound = async () => {
+    load();
+
+    return () => {
+      // Mark the in-progress load as stale so it drops its result
+      cancelled = true;
+      // Unload whatever sound is currently active
+      const s = soundRef.current;
+      soundRef.current = null;
+      if (s) {
+        s.stopAsync().catch(() => {});
+        s.unloadAsync().catch(() => {});
+      }
+    };
+  }, [audioSource, onPlaybackStatusUpdate]);
+
+  // ── Actions — all read soundRef.current so they are never stale ──────────────
+
+  const play = useCallback(async () => {
     try {
-      if (sound) {
-        console.log('🔊 Unloading sound...');
-        await sound.unloadAsync();
-        setSound(undefined);
-        setIsPlaying(false);
-        setPosition(0);
-        setDuration(0);
-        setDidJustFinish(false);
-      }
-    } catch (error) {
-      console.error('Error unloading audio:', error);
-    }
-  };
-
-  const onPlaybackStatusUpdate = (playbackStatus: any) => {
-    if (!playbackStatus) return;
-
-    console.log('🔊 Playback status:', {
-      isLoaded: playbackStatus.isLoaded,
-      isPlaying: playbackStatus.isPlaying,
-      position: playbackStatus.positionMillis,
-      duration: playbackStatus.durationMillis,
-      didJustFinish: playbackStatus.didJustFinish,
-      isBuffering: playbackStatus.isBuffering
-    });
-
-    if (playbackStatus.isLoaded) {
-      setIsPlaying(playbackStatus.isPlaying || false);
-      setPosition(playbackStatus.positionMillis || 0);
-      setDuration(playbackStatus.durationMillis || 0);
-      setIsBuffering(playbackStatus.isBuffering || false);
-      
-      if (playbackStatus.didJustFinish) {
-        setDidJustFinish(true);
-        setIsPlaying(false);
+      if (soundRef.current) {
+        console.log('🔊 Playing audio (soundRef set)...');
+        await soundRef.current.playAsync();
       } else {
-        setDidJustFinish(false);
-      }
-
-      if (playbackStatus.isMuted !== undefined) {
-        setIsMuted(playbackStatus.isMuted);
-      }
-      if (playbackStatus.volume !== undefined) {
-        setCurrentVolume(playbackStatus.volume);
-      }
-    }
-  };
-
-  const play = async () => {
-    try {
-      if (sound) {
-        console.log('🔊 Playing audio...');
-        await sound.playAsync();
-      } else {
-        console.log('❌ No sound loaded to play');
+        console.log('❌ No sound loaded to play (soundRef is null)');
         setLoadError('No audio loaded');
       }
     } catch (error) {
       console.error('❌ Error playing audio:', error);
       setLoadError(`Play failed: ${error}`);
     }
-  };
+  }, []);
 
-  const pause = async () => {
+  const pause = useCallback(async () => {
     try {
-      if (sound) {
-        console.log('🔊 Pausing audio...');
-        await sound.pauseAsync();
-      }
+      if (soundRef.current) await soundRef.current.pauseAsync();
     } catch (error) {
       console.error('Error pausing audio:', error);
     }
-  };
+  }, []);
 
-  const playPause = async () => {
-    console.log('🔊 Play/Pause triggered, current state:', isPlaying);
-    if (isPlaying) {
-      await pause();
-    } else {
-      await play();
-    }
-  };
-
-  const seekTo = async (positionMs: number) => {
+  const replay = useCallback(async () => {
     try {
-      if (sound) {
-        await sound.setPositionAsync(positionMs);
-      }
-    } catch (error) {
-      console.error('Error seeking audio:', error);
-    }
-  };
-
-  const replay = async () => {
-    try {
-      if (sound) {
-        console.log('🔊 Replaying audio...');
-        await sound.setPositionAsync(0);
-        await sound.playAsync();
+      if (soundRef.current) {
+        await soundRef.current.setPositionAsync(0);
+        await soundRef.current.playAsync();
       }
     } catch (error) {
       console.error('Error replaying audio:', error);
     }
-  };
+  }, []);
 
-  const setPlaybackRate = async (rate: number) => {
+  const seekTo = useCallback(async (positionMs: number) => {
     try {
-      if (sound) {
-        await sound.setRateAsync(rate, true);
-      }
+      if (soundRef.current) await soundRef.current.setPositionAsync(positionMs);
+    } catch (error) {
+      console.error('Error seeking audio:', error);
+    }
+  }, []);
+
+  const setPlaybackRate = useCallback(async (rate: number) => {
+    try {
+      if (soundRef.current) await soundRef.current.setRateAsync(rate, true);
     } catch (error) {
       console.error('Error setting playback rate:', error);
     }
-  };
+  }, []);
 
-  const setVolume = async (volume: number) => {
+  const setVolume = useCallback(async (volume: number) => {
     try {
-      if (sound) {
-        const newVolume = Math.max(0, Math.min(1, volume));
-        await sound.setVolumeAsync(newVolume);
-        setCurrentVolume(newVolume);
+      if (soundRef.current) {
+        const clamped = Math.max(0, Math.min(1, volume));
+        await soundRef.current.setVolumeAsync(clamped);
+        setCurrentVolume(clamped);
       }
     } catch (error) {
       console.error('Error setting volume:', error);
     }
-  };
+  }, []);
 
-  const toggleMute = async () => {
+  const toggleMute = useCallback(async () => {
     try {
-      if (sound) {
-        const newMutedState = !isMuted;
-        await sound.setIsMutedAsync(newMutedState);
-        setIsMuted(newMutedState);
+      if (soundRef.current) {
+        const next = !isMuted;
+        await soundRef.current.setIsMutedAsync(next);
+        setIsMuted(next);
       }
     } catch (error) {
       console.error('Error toggling mute:', error);
     }
-  };
+  }, [isMuted]);
 
-  // Create compatible status object for your component
+  const playPause = useCallback(async () => {
+    if (isPlaying) await pause(); else await play();
+  }, [isPlaying, play, pause]);
+
+  // Backward-compat status shape used by existing consumers
   const status = {
-    isLoaded: !!sound,
-    playing: isPlaying,
-    currentTime: position / 1000,
-    duration: duration / 1000,
+    isLoaded:    !!soundRef.current,
+    playing:     isPlaying,
+    currentTime: position  / 1000,
+    duration:    duration  / 1000,
     isBuffering,
     didJustFinish,
-    loop: false,
-    muted: isMuted,
-    volume: currentVolume,
+    loop:         false,
+    muted:        isMuted,
+    volume:       currentVolume,
     playbackRate: 1,
   };
 
   return {
-    // Main state
     isPlaying,
     position,
     duration,
@@ -250,8 +210,6 @@ export const useCustomAudioPlayer = (audioSource?: string | number | any) => {
     isMuted,
     currentVolume,
     loadError,
-    
-    // Control methods
     play,
     pause,
     playPause,
@@ -260,8 +218,6 @@ export const useCustomAudioPlayer = (audioSource?: string | number | any) => {
     setPlaybackRate,
     setVolume,
     toggleMute,
-    
-    // Backward compatibility
     status,
     player: {
       play,
@@ -269,8 +225,8 @@ export const useCustomAudioPlayer = (audioSource?: string | number | any) => {
       seekTo: (seconds: number) => seekTo(seconds * 1000),
       setPlaybackRate,
       status,
-      volume: currentVolume,
-      muted: isMuted,
+      volume:       currentVolume,
+      muted:        isMuted,
       playbackRate: 1,
     },
   };

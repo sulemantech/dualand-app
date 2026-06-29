@@ -7,7 +7,6 @@ import {
   Dimensions,
   Image,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -203,16 +202,18 @@ export default function DuaTrackerScreen() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('all');
 
-  const favorites     = useUserProgressStore(s => s.favorites);
-  const memorization  = useUserProgressStore(s => s.memorization);
+  const favorites      = useUserProgressStore(s => s.favorites);
+  const memorization   = useUserProgressStore(s => s.memorization);
   const toggleFavorite = useUserProgressStore(s => s.toggleFavorite);
-  const setMemorizationStatus = useUserProgressStore(s => s.setMemorizationStatus);
 
+  // Always derive status from the Zustand store so that resetAllProgress() immediately
+  // reflects on the tracker. Falling back to hardcoded dua data would show stale values
+  // after a reset because the raw data has non-empty sample statuses baked in.
   const duas = useMemo<Dua[]>(() =>
     getAllDuas().map(dua => ({
       ...dua,
-      is_favorited:        favorites[dua.id]    ?? dua.is_favorited,
-      memorization_status: (memorization[dua.id] ?? dua.memorization_status) as Dua['memorization_status'],
+      is_favorited:        favorites[dua.id]     ?? false,
+      memorization_status: (memorization[dua.id] ?? 'not_started') as Dua['memorization_status'],
     })),
     [favorites, memorization]
   );
@@ -253,10 +254,8 @@ export default function DuaTrackerScreen() {
   }, [router]);
 
   return (
-    <ScreenWrapper bottomMargin={70}>
+    <ScreenWrapper>
       <SafeAreaView style={styles.screen} edges={['top']}>
-        <StatusBar barStyle="light-content" backgroundColor="#7E57C2" />
-
         <AppHeader icon="📊" title="Dua Tracker" subtitle="Track your memorization journey" />
 
         <StatsBar duas={duas} />

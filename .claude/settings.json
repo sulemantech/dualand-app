@@ -6,7 +6,11 @@
       "Bash(git checkout *)",
       "Bash(node -e ' *)",
       "Bash(del \"d:\\\\Projects\\\\dualand-app\\\\app\\\\\\(tabs\\)\\\\share.tsx\")",
-      "PowerShell(Remove-Item \"d:\\\\Projects\\\\dualand-app\\\\app\\\\\\(tabs\\)\\\\share.tsx\" -Confirm:$false)"
+      "PowerShell(Remove-Item \"d:\\\\Projects\\\\dualand-app\\\\app\\\\\\(tabs\\)\\\\share.tsx\" -Confirm:$false)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c ' *)",
+      "Bash(python3)",
+      "Bash(python3 \"C:\\\\Users\\\\HP\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Projects-dualand-app\\\\65efc98a-ccf2-4c20-abca-c0ca1f20182a\\\\scratchpad\\\\add_translations.py\")"
     ]
   }
 }

@@ -6,10 +6,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAppSettingsStore } from '../../stores/appSettingsStore';
 import { useUserProgressStore } from '../../stores/userProgressStore';
 import {
-  Alert,
   Animated,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Switch,
   Text,
@@ -18,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/ui/AppHeader';
+import { AlertButton, CustomAlert } from '../../components/common/CustomAlert';
 
 const PURPLE = '#7E57C2';
 const PURPLE_DARK = '#4527A0';
@@ -223,6 +222,13 @@ const FontSizePicker = ({
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
+interface AlertConfig {
+  title: string;
+  message?: string;
+  icon?: string;
+  buttons: AlertButton[];
+}
+
 export default function SettingsScreen() {
   const {
     language, arabicFontSize, darkMode, readDuaTitle, readDuaTranslation,
@@ -233,41 +239,55 @@ export default function SettingsScreen() {
 
   const resetAllProgress = useUserProgressStore(s => s.resetAllProgress);
 
+  const [alertConfig, setAlertConfig] = useState<AlertConfig | null>(null);
+  const showAlert = useCallback((config: AlertConfig) => setAlertConfig(config), []);
+  const hideAlert = useCallback(() => setAlertConfig(null), []);
+
   const currentLang = LANGUAGE_OPTIONS.find(l => l.id === language);
 
   const handleSupport = useCallback((action: 'rate' | 'feedback' | 'help' | 'about') => {
-    const map = {
-      rate: [
-        '⭐ Rate DuaLand',
-        'Thank you for using DuaLand! If you enjoy the app, please consider rating us on the App Store.',
-        [{ text: 'Maybe Later', style: 'cancel' as const }, { text: 'Rate Now', style: 'default' as const }],
-      ],
-      feedback: [
-        '💌 Send Feedback',
-        "We'd love to hear your thoughts! Your feedback helps us improve DuaLand for everyone.",
-        [{ text: 'Cancel', style: 'cancel' as const }, { text: 'Send Feedback', style: 'default' as const }],
-      ],
-      help: [
-        '❓ Help & Support',
-        'Need help with DuaLand? Visit our help center or contact our support team.',
-        [{ text: 'Cancel', style: 'cancel' as const }, { text: 'Get Help', style: 'default' as const }],
-      ],
-      about: [
-        '📱 About DuaLand',
-        'DuaLand v1.0.0\n\nA beautiful, kid-friendly app for learning and memorizing Islamic duas. Built with love for the Muslim community.',
-        [{ text: 'Close', style: 'cancel' as const }],
-      ],
-    } as const;
-    const [title, msg, buttons] = map[action];
-    Alert.alert(title, msg, [...buttons]);
-  }, []);
+    const map: Record<string, AlertConfig> = {
+      rate: {
+        icon: '⭐',
+        title: 'Rate DuaLand',
+        message: 'Thank you for using DuaLand! If you enjoy the app, please consider rating us on the App Store.',
+        buttons: [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'Rate Now',    style: 'default' },
+        ],
+      },
+      feedback: {
+        icon: '💌',
+        title: 'Send Feedback',
+        message: "We'd love to hear your thoughts! Your feedback helps us improve DuaLand for everyone.",
+        buttons: [
+          { text: 'Cancel',        style: 'cancel'  },
+          { text: 'Send Feedback', style: 'default' },
+        ],
+      },
+      help: {
+        icon: '❓',
+        title: 'Help & Support',
+        message: 'Need help with DuaLand? Visit our help center or contact our support team.',
+        buttons: [
+          { text: 'Cancel',   style: 'cancel'  },
+          { text: 'Get Help', style: 'default' },
+        ],
+      },
+      about: {
+        icon: '📱',
+        title: 'About DuaLand',
+        message: 'DuaLand v1.0.0\n\nA beautiful, kid-friendly app for learning and memorizing Islamic duas. Built with love for the Muslim community.',
+        buttons: [{ text: 'Close', style: 'cancel' }],
+      },
+    };
+    showAlert(map[action]);
+  }, [showAlert]);
 
   return (
-    <ScreenWrapper bottomMargin={70}>
+    <ScreenWrapper>
       <SafeAreaView style={styles.screen} edges={['top']}>
-        <StatusBar barStyle="light-content" backgroundColor="#7E57C2" />
-
-        <AppHeader icon="⚙️" title="Settings" subtitle="Customize your experience" />
+        <AppHeader title="Settings" subtitle="Customize your experience" />
 
         <ScrollView
           style={styles.scroll}
@@ -282,15 +302,17 @@ export default function SettingsScreen() {
               subtitle="Change the app display language"
               divider={true}
               onPress={() =>
-                Alert.alert(
-                  'Select Language',
-                  'Choose your preferred language',
-                  LANGUAGE_OPTIONS.map(lang => ({
+                showAlert({
+                  icon: '🌐',
+                  title: 'Select Language',
+                  message: 'Choose your preferred language',
+                  buttons: LANGUAGE_OPTIONS.map(lang => ({
                     text: `${lang.emoji} ${lang.name}${!lang.available ? ' (Coming Soon)' : ''}`,
-                    onPress: lang.available ? () => updateSetting('language', lang.id) : undefined,
                     style: lang.available ? ('default' as const) : ('cancel' as const),
-                  }))
-                )
+                    onPress: lang.available ? () => updateSetting('language', lang.id) : undefined,
+                    disabled: !lang.available,
+                  })),
+                })
               }
               right={
                 <View style={styles.langPill}>
@@ -428,14 +450,15 @@ export default function SettingsScreen() {
             style={styles.resetButton}
             activeOpacity={0.75}
             onPress={() =>
-              Alert.alert(
-                'Reset Progress',
-                'This will clear all your favorites and memorization progress. This cannot be undone.',
-                [
+              showAlert({
+                icon: '⚠️',
+                title: 'Reset All Progress',
+                message: 'This will clear all your favorites and memorization progress. This cannot be undone.',
+                buttons: [
                   { text: 'Cancel', style: 'cancel' },
-                  { text: 'Reset', style: 'destructive', onPress: () => resetAllProgress() },
-                ]
-              )
+                  { text: 'Reset',  style: 'destructive', onPress: () => resetAllProgress() },
+                ],
+              })
             }
           >
             <Text style={styles.resetIcon}>🔄</Text>
@@ -448,6 +471,15 @@ export default function SettingsScreen() {
             <Text style={styles.footerVersion}>DuaLand v1.0.0 • © 2025</Text>
           </View>
         </ScrollView>
+
+        <CustomAlert
+          visible={!!alertConfig}
+          title={alertConfig?.title ?? ''}
+          message={alertConfig?.message}
+          icon={alertConfig?.icon}
+          buttons={alertConfig?.buttons ?? []}
+          onDismiss={hideAlert}
+        />
       </SafeAreaView>
     </ScreenWrapper>
   );
