@@ -670,20 +670,46 @@ export default function DashboardScreen() {
                   Try different words or explore all categories! 🌈
                 </Text>
               </View>
-            ) : (
-              <View style={styles.gridContainer}>
-                {filteredCategories.map((category, index) => (
-                  <CategoryCard
-                    key={category.id}
-                    category={category}
-                    index={index}
-                    onPress={handleCategoryPress}
-                    cardWidth={cardWidth}
-                    imageHeight={cardImageHeight}
-                  />
-                ))}
-              </View>
-            )}
+            ) : (() => {
+                const remainder = filteredCategories.length % numColumns;
+                const mainItems = remainder > 0
+                  ? filteredCategories.slice(0, filteredCategories.length - remainder)
+                  : filteredCategories;
+                const lastRowItems = remainder > 0
+                  ? filteredCategories.slice(filteredCategories.length - remainder)
+                  : [];
+                return (
+                  <>
+                    <View style={styles.gridContainer}>
+                      {mainItems.map((category, index) => (
+                        <CategoryCard
+                          key={category.id}
+                          category={category}
+                          index={index}
+                          onPress={handleCategoryPress}
+                          cardWidth={cardWidth}
+                          imageHeight={cardImageHeight}
+                        />
+                      ))}
+                    </View>
+                    {lastRowItems.length > 0 && (
+                      <View style={styles.lastRowContainer}>
+                        {lastRowItems.map((category, index) => (
+                          <CategoryCard
+                            key={category.id}
+                            category={category}
+                            index={mainItems.length + index}
+                            onPress={handleCategoryPress}
+                            cardWidth={cardWidth}
+                            imageHeight={cardImageHeight}
+                          />
+                        ))}
+                      </View>
+                    )}
+                  </>
+                );
+              })()
+            }
 
             <View style={styles.bottomPadding} />
           </ScrollView>
@@ -851,6 +877,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  lastRowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: CARD_MARGIN,
     paddingHorizontal: 16,
   },
   // Category Card Styles

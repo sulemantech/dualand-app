@@ -151,7 +151,7 @@ const HomeTabIcon = ({ focused }: { focused: boolean }) => {
     }
   }, [focused]);
 
-  const deg          = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const deg          = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '359deg'] });
   const glowOpacity  = glow.interpolate({ inputRange: [0, 1], outputRange: [0.1, 0.45] });
   const labelOpacity = glow.interpolate({ inputRange: [0.2, 1], outputRange: [0.55, 1] });
 
