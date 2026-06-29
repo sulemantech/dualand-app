@@ -15,6 +15,7 @@ import {
   UIManager,
   Vibration,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -93,6 +94,9 @@ const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: stri
 };
 
 export default function DuaDetailScreen() {
+  const { width } = useWindowDimensions();
+  const illustrationHeight = width >= 600 ? 320 : 250;
+
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -1121,6 +1125,7 @@ export default function DuaDetailScreen() {
             style={[
               styles.illustrationContainer,
               {
+                height: illustrationHeight,
                 transform: [{ scale: imageScale }],
               }
             ]}
@@ -1386,9 +1391,9 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    fontWeight: 'bold',
     color: THEME.text.primary,
     marginTop: 16,
+    fontFamily: 'title',
   },
   noDuasContainer: {
     flex: 1,
@@ -1402,10 +1407,10 @@ const styles = StyleSheet.create({
   },
   noDuasText: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: THEME.text.primary,
     marginBottom: 12,
     textAlign: 'center',
+    fontFamily: 'title',
   },
   noDuasSubtext: {
     fontSize: 16,
@@ -1413,6 +1418,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     lineHeight: 22,
+    fontFamily: 'translationtext',
   },
   backButton: {
     paddingHorizontal: 24,
@@ -1457,11 +1463,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: THEME.text.dark,
+    fontFamily: 'title',
   },
   headerSubtitle: {
     fontSize: 12,
     color: THEME.text.primary,
     marginTop: 2,
+    fontFamily: 'translationtext',
   },
   content: {
     flex: 1,
@@ -1502,8 +1510,8 @@ const styles = StyleSheet.create({
   swipeHintText: {
     color: THEME.text.light,
     fontSize: 14,
-    fontWeight: 'bold',
     textAlign: 'center',
+    fontFamily: 'reference',
   },
   illustrationContainer: {
     width: '100%',
@@ -1545,8 +1553,8 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '700',
     letterSpacing: 0.2,
+    fontFamily: 'reference',
   },
   favoriteButton: {
     width: 40,
@@ -1579,14 +1587,15 @@ const styles = StyleSheet.create({
   },
   stepsTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: THEME.success,
     marginBottom: 8,
+    fontFamily: 'reference',
   },
   stepsText: {
     fontSize: 14,
     color: THEME.text.primary,
     lineHeight: 20,
+    fontFamily: 'translationtext',
   },
   // ── Mode segmented control ──────────────────────────────────────
   modeTrack: {
@@ -1627,9 +1636,9 @@ const styles = StyleSheet.create({
   },
   modeSegLabel: {
     fontSize: 12,
-    fontWeight: '700',
     color: 'rgba(255,255,255,0.60)',
     letterSpacing: 0.1,
+    fontFamily: 'reference',
   },
   modeSegLabelActive: {
     color: '#3D1D8A',
@@ -1645,7 +1654,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 14,
     color: '#E53E3E',
-    fontWeight: '500',
+    fontFamily: 'translationtext',
   },
   duaTextContainer: {
     margin: 16,
@@ -1672,7 +1681,7 @@ const styles = StyleSheet.create({
     lineHeight: 48,
     textAlign: 'right',
     color: THEME.text.primary,
-    fontFamily: Platform.OS === 'ios' ? 'Geeza Pro' : 'sans-serif',
+    fontFamily: 'MyArabicFont',
   },
   arabicWord: {
     paddingHorizontal: 4,
@@ -1693,6 +1702,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: THEME.text.primary,
     lineHeight: 20,
+    fontFamily: 'translationtext',
   },
   referenceInline: {
     marginTop: 12,
@@ -1704,6 +1714,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: THEME.text.secondary,
     fontStyle: 'italic',
+    fontFamily: 'reference',
   },
   readingGuide: {
     marginTop: 16,

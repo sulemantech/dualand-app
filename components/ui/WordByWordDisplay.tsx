@@ -200,6 +200,7 @@ const styles = StyleSheet.create({
     lineHeight: 48,
     textAlign: 'right',
     color: THEME.text.primary,
+    fontFamily: 'MyArabicFont',
   },
   arabicWord: {
     paddingHorizontal: 4,
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: THEME.text.primary,
     lineHeight: 20,
+    fontFamily: 'translationtext',
   },
   referenceInline: {
     marginTop: 12,
@@ -231,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: THEME.text.secondary,
     fontStyle: 'italic',
+    fontFamily: 'reference',
   },
   readingGuide: {
     marginTop: 16,
@@ -242,6 +245,6 @@ const styles = StyleSheet.create({
   readingGuideText: {
     fontSize: 14,
     color: THEME.text.primary,
-    fontWeight: '600',
+    fontFamily: 'reference',
   },
 });

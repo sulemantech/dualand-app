@@ -1,10 +1,10 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { useFonts } from 'expo-font';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-// Simple loading component
 function LoadingScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f9ff' }}>
@@ -14,7 +14,6 @@ function LoadingScreen() {
   );
 }
 
-// Simple error boundary component
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean }
@@ -48,41 +47,52 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
+
 export default function RootLayout() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [appReady, setAppReady] = useState(false);
+
+  const [fontsLoaded, fontError] = useFonts({
+    MyArabicFont:    require('../assets/fonts/vazirmatn_regular.ttf'),
+    translationtext: require('../assets/fonts/poppins_regular.ttf'),
+    reference:       require('../assets/fonts/poppins_semibold.ttf'),
+    title:           require('../assets/fonts/mochypop_regular.ttf'),
+  });
 
   useEffect(() => {
-    // Simulate initial loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    if (fontsLoaded || fontError) {
+      // Minimum 1-second splash, but wait for fonts too
+      const timer = setTimeout(() => setAppReady(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [fontsLoaded, fontError]);
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
+  if (!appReady) {
     return <LoadingScreen />;
   }
 
   return (
-    <ErrorBoundary>
-      <StatusBar style="dark" backgroundColor="#ffffff" />
-      <Stack
+    <GestureHandlerRootView style={styles.root}>
+      <ErrorBoundary>
+        <StatusBar style="dark" backgroundColor="#ffffff" />
+        <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: '#f0f9ff' },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="dua-detail"
-          options={{
-            presentation: 'modal',
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-      </Stack>
-    </ErrorBoundary>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="dua-detail"
+            options={{
+              headerShown: false,
+              gestureEnabled: true,
+            }}
+          />
+        </Stack>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }

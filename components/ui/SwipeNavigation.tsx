@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
-import { PanResponder, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 interface SwipeNavigationProps {
   onSwipeLeft: () => void;
@@ -10,41 +11,26 @@ interface SwipeNavigationProps {
 export const SwipeNavigation: React.FC<SwipeNavigationProps> = ({
   onSwipeLeft,
   onSwipeRight,
-  children
+  children,
 }) => {
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy * 1.5);
-        return isHorizontalSwipe;
-      },
-      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy * 1.5);
-        return isHorizontalSwipe;
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const { dx } = gestureState;
-        const swipeThreshold = 40;
-
-        if (dx > swipeThreshold) {
-          console.log('➡️ Swipe right - Previous dua');
-          onSwipeRight();
-        } else if (dx < -swipeThreshold) {
-          console.log('⬅️ Swipe left - Next dua');
-          onSwipeLeft();
-        }
-      },
-      onPanResponderTerminate: () => null,
-      onShouldBlockNativeResponder: () => false,
-    })
-  ).current;
+  const pan = Gesture.Pan()
+    .runOnJS(true)
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-15, 15])
+    .onEnd((event) => {
+      if (event.translationX > 60) {
+        onSwipeRight();
+      } else if (event.translationX < -60) {
+        onSwipeLeft();
+      }
+    });
 
   return (
-    <View style={styles.container} {...panResponder.panHandlers}>
-      {children}
-    </View>
+    <GestureDetector gesture={pan}>
+      <View style={styles.container}>
+        {children}
+      </View>
+    </GestureDetector>
   );
 };
 

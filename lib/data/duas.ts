@@ -313,7 +313,7 @@ export const duas: Dua[] = [
   },
   {
     id: '14', category_id: 11, title: 'Before Taking off Dress',
-    arabic_text: 'بِسْمِ اللّٰہُِِِِ',
+    arabic_text:  "بِسْمِ اللّٰہِ",
     translation: 'In the Name of Allah.',
     reference: '[Sahih al-Jami\' al-Saghir]',
     textheading: 'Du\'a before Taking off Dress',
@@ -350,7 +350,7 @@ export const duas: Dua[] = [
   // Category 10: Journey (3 duas)
   {
     id: '19', category_id: 15, title: 'For Journey - Start',
-    arabic_text: 'بِسْمِ اللّٰہِ',
+    arabic_text:  "بِسْمِ اللّٰہِ",
     translation: 'In the Name of Allah.',
     reference: '[Sunan Abu Dawūd]',
     textheading: 'Du\'a for Journey',
@@ -396,7 +396,7 @@ export const duas: Dua[] = [
   // Category 11: Home (2 duas)
   {
     id: '16', category_id: 13, title: 'Entering Home',
-    arabic_text: 'بِسْمِ اللّٰہِ',
+    arabic_text: "بِسْمِ اللّٰہِ",
     translation: 'In the Name of Allah.',
     reference: '[Ṣaḥīḥ Muslim]',
     textheading: 'Du\'a while Entering the Home',
@@ -446,8 +446,9 @@ export const duas: Dua[] = [
   // Category 13: Greetings (2 duas)
   {
     id: '22', category_id: 16, title: 'When Meeting a Muslim',
-    arabic_text: 'اَلسَّلَامُ عَلَیْکُمْ وَرَحْمَةُ اللّٰہِ وَ بَرَکَاتُہُِِ',
-    translation: 'May peace, mercy and blessings (of Allah) be upon You.',
+    arabic_text: "اَلسَّلَامُ عَلَیْکُمْ وَرَحْمَةُ اللّٰہِ وَ بَرَکَاتُہُِِ",
+    translation: "May peace, mercy and blessings (of Allah) be upon You.",
+            
     reference: '[Sunan Abu Dawūd]',
     textheading: 'Du\'a When Meeting a Muslim',
     duaNumber: '16.',
@@ -462,8 +463,8 @@ export const duas: Dua[] = [
   },
   {
     id: '23', category_id: 16, title: 'Reply to Greeting',
-    arabic_text: 'وَعَلَیْکُمُ السَّلَامُ وَ رَ حْمَةُ اللّٰہِ وَ بَرَکَاتُہُُِِ',
-    translation: 'May peace, mercy and blessings of Allah be upon You as Well.',
+    arabic_text: "وَعَلَيْكُمُ السَّلَامُ وَرَحْمَةُ اللّٰهِ وَبَرَكَاتُهُ",
+    translation: "May peace, mercy and blessings of Allah be upon You as Well.",
     reference: '[Sunan Abu Dawūd]',
     duaNumber: '16.',
     order_index: 2,
@@ -515,8 +516,8 @@ export const duas: Dua[] = [
   // Category 16: Masjid (2 duas)
   {
     id: '26', category_id: 19, title: 'Entering Masjid',
-    arabic_text: 'اَللّٰھُمَّ افْتَحْ لِیْ اَبْوَابَ رَحْمَتِکَُُِِ',
-    translation: 'O Allah, open for me the doors of your mercy.',
+    arabic_text:  "اَللّٰھُمَّ افْتَحْ لِیْ اَبْوَابَ رَحْمَتِکَُُِِ",
+    translation: "O Allah, open for me the doors of your mercy.",
     reference: '[Sunan al-Nasa\'i]',
     textheading: 'Du\'a When Entering the Masjid',
     duaNumber: '19.',
@@ -551,7 +552,7 @@ export const duas: Dua[] = [
   // Category 17: Eating & Drinking (3 duas)
   {
     id: '28', category_id: 21, title: 'Before Eating',
-    arabic_text: 'بِسْمِ اللّٰہَُُِِِ',
+      arabic_text: "بِسْمِ اللّٰہِ",
     translation: 'In the Name of Allah.',
     reference: '[Sunan Ibn Majah]',
     textheading: 'Du\'a Before Eating & Drinking',
@@ -601,7 +602,7 @@ export const duas: Dua[] = [
   // Category 18: Visiting Sick (2 duas)
   {
     id: '31', category_id: 23, title: 'Visiting Sick - Comfort',
-    arabic_text: 'لَا بَأْسَ طَهُورٌ إِنْ شَاءَ اللَّهَُُُُِِِ',
+    arabic_text: "لَا بَأْسَ طَهُورٌ إِنْ شَاءَ اللَّهُ",
     translation: 'No harm, (this illness will be) a purification (from sins), if Allah wills.',
     reference: '[Sahih al-Bukhari]',
     textheading: 'Du\'a When Visiting the Sick',

@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   Easing,
   Image,
   Keyboard,
@@ -14,7 +13,8 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchIcon } from '../../Icons';
@@ -30,9 +30,7 @@ import {
   getWordAudioPairsByDua
 } from '../../lib/data/duas'; // Update this path as needed
 
-const { width, height } = Dimensions.get('window');
 const CARD_MARGIN = 12;
-const CARD_WIDTH = (width - 40 - CARD_MARGIN) / 2;
 
 // Enhanced Kid-Friendly Theme with Better Contrast
 const THEME = {
@@ -56,6 +54,7 @@ const THEME = {
 
 // Enhanced Floating Particles
 const FloatingParticles = React.memo(({ count = 8 }) => {
+  const { width, height } = useWindowDimensions();
   const particles = useRef(
     Array.from({ length: count }, () => new Animated.Value(0))
   ).current;
@@ -283,10 +282,12 @@ const ProgressStar = ({ filled, size = 16 }) => (
 );
 
 // CategoryCard component - One card per category
-const CategoryCard = React.memo(({ category, index, onPress }: {
+const CategoryCard = React.memo(({ category, index, onPress, cardWidth, imageHeight }: {
   category: Category;
   index: number;
   onPress: (category: Category) => void;
+  cardWidth: number;
+  imageHeight: number;
 }) => {
   const cardAnim = useRef(new Animated.Value(0)).current;
   const pressAnim = useRef(new Animated.Value(0)).current;
@@ -355,9 +356,9 @@ const CategoryCard = React.memo(({ category, index, onPress }: {
         ],
       }}
     >
-      <BouncingButton onPress={() => onPress(category)} style={styles.card}>
+      <BouncingButton onPress={() => onPress(category)} style={[styles.card, { width: cardWidth }]}>
         <Animated.View style={styles.cardInner}>
-          <View style={styles.cardImageContainer}>
+          <View style={[styles.cardImageContainer, { height: imageHeight }]}>
             <View style={styles.cardNumber}>
               <Text style={styles.cardNumberText}>
                 {category.id.toString().padStart(2, '0')}
@@ -395,6 +396,11 @@ const CategoryCard = React.memo(({ category, index, onPress }: {
 
 
 export default function DashboardScreen() {
+  const { width } = useWindowDimensions();
+  const numColumns = width >= 600 ? 3 : 2;
+  const cardWidth = (width - 32 - CARD_MARGIN * (numColumns - 1)) / numColumns;
+  const cardImageHeight = width >= 600 ? 140 : 100;
+
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -660,6 +666,8 @@ export default function DashboardScreen() {
                     category={category}
                     index={index}
                     onPress={handleCategoryPress}
+                    cardWidth={cardWidth}
+                    imageHeight={cardImageHeight}
                   />
                 ))}
               </View>
@@ -835,7 +843,6 @@ const styles = StyleSheet.create({
   },
   // Category Card Styles
   card: {
-    width: CARD_WIDTH,
     marginBottom: 16,
   },
   cardInner: {
@@ -852,7 +859,6 @@ const styles = StyleSheet.create({
   },
   cardImageContainer: {
     position: 'relative',
-    height: 100,
     overflow: 'hidden',
   },
   cardNumber: {
