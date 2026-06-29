@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -53,6 +54,14 @@ const styles = StyleSheet.create({
 
 export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
+
+  // Lock to portrait on every platform and screen size.
+  // This runs before the first render so there is no flash of landscape content.
+  // app.json orientation:"portrait" + iOS UIRequiresFullScreen:true cover production
+  // builds; this call covers Expo Go, dev-client, and any runtime rotation event.
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+  }, []);
 
   const [fontsLoaded, fontError] = useFonts({
     MyArabicFont:    require('../assets/fonts/vazirmatn_regular.ttf'),

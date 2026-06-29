@@ -16,8 +16,7 @@ export const THEME = {
 };
 
 export const localImages = {
-  kaaba: require('../assets/images/kaaba.png'),
-  dua_1: require('../assets/images/kaaba.png'),
+  dua_1: require('../assets/images/dua_1.png'),
   dua_2: require('../assets/images/dua_2.png'),
   dua_3: require('../assets/images/dua_3.png'),
   dua_4: require('../assets/images/dua_4.png'),
@@ -28,7 +27,6 @@ export const localImages = {
   dua_9: require('../assets/images/dua_9.png'),
   dua_10: require('../assets/images/dua_10.png'),
   dua_11: require('../assets/images/dua_11.png'),
-  dua_12: require('../assets/images/dua_12.png'),
   dua_13: require('../assets/images/dua_13.png'),
   dua_14: require('../assets/images/dua_14.png'),
   dua_15: require('../assets/images/dua_15.png'),
@@ -49,6 +47,7 @@ export const localImages = {
   dua_30: require('../assets/images/dua_30.png'),
   dua_31: require('../assets/images/dua_31.png'),
   dua_32: require('../assets/images/dua_32.png'),
+  dua_33: require('../assets/images/dua_33.png'),
 };
 
 export const BUTTON_IMAGES = {

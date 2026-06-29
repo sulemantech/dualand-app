@@ -1,5 +1,4 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
@@ -25,9 +24,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Single source of truth for status bar across all screens that use AppHeader */}
-      <StatusBar style="light" backgroundColor="#7E57C2" />
-
       <LinearGradient
         colors={['#7E57C2', '#4527A0']}
         start={{ x: 0, y: 0 }}

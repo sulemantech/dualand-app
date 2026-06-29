@@ -8,7 +8,6 @@ import {
   LayoutAnimation,
   Platform,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -74,7 +73,7 @@ const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: stri
 
   if (imagePath && typeof imagePath === 'string') {
     try {
-      const imageKey = (imagePath.split('/').pop()?.replace('.png', '') || 'kaaba') as keyof typeof localImages;
+      const imageKey = (imagePath.split('/').pop()?.replace('.png', '') || 'dua_1') as keyof typeof localImages;
       if (localImages[imageKey]) return localImages[imageKey];
     } catch {}
   }
@@ -90,12 +89,19 @@ const getLocalImage = (duaId: string, duaNumber?: string, localImageIndex?: stri
   }
 
   const imageIndex = (parseInt(duaId || '1') % 32) || 1;
-  return localImages[`dua_${imageIndex}` as keyof typeof localImages] || localImages.kaaba;
+  return localImages[`dua_${imageIndex}` as keyof typeof localImages] || localImages.dua_1;
 };
 
 export default function DuaDetailScreen() {
   const { width } = useWindowDimensions();
-  const illustrationHeight = width >= 600 ? 320 : 250;
+  // Keep a natural aspect ratio across screen sizes:
+  //   large tablet  (≥ 768 px) → 48 % of width  e.g. 768 → 369 px, 1024 → 492 px
+  //   small tablet  (≥ 600 px) → 320 px fixed
+  //   phone         (< 600 px) → 250 px fixed
+  const illustrationHeight =
+    width >= 768 ? Math.round(width * 0.48) :
+    width >= 600 ? 320 :
+    250;
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -1111,7 +1117,6 @@ useEffect(() => {
   if (allDuas.length === 0 && !isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
         {renderHeader()}
         <View style={styles.noDuasContainer}>
           <Text style={styles.noDuasEmoji}>😔</Text>
@@ -1134,8 +1139,6 @@ useEffect(() => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={THEME.header} />
-
       {/* ✅ USING EXTERNAL COMPONENTS */}
       <FloatingParticles />
 

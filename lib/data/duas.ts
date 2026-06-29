@@ -26,8 +26,6 @@ export interface Dua {
   urdu?: string;
   hinditranslation?: string;
   textheading?: string;
-  backgroundResId?: string;
-  statusBarColorResId?: string;
   duaNumber?: string;
   titleAudioResId?: any;
   steps?: string;
@@ -43,7 +41,7 @@ export interface WordAudioPair {
 
 // All Categories (Complete 32 categories with images)
 export const categories: Category[] = [
-  { id: 1, name: 'Praise and Glory', icon: 'star', color: '#2D7D46', order_index: 1, image_path: require('../../assets/images/kaaba.png') },
+  { id: 1, name: 'Praise and Glory', icon: 'star', color: '#2D7D46', order_index: 1, image_path: require('../../assets/images/dua_1.png') },
   { id: 2, name: 'Peace and Blessing upon Muhammad ﷺ', icon: 'peace', color: '#3182CE', order_index: 2, image_path: require('../../assets/images/dua_2.png') },
   { id: 3, name: 'Du\'a of Morning \n(Before Sunrise)', icon: 'sunny', color: '#a0825cff', order_index: 3, image_path: require('../../assets/images/dua_3.png') },
   { id: 4, name: 'Du\'a of Evening \n(Before Sunset)', icon: 'moon', color: '#805AD5', order_index: 4, image_path: require('../../assets/images/dua_4.png') },
@@ -75,16 +73,16 @@ export const categories: Category[] = [
   { id: 30, name: 'Du\'a for Seeking Allah\'s Love', icon: 'praying-hands', color: '#2EC4B6', order_index: 30, image_path: require('../../assets/images/dua_31.png') },
   { id: 31, name: 'Du\'a: Sayyid-ul-Istighfar', icon: 'pray', color: '#E71D36', order_index: 31, image_path: require('../../assets/images/dua_32.png') },
   { id: 32, name: 'Seeking Refuge with Allah', icon: 'shield-alt', color: '#662E9B', order_index: 32, image_path: require('../../assets/images/dua_33.png') },
-  { id: 33, name: 'Ayat ul Kursi', icon: 'star', color: '#1A237E', order_index: 33, image_path: require('../../assets/images/kaaba.png') },
-  { id: 34, name: 'Darood Ibrahim', icon: 'peace', color: '#1B5E20', order_index: 34, image_path: require('../../assets/images/kaaba.png') },
-  { id: 35, name: "Du'a for Knowledge", icon: 'book', color: '#E65100', order_index: 35, image_path: require('../../assets/images/kaaba.png') },
-  { id: 36, name: "Du'a for Parents", icon: 'heart', color: '#880E4F', order_index: 36, image_path: require('../../assets/images/kaaba.png') },
-  { id: 37, name: "Du'a when Drinking Milk", icon: 'cup', color: '#01579B', order_index: 37, image_path: require('../../assets/images/kaaba.png') },
-  { id: 38, name: "Du'a for House in Jannah", icon: 'home', color: '#F57F17', order_index: 38, image_path: require('../../assets/images/kaaba.png') },
-  { id: 39, name: "Du'a from Hellfire", icon: 'shield', color: '#B71C1C', order_index: 39, image_path: require('../../assets/images/kaaba.png') },
-  { id: 40, name: "Du'a at Iftar", icon: 'moon', color: '#BF360C', order_index: 40, image_path: require('../../assets/images/kaaba.png') },
-  { id: 41, name: "Du'a for New Clothes", icon: 'tshirt', color: '#004D40', order_index: 41, image_path: require('../../assets/images/kaaba.png') },
-  { id: 42, name: "Du'a of Thanks", icon: 'praying-hands', color: '#4A148C', order_index: 42, image_path: require('../../assets/images/kaaba.png') },
+  { id: 33, name: 'Ayat ul Kursi', icon: 'star', color: '#1A237E', order_index: 33, image_path: require('../../assets/images/dua_1.png') },
+  { id: 34, name: 'Darood Ibrahim', icon: 'peace', color: '#1B5E20', order_index: 34, image_path: require('../../assets/images/dua_1.png') },
+  { id: 35, name: "Du'a for Knowledge", icon: 'book', color: '#E65100', order_index: 35, image_path: require('../../assets/images/dua_1.png') },
+  { id: 36, name: "Du'a for Parents", icon: 'heart', color: '#880E4F', order_index: 36, image_path: require('../../assets/images/dua_1.png') },
+  { id: 37, name: "Du'a when Drinking Milk", icon: 'cup', color: '#01579B', order_index: 37, image_path: require('../../assets/images/dua_1.png') },
+  { id: 38, name: "Du'a for House in Jannah", icon: 'home', color: '#F57F17', order_index: 38, image_path: require('../../assets/images/dua_1.png') },
+  { id: 39, name: "Du'a from Hellfire", icon: 'shield', color: '#B71C1C', order_index: 39, image_path: require('../../assets/images/dua_1.png') },
+  { id: 40, name: "Du'a at Iftar", icon: 'moon', color: '#BF360C', order_index: 40, image_path: require('../../assets/images/dua_1.png') },
+  { id: 41, name: "Du'a for New Clothes", icon: 'tshirt', color: '#004D40', order_index: 41, image_path: require('../../assets/images/dua_1.png') },
+  { id: 42, name: "Du'a of Thanks", icon: 'praying-hands', color: '#4A148C', order_index: 42, image_path: require('../../assets/images/dua_1.png') },
 ];
 
 // All 43 Duas with image paths
@@ -104,9 +102,7 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_praise_and_glory.mp3'),
     audio_full: require('../../assets/audio/complete/dua01_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
-    image_path: require('../../assets/images/kaaba.png')
+    image_path: require('../../assets/images/dua_1.png')
   },
   {
     id: '2', category_id: 1, title: 'Allah is the Greatest',
@@ -120,9 +116,7 @@ export const duas: Dua[] = [
     is_favorited: true,
     memorization_status: 'learning',
     audio_full: require('../../assets/audio/complete/dua01_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
-    image_path: require('../../assets/images/kaaba.png')
+    image_path: require('../../assets/images/dua_1.png')
   },
 
   // Category 2: Peace and Blessings (2 duas)
@@ -140,8 +134,6 @@ export const duas: Dua[] = [
     memorization_status: 'memorized',
     titleAudioResId: require('../../assets/audio/word-by-word/title_peace.mp3'),
     audio_full: require('../../assets/audio/complete/dua02_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_2.png')
   },
   {
@@ -156,8 +148,6 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua02_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_2.png')
   },
 
@@ -176,8 +166,6 @@ export const duas: Dua[] = [
     memorization_status: 'memorized',
     titleAudioResId: require('../../assets/audio/word-by-word/title_morning.mp3'),
     audio_full: require('../../assets/audio/complete/dua03_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_3.png')
   },
 
@@ -196,8 +184,6 @@ export const duas: Dua[] = [
     memorization_status: 'learning',
     titleAudioResId: require('../../assets/audio/word-by-word/title_evening.mp3'),
     audio_full: require('../../assets/audio/complete/dua04_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_4.png')
   },
 
@@ -216,8 +202,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_protection.mp3'),
     audio_full: require('../../assets/audio/complete/dua05_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_5.png')
   },
   {
@@ -232,8 +216,6 @@ export const duas: Dua[] = [
     is_favorited: true,
     memorization_status: 'memorized',
     audio_full: require('../../assets/audio/complete/dua05_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_5.png')
   },
 
@@ -253,8 +235,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_sleeping.mp3'),
     audio_full: require('../../assets/audio/complete/dua06_part01_audio01_complete.mp3'),
     steps: '1. Dust the bed before sleeping\n2. Sleep on the right side\n3. Put your hand under your right cheek and say',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_6.png')
   },
   {
@@ -272,8 +252,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_waking_up.mp3'),
     audio_full: require('../../assets/audio/complete/dua07_part01_audio01_complete.mp3'),
     steps: 'Rub your face and your eyes with your hands to remove any remaining effects of sleep and say:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_7.png')
   },
 
@@ -293,8 +271,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_entering_toilet.mp3'),
     audio_full: require('../../assets/audio/complete/dua08_part01_audio01_complete.mp3'),
     steps: 'Enter with your left foot and say:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_8.png')
   },
   {
@@ -312,8 +288,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_leaving_toilet.mp3'),
     audio_full: require('../../assets/audio/complete/dua09_part01_audio01_complete.mp3'),
     steps: 'Leave with your right foot and say:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_9.png')
   },
 
@@ -333,8 +307,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_before_putting_dress.mp3'),
     audio_full: require('../../assets/audio/complete/dua10_part01_audio01_complete.mp3'),
     steps: '1. Shake and dust your dress before wearing.\n2. Start wearing the cloth from the right side',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_10.png')
   },
   {
@@ -352,8 +324,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_taking_of_dress.mp3'),
     audio_full: require('../../assets/audio/complete/dua11_part01_audio01_complete.mp3'),
     steps: 'Start to undress from the left side',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_11.png')
   },
 
@@ -372,8 +342,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_traveler.mp3'),
     audio_full: require('../../assets/audio/complete/dua12_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_15.png')
   },
 
@@ -392,8 +360,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_journey.mp3'),
     audio_full: require('../../assets/audio/complete/dua15_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_16.png')
   },
   {
@@ -408,8 +374,6 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua15_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_16.png')
   },
   {
@@ -424,8 +388,6 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua15_part03_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_16.png')
   },
 
@@ -444,8 +406,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_entering_home.mp3'),
     audio_full: require('../../assets/audio/complete/dua13_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_13.png')
   },
   {
@@ -460,8 +420,6 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua13_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_13.png')
   },
 
@@ -480,8 +438,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_bad_ikhlaq.mp3'),
     audio_full: require('../../assets/audio/complete/dua14_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_14.png')
   },
 
@@ -501,8 +457,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_meeting_muslim.mp3'),
     audio_full: require('../../assets/audio/complete/dua16_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_17.png')
   },
   {
@@ -518,8 +472,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: 'Reply to the Greeting:',
     audio_full: require('../../assets/audio/complete/dua16_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_17.png')
   },
 
@@ -538,8 +490,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_gathering.mp3'),
     audio_full: require('../../assets/audio/complete/dua17_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_18.png')
   },
 
@@ -558,8 +508,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_market.mp3'),
     audio_full: require('../../assets/audio/complete/dua18_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_19.png')
   },
 
@@ -579,8 +527,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_entering_masjid.mp3'),
     audio_full: require('../../assets/audio/complete/dua19_part01_audio01_complete.mp3'),
     steps: 'Enter the Masjid with the right foot and say:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_20.png')
   },
   {
@@ -598,8 +544,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_leaving_masjid.mp3'),
     audio_full: require('../../assets/audio/complete/dua20_part01_audio01_complete.mp3'),
     steps: 'Leave the masjid with the left foot and say:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_21.png')
   },
 
@@ -619,8 +563,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_eating_drinking.mp3'),
     audio_full: require('../../assets/audio/complete/dua21_part01_audio01_complete.mp3'),
     steps: '1. Sit while eating and drinking\n2. Eat with your right hand and eat from what is in front of you and say:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_22.png')
   },
   {
@@ -636,8 +578,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: '3. If you forgot to read the Du\'a at the beginning then upon remembering say:',
     audio_full: require('../../assets/audio/complete/dua21_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_22.png')
   },
   {
@@ -654,8 +594,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_after_eating.mp3'),
     audio_full: require('../../assets/audio/complete/dua22_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_23.png')
   },
 
@@ -674,8 +612,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_sick.mp3'),
     audio_full: require('../../assets/audio/complete/dua23_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_24.png')
   },
   {
@@ -690,8 +626,6 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     audio_full: require('../../assets/audio/complete/dua23_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_24.png')
   },
 
@@ -710,8 +644,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_calamity.mp3'),
     audio_full: require('../../assets/audio/complete/dua24_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_25.png')
   },
   {
@@ -728,8 +660,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_seeing_in_calamity.mp3'),
     audio_full: require('../../assets/audio/complete/dua25_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_26.png')
   },
 
@@ -749,8 +679,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_angry.mp3'),
     audio_full: require('../../assets/audio/complete/dua26_part01_audio01_complete.mp3'),
     steps: 'Seek refuge with Allah from the Satan:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_27.png')
   },
 
@@ -770,8 +698,6 @@ export const duas: Dua[] = [
     titleAudioResId: require('../../assets/audio/word-by-word/title_sneezing.mp3'),
     audio_full: require('../../assets/audio/complete/dua27_part01_audio01_complete.mp3'),
     steps: 'Say after sneezing:',
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_28.png')
   },
   {
@@ -787,8 +713,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: 'Dua by one who hears someone saying اَلْحَمْدُ لِلّٰہِ',
     audio_full: require('../../assets/audio/complete/dua27_part02_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_28.png')
   },
   {
@@ -804,8 +728,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     steps: 'Du\'a in reply by the person who sneezes:',
     audio_full: require('../../assets/audio/complete/dua27_part03_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_28.png')
   },
 
@@ -824,8 +746,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_rains.mp3'),
     audio_full: require('../../assets/audio/complete/dua28_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_29.png')
   },
   {
@@ -842,8 +762,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_moon.mp3'),
     audio_full: require('../../assets/audio/complete/dua29_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_30.png')
   },
 
@@ -862,8 +780,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_seeking_love.mp3'),
     audio_full: require('../../assets/audio/complete/dua30_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_31.png')
   },
 
@@ -882,8 +798,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_istighfar.mp3'),
     audio_full: require('../../assets/audio/complete/dua31_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_32.png')
   },
   {
@@ -900,8 +814,6 @@ export const duas: Dua[] = [
     memorization_status: 'not_started',
     titleAudioResId: require('../../assets/audio/word-by-word/title_refuse_with_allah.mp3'),
     audio_full: require('../../assets/audio/complete/dua32_part01_audio01_complete.mp3'),
-    backgroundResId: 'header_bg',
-    statusBarColorResId: 'top_nav_new',
     image_path: require('../../assets/images/dua_33.png')
   },
 
@@ -919,7 +831,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Recite after every obligatory prayer and before sleeping for protection.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 34: Darood Ibrahim
@@ -936,7 +848,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Recite in the Tashahhud of Salah after the first sitting.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 35: Dua for Increase in Knowledge
@@ -953,7 +865,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Raise your hands and ask Allah to increase your knowledge, especially before studying.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 36: Dua for Parents
@@ -970,7 +882,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Recite this dua for your parents regularly, especially after every prayer.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 37: Dua When Drinking Milk
@@ -987,7 +899,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this dua when you drink milk.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 38: Dua for a House in Jannah
@@ -1004,7 +916,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Recite this dua with full faith and longing for Jannah.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 39: Dua for Protection from Hellfire
@@ -1021,7 +933,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this 7 times in the morning and evening, and after Fajr and Maghrib prayers.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 40: Dua for Breaking the Fast
@@ -1038,7 +950,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this dua when breaking your fast at iftar time.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 41: Dua for Someone Wearing New Clothes
@@ -1055,7 +967,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this to someone when you see them wearing new clothes.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 
   // Category 42: Dua to Thank Someone
@@ -1072,7 +984,7 @@ export const duas: Dua[] = [
     is_favorited: false,
     memorization_status: 'not_started',
     steps: 'Say this to thank anyone who has done something good for you.',
-    image_path: require('../../assets/images/kaaba.png'),
+    image_path: require('../../assets/images/dua_1.png'),
   },
 ];
 

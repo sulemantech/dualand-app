@@ -10,7 +10,13 @@
       "Bash(python3 -c ' *)",
       "Bash(python -c ' *)",
       "Bash(python3)",
-      "Bash(python3 \"C:\\\\Users\\\\HP\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Projects-dualand-app\\\\65efc98a-ccf2-4c20-abca-c0ca1f20182a\\\\scratchpad\\\\add_translations.py\")"
+      "Bash(python3 \"C:\\\\Users\\\\HP\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Projects-dualand-app\\\\65efc98a-ccf2-4c20-abca-c0ca1f20182a\\\\scratchpad\\\\add_translations.py\")",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.dependencies['expo-screen-orientation'] || 'NOT INSTALLED'\\)\")",
+      "Bash(npx expo *)",
+      "Bash(cd \"d:/Projects/dualand-app/assets/images\" && ls card*.png | wc -l && rm card*.png && echo \"Deleted OK\")"
+    ],
+    "additionalDirectories": [
+      "d:\\Projects\\dualand-app"
     ]
   }
 }

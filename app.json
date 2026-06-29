@@ -40,7 +40,8 @@
       "expo-secure-store",
       "expo-sqlite",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-screen-orientation"
     ],
     "experiments": {
       "typedRoutes": true

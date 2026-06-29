@@ -148,7 +148,7 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
   // Case 2: String path that needs mapping
   if (typeof imagePath === 'string') {
     const imageMap = {
-      'kaaba': require('../../assets/images/kaaba.png'),
+      'dua_1': require('../../assets/images/dua_1.png'),
       'dua_2': require('../../assets/images/dua_2.png'),
       'dua_3': require('../../assets/images/dua_3.png'),
       'dua_4': require('../../assets/images/dua_4.png'),
@@ -159,7 +159,6 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       'dua_9': require('../../assets/images/dua_9.png'),
       'dua_10': require('../../assets/images/dua_10.png'),
       'dua_11': require('../../assets/images/dua_11.png'),
-      'dua_12': require('../../assets/images/dua_12.png'),
       'dua_13': require('../../assets/images/dua_13.png'),
       'dua_14': require('../../assets/images/dua_14.png'),
       'dua_15': require('../../assets/images/dua_15.png'),
@@ -183,8 +182,8 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       'dua_33': require('../../assets/images/dua_33.png'),
     };
 
-    const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'kaaba';
-    const resolvedImage = imageMap[imageName as keyof typeof imageMap] || require('../../assets/images/kaaba.png');
+    const imageName = imagePath.split('/').pop()?.replace('.png', '') || 'dua_1';
+    const resolvedImage = imageMap[imageName as keyof typeof imageMap] || require('../../assets/images/dua_1.png');
     
     console.log(`📸 Mapped "${imageName}" to image:`, resolvedImage);
     return resolvedImage;
@@ -193,7 +192,7 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
   // Case 3: Fallback to category-based image
   if (categoryId) {
     const categoryBasedImages = {
-      1: require('../../assets/images/kaaba.png'),
+      1: require('../../assets/images/dua_1.png'),
       2: require('../../assets/images/dua_2.png'),
       3: require('../../assets/images/dua_3.png'),
       4: require('../../assets/images/dua_4.png'),
@@ -227,13 +226,13 @@ const getImageSource = (imagePath: any, categoryId?: number, categoryName?: stri
       32: require('../../assets/images/dua_33.png'),
     };
 
-    const fallbackImage = categoryBasedImages[categoryId as keyof typeof categoryBasedImages] || require('../../assets/images/kaaba.png');
+    const fallbackImage = categoryBasedImages[categoryId as keyof typeof categoryBasedImages] || require('../../assets/images/dua_1.png');
     console.log(`🎯 Using category-based fallback for ID ${categoryId}:`, fallbackImage);
     return fallbackImage;
   }
 
   console.log('🚨 Ultimate fallback to default image');
-  return require('../../assets/images/kaaba.png');
+  return require('../../assets/images/dua_1.png');
 };
 
 // Bouncing Button Component
