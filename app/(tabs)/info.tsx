@@ -169,7 +169,7 @@ export default function InspireScreen() {
     <ScreenWrapper>
       <SafeAreaView style={styles.screen} edges={['top']}>
 
-        <AppHeader icon="💡" title="Inspire" subtitle="Knowledge & Community" />
+        <AppHeader title="Inspire" subtitle="Knowledge & Community" />
 
         <ScrollView
           style={styles.scroll}
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     color: T.text.white,
     textAlign: 'center',
     lineHeight: 36,
-    fontWeight: '600',
+    fontFamily: 'MyArabicFont',
     letterSpacing: 0.5,
   },
   heroDivider: {

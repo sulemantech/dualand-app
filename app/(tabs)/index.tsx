@@ -592,7 +592,6 @@ export default function DashboardScreen() {
           <FloatingParticles />
 
           <AppHeader
-            icon="🕌"
             title="DuaLand"
             subtitle={`${filteredCategories.length} categories to explore`}
             rightElement={

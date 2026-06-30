@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     color: T.text.primary,
     textAlign: 'center',
     marginBottom: 4,
-    fontWeight: '500',
+    fontFamily: 'MyArabicFont',
   },
   slider: {
     width: '100%',

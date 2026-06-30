@@ -110,7 +110,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   title: {
-    fontWeight: 'bold',
+    fontFamily: 'mochiypopp',
+    fontWeight: '400',
     color: '#FFFFFF',
     letterSpacing: 0.2,
     textAlign: 'center',

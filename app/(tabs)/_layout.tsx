@@ -3,7 +3,6 @@ import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
-  Easing,
   Platform,
   StyleSheet,
   Text,
@@ -14,23 +13,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const PURPLE = '#7E57C2';
 const WHITE  = '#FFFFFF';
 
-// Base tab bar content height (does NOT include bottom safe-area inset)
-export const TAB_BAR_BASE_HEIGHT = 80;
+export const TAB_BAR_BASE_HEIGHT = 72;
 
-// Per-tab colour palette — all in the purple/violet family for cohesion
 const TAB_COLORS = {
-  home:     { from: '#7E57C2', to: '#4527A0', pulse: '#7E57C2' },
-  tracker:  { from: '#5C6BC0', to: '#3949AB', pulse: '#5C6BC0' },
-  learn:    { from: '#8E24AA', to: '#6A1B9A', pulse: '#8E24AA' },
-  settings: { from: '#5E35B1', to: '#311B92', pulse: '#5E35B1' },
+  home:     { from: '#7E57C2', to: '#4527A0' },
+  tracker:  { from: '#5C6BC0', to: '#3949AB' },
+  learn:    { from: '#8E24AA', to: '#6A1B9A' },
+  settings: { from: '#5E35B1', to: '#311B92' },
 };
 
-// ─── Shared constants ─────────────────────────────────────────────────────────
-
-const ICON_ACTIVE   = 50;
-const ICON_INACTIVE = 44;
-
-// ─── Regular tab icon ─────────────────────────────────────────────────────────
+// ─── Tab icon ─────────────────────────────────────────────────────────────────
 
 const TabIcon = ({
   emoji,
@@ -41,52 +33,22 @@ const TabIcon = ({
   emoji: string;
   label: string;
   focused: boolean;
-  colors: { from: string; to: string; pulse: string };
+  colors: { from: string; to: string };
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
-  const lift  = useRef(new Animated.Value(0)).current;
-  const glow  = useRef(new Animated.Value(0)).current;
-  const floatLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
-    if (focused) {
-      floatLoop.current?.stop();
-      Animated.parallel([
-        Animated.spring(scale, { toValue: 1.12, tension: 300, friction: 6,  useNativeDriver: true }),
-        Animated.spring(lift,  { toValue: -5,   tension: 240, friction: 7,  useNativeDriver: true }),
-        Animated.timing(glow,  { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]).start(() => {
-        floatLoop.current = Animated.loop(
-          Animated.sequence([
-            Animated.timing(lift, { toValue: -7, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(lift, { toValue: -5, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          ])
-        );
-        floatLoop.current.start();
-      });
-    } else {
-      floatLoop.current?.stop();
-      floatLoop.current = null;
-      Animated.parallel([
-        Animated.spring(scale, { toValue: 1, tension: 260, friction: 7, useNativeDriver: true }),
-        Animated.spring(lift,  { toValue: 0, tension: 240, friction: 7, useNativeDriver: true }),
-        Animated.timing(glow,  { toValue: 0, duration: 180, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]).start();
-    }
+    Animated.spring(scale, {
+      toValue: focused ? 1.1 : 1,
+      tension: 320,
+      friction: 7,
+      useNativeDriver: true,
+    }).start();
   }, [focused]);
-
-  const glowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0,    0.30] });
-  const bgOpacity   = glow.interpolate({ inputRange: [0, 1], outputRange: [0,    0.12] });
-  const labelColor  = focused ? colors.from : '#B0BEC5';
-  const labelWeight = focused ? '700' : '500';
 
   return (
     <View style={styles.iconWrap}>
-      {/* ambient glow */}
-      <Animated.View style={[styles.glow,   { backgroundColor: colors.pulse, opacity: glowOpacity }]} />
-      <Animated.View style={[styles.bgPill, { backgroundColor: colors.pulse, opacity: bgOpacity   }]} />
-
-      <Animated.View style={{ transform: [{ translateY: lift }, { scale }] }}>
+      <Animated.View style={{ transform: [{ scale }] }}>
         {focused ? (
           <LinearGradient
             colors={[colors.from, colors.to]}
@@ -103,91 +65,53 @@ const TabIcon = ({
         )}
       </Animated.View>
 
-      {/* active indicator dot */}
-      <Animated.View style={[styles.dot, { backgroundColor: colors.from, opacity: glow }]} />
+      {focused && <View style={[styles.dot, { backgroundColor: colors.from }]} />}
 
-      <Text style={[styles.label, { color: labelColor, fontWeight: labelWeight }]}>
+      <Text style={[
+        styles.label,
+        { color: focused ? colors.from : '#B0BEC5', fontWeight: focused ? '700' : '500' },
+      ]}>
         {label}
       </Text>
     </View>
   );
 };
 
-// ─── Home tab icon (always has a gradient circle, more prominent) ─────────────
+// ─── Home tab icon (slightly larger, always gradient) ─────────────────────────
 
 const HomeTabIcon = ({ focused }: { focused: boolean }) => {
-  const scale  = useRef(new Animated.Value(1)).current;
-  const lift   = useRef(new Animated.Value(0)).current;
-  const glow   = useRef(new Animated.Value(0.2)).current;
-  const rotate = useRef(new Animated.Value(0)).current;
-  const floatLoop = useRef<Animated.CompositeAnimation | null>(null);
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (focused) {
-      floatLoop.current?.stop();
-      Animated.parallel([
-        Animated.spring(scale,  { toValue: 1.18, tension: 280, friction: 5,  useNativeDriver: true }),
-        Animated.spring(lift,   { toValue: -6,   tension: 220, friction: 6,  useNativeDriver: true }),
-        Animated.timing(glow,   { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(rotate, { toValue: 1, duration: 420, easing: Easing.out(Easing.back), useNativeDriver: true }),
-      ]).start(() => {
-        floatLoop.current = Animated.loop(
-          Animated.sequence([
-            Animated.timing(lift, { toValue: -9, duration: 950, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(lift, { toValue: -6, duration: 950, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          ])
-        );
-        floatLoop.current.start();
-      });
-    } else {
-      floatLoop.current?.stop();
-      floatLoop.current = null;
-      Animated.parallel([
-        Animated.spring(scale,  { toValue: 1,   tension: 260, friction: 7, useNativeDriver: true }),
-        Animated.spring(lift,   { toValue: 0,   tension: 220, friction: 7, useNativeDriver: true }),
-        Animated.timing(glow,   { toValue: 0.2, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(rotate, { toValue: 0,   duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      ]).start();
-    }
+    Animated.spring(scale, {
+      toValue: focused ? 1.12 : 1,
+      tension: 320,
+      friction: 7,
+      useNativeDriver: true,
+    }).start();
   }, [focused]);
-
-  const deg          = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '359deg'] });
-  const glowOpacity  = glow.interpolate({ inputRange: [0, 1], outputRange: [0.1, 0.45] });
-  const labelOpacity = glow.interpolate({ inputRange: [0.2, 1], outputRange: [0.55, 1] });
 
   return (
     <View style={styles.homeWrap}>
-      {/* ambient glow — always visible, just brighter when focused */}
-      <Animated.View style={[styles.homeGlow, { opacity: glowOpacity }]} />
-
-      <Animated.View style={{ transform: [{ translateY: lift }, { scale }, { rotate: deg }] }}>
+      <Animated.View style={{ transform: [{ scale }] }}>
         <LinearGradient
-          colors={[TAB_COLORS.home.from, TAB_COLORS.home.to]}
+          colors={focused ? [TAB_COLORS.home.from, TAB_COLORS.home.to] : ['#EDE7F6', '#D1C4E9']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.homeCircle, focused && styles.homeCircleFocused]}
+          style={[styles.homeCircle, !focused && styles.homeCircleInactive]}
         >
-          <Text style={styles.homeEmoji}>🏠</Text>
+          <Text style={focused ? styles.emojiActive : styles.emojiInactive}>🏠</Text>
         </LinearGradient>
       </Animated.View>
 
-      {/* sparkle stars when focused */}
-      {focused && (
-        <>
-          <Animated.View style={[styles.star1, { opacity: glow, transform: [{ scale }] }]}>
-            <LinearGradient colors={[TAB_COLORS.home.from, TAB_COLORS.home.to]} style={styles.starGrad}>
-              <Text style={styles.starEmoji}>✨</Text>
-            </LinearGradient>
-          </Animated.View>
-          <Animated.View style={[styles.star2, { opacity: glow, transform: [{ scale }] }]}>
-            <LinearGradient colors={[TAB_COLORS.home.from, TAB_COLORS.home.to]} style={styles.starGrad}>
-              <Text style={styles.starEmoji}>🌟</Text>
-            </LinearGradient>
-          </Animated.View>
-        </>
-      )}
+      {focused && <View style={[styles.dot, { backgroundColor: PURPLE }]} />}
 
-      <Animated.Text style={[styles.homeLabel, { opacity: labelOpacity }]}>Home</Animated.Text>
+      <Text style={[
+        styles.label,
+        { color: focused ? PURPLE : '#B0BEC5', fontWeight: focused ? '700' : '500' },
+      ]}>
+        Home
+      </Text>
     </View>
   );
 };
@@ -196,8 +120,6 @@ const HomeTabIcon = ({ focused }: { focused: boolean }) => {
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-
-  // True bottom inset (home indicator on iOS, gesture bar on Android)
   const bottomInset = insets.bottom;
 
   return (
@@ -207,8 +129,6 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarHideOnKeyboard: true,
         headerShown: false,
-        // Allow our icon components to fill the width of each tab slot so
-        // labels like "Tracker" are never clipped.
         tabBarItemStyle: {
           flex: 1,
           alignItems: 'center',
@@ -234,14 +154,10 @@ export default function TabLayout() {
           shadowOpacity: 0.13,
           shadowRadius: 18,
           paddingHorizontal: 4,
-          // On Android, bottomInset is now reliable (SafeAreaProvider is in the tree).
-          // Use a generous minimum (24 px) to absorb any device-specific rounding.
           paddingBottom: Platform.OS === 'android'
-            ? Math.max(bottomInset, 24)
+            ? Math.max(bottomInset, 20)
             : bottomInset + 4,
           paddingTop: 6,
-          borderWidth: 1,
-          borderColor: 'rgba(126,87,194,0.10)',
         },
       }}
     >
@@ -289,49 +205,29 @@ export default function TabLayout() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // ── Regular tab ──
   iconWrap: {
-    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-    position: 'relative',
-    overflow: 'visible',
-  },
-  glow: {
-    position: 'absolute',
-    top: -4,
-    alignSelf: 'center',
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-  },
-  bgPill: {
-    position: 'absolute',
-    top: -2,
-    alignSelf: 'center',
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    paddingVertical: 2,
   },
   circleActive: {
-    width: ICON_ACTIVE,
-    height: ICON_ACTIVE,
-    borderRadius: ICON_ACTIVE / 2,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2.5,
+    borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.88)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 7,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 5,
   },
   circleInactive: {
-    width: ICON_INACTIVE,
-    height: ICON_INACTIVE,
-    borderRadius: ICON_INACTIVE / 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.96)',
@@ -348,92 +244,41 @@ const styles = StyleSheet.create({
   },
   emojiInactive: {
     fontSize: 18,
-    opacity: 0.78,
+    opacity: 0.75,
   },
   dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     marginTop: 3,
     marginBottom: 1,
   },
   label: {
-    fontSize: 11,
+    fontSize: 10,
     letterSpacing: 0.1,
   },
 
-  // ── Home tab ──
   homeWrap: {
-    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-    position: 'relative',
-    overflow: 'visible',
-  },
-  homeGlow: {
-    position: 'absolute',
-    top: -6,
-    alignSelf: 'center',
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: PURPLE,
+    paddingVertical: 2,
   },
   homeCircle: {
-    width: ICON_ACTIVE + 4,
-    height: ICON_ACTIVE + 4,
-    borderRadius: (ICON_ACTIVE + 4) / 2,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
     borderColor: 'rgba(255,255,255,0.90)',
     shadowColor: PURPLE,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  homeCircleFocused: {
-    borderWidth: 3,
-    borderColor: WHITE,
-  },
-  homeEmoji: {
-    fontSize: 22,
-  },
-  homeLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: PURPLE,
-    marginTop: 4,
-    letterSpacing: 0.1,
-  },
-  star1: {
-    position: 'absolute',
-    top: -3,
-    right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  star2: {
-    position: 'absolute',
-    top: -3,
-    left: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  starGrad: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-  },
-  starEmoji: {
-    fontSize: 11,
+  homeCircleInactive: {
+    borderColor: 'rgba(126,87,194,0.20)',
+    shadowOpacity: 0.06,
   },
 });

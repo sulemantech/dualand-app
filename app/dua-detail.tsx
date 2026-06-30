@@ -1355,10 +1355,7 @@ useEffect(() => {
           >
             <Image
               source={BtnPrevious}
-              style={[
-                styles.footerNavButton,
-                currentDuaIndex === 0 && styles.disabledButtonImage
-              ]}
+              style={[styles.footerNavButton, currentDuaIndex === 0 && styles.disabledButtonImage]}
             />
           </BouncingButton>
 
@@ -1368,12 +1365,8 @@ useEffect(() => {
                 <Image source={BtnRepeat} style={styles.controlButton} />
               </BouncingButton>
             </Animated.View>
-
             {repeatMode !== 'empty' && (
-              <View style={[
-                styles.repeatBadgeSmall,
-                repeatMode === 'infinite' && styles.repeatBadgeInfinite
-              ]}>
+              <View style={[styles.repeatBadgeSmall, repeatMode === 'infinite' && styles.repeatBadgeInfinite]}>
                 <Text style={styles.repeatBadgeSmallText}>
                   {repeatMode === 'infinite' ? '∞' : repeatMode}
                 </Text>
@@ -1399,7 +1392,7 @@ useEffect(() => {
             <Animated.View style={{
               transform: [
                 { scale: playButtonScale },
-                { scale: isAnythingPlaying ? pulseAnim : 1 }
+                { scale: isAnythingPlaying ? pulseAnim : 1 },
               ]
             }}>
               <BouncingButton onPress={handlePlayPause}>
@@ -1417,10 +1410,7 @@ useEffect(() => {
           >
             <Image
               source={BtnNext}
-              style={[
-                styles.footerNavButton,
-                currentDuaIndex === allDuas.length - 1 && styles.disabledButtonImage
-              ]}
+              style={[styles.footerNavButton, currentDuaIndex === allDuas.length - 1 && styles.disabledButtonImage]}
             />
           </BouncingButton>
         </View>
@@ -1862,9 +1852,9 @@ const styles = StyleSheet.create({
   },
   playRing: {
     position: 'absolute',
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     borderWidth: 2.5,
   },
   playStatusRow: {
@@ -1879,20 +1869,20 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0,
+    shadowColor: '#7E57C2',
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.13,
+    shadowRadius: 18,
+    elevation: 24,
   },
   footerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     width: '100%',
-  },
-  gradientBorder: {
-    borderRadius: 16,
-    padding: 2,
   },
   footerNavButton: {
     width: 50,

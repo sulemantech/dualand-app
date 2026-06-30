@@ -256,7 +256,7 @@ export default function DuaTrackerScreen() {
   return (
     <ScreenWrapper>
       <SafeAreaView style={styles.screen} edges={['top']}>
-        <AppHeader icon="📊" title="Dua Tracker" subtitle="Track your memorization journey" />
+        <AppHeader title="Dua Tracker" subtitle="Track your memorization journey" />
 
         <StatsBar duas={duas} />
 
