@@ -175,13 +175,6 @@ export const WordByWordDisplay: React.FC<WordByWordDisplayProps> = ({
         )}
       </View>
 
-      {isPlaying && currentWordIndex >= 0 && (
-        <View style={styles.readingGuide}>
-          <Text style={styles.readingGuideText}>
-            👆 Listening to word {currentWordIndex + 1} of {words.length}
-          </Text>
-        </View>
-      )}
     </View>
   );
 };
@@ -205,7 +198,7 @@ const styles = StyleSheet.create({
   arabicText: {
     fontSize: 28,
     lineHeight: 48,
-    textAlign: 'right',
+    textAlign: 'center',
     color: THEME.text.primary,
     fontFamily: 'MyArabicFont',
   },
@@ -214,9 +207,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
     marginHorizontal: 1,
+    fontFamily: 'MyArabicFont',
   },
   currentWord: {
-    fontWeight: 'bold',
+    fontFamily: 'MyArabicFontBold',
   },
   translationInline: {
     marginTop: 16,
@@ -226,9 +220,11 @@ const styles = StyleSheet.create({
   },
   translationText: {
     fontSize: 14,
-    color: THEME.text.primary,
+    color: '#343A46',
     lineHeight: 20,
     fontFamily: 'translationtext',
+    fontWeight: '400',
+    textAlign: 'center',
   },
   referenceInline: {
     marginTop: 12,
@@ -238,20 +234,9 @@ const styles = StyleSheet.create({
   },
   referenceText: {
     fontSize: 13,
-    color: THEME.text.secondary,
-    fontStyle: 'italic',
+    color: '#58595D',
     fontFamily: 'reference',
-  },
-  readingGuide: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: `${THEME.accent}20`,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  readingGuideText: {
-    fontSize: 14,
-    color: THEME.text.primary,
-    fontFamily: 'reference',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

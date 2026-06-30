@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   arabicText: {
     fontSize: 28,
     lineHeight: 48,
-    textAlign: 'right',
+    textAlign: 'center',
     color: THEME.text.primary,
     fontFamily: 'MyArabicFont',
   },
@@ -70,9 +70,11 @@ const styles = StyleSheet.create({
   },
   translationText: {
     fontSize: 14,
-    color: THEME.text.primary,
+    color: '#343A46',
     lineHeight: 20,
     fontFamily: 'translationtext',
+    fontWeight: '400',
+    textAlign: 'center',
   },
   referenceInline: {
     marginTop: 12,
@@ -82,8 +84,9 @@ const styles = StyleSheet.create({
   },
   referenceText: {
     fontSize: 13,
-    color: THEME.text.secondary,
-    fontStyle: 'italic',
+    color: '#58595D',
     fontFamily: 'reference',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

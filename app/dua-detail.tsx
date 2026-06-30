@@ -437,8 +437,7 @@ export default function DuaDetailScreen() {
   const swipeHintOpacity  = useRef(new Animated.Value(1)).current;
   const modeSlideAnim     = useRef(new Animated.Value(0)).current; // 0=word, 1=full
   const [modeSegWidth, setModeSegWidth] = useState(0);
-  const modeIconScale0 = useRef(modeSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [1.16, 0.82] })).current;
-  const modeIconScale1 = useRef(modeSlideAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1.16] })).current;
+
 
   // Restore persisted mode once after screen data finishes loading.
   // Keyed on isLoading so it fires exactly once per mount, after the store has hydrated.
@@ -1094,12 +1093,7 @@ useEffect(() => {
       >
         <View style={styles.headerContent}>
           <BouncingButton onPress={handleBack}>
-            <LinearGradient
-              colors={['#7E57C2', '#9C77D9']}
-              style={styles.gradientBorder}
-            >
-              <Image source={BtnPrevious} style={styles.headerButton} />
-            </LinearGradient>
+            <Image source={BtnPrevious} style={styles.headerButton} />
           </BouncingButton>
 
           <View style={styles.headerTitleContainer}>
@@ -1112,12 +1106,7 @@ useEffect(() => {
           </View>
 
           <BouncingButton onPress={handleHome}>
-            <LinearGradient
-              colors={['#FFD166', '#FFB347']}
-              style={styles.gradientBorder}
-            >
-              <Image source={BtnHome} style={styles.headerButton} />
-            </LinearGradient>
+            <Image source={BtnHome} style={styles.headerButton} />
           </BouncingButton>
         </View>
       </LinearGradient>
@@ -1262,13 +1251,6 @@ useEffect(() => {
             })()}
           </Animated.View>
 
-          {steps && (
-            <View style={styles.stepsContainer}>
-              <Text style={styles.stepsTitle}>Steps:</Text>
-              <Text style={styles.stepsText}>{steps}</Text>
-            </View>
-          )}
-
           {categoryTotal > 1 && (
             <View style={styles.categoryDotsRow}>
               {Array.from({ length: categoryTotal }, (_, i) => (
@@ -1283,9 +1265,9 @@ useEffect(() => {
           {/* ── Mode segmented control ── */}
           <View
             style={styles.modeTrack}
-            onLayout={(e) => setModeSegWidth((e.nativeEvent.layout.width - 6) / 2)}
+            onLayout={(e) => setModeSegWidth((e.nativeEvent.layout.width - 8) / 2)}
           >
-            {/* Sliding white thumb */}
+            {/* Sliding pink pill */}
             {modeSegWidth > 0 && (
               <Animated.View
                 style={[
@@ -1307,11 +1289,10 @@ useEffect(() => {
             <TouchableOpacity
               style={styles.modeSegment}
               onPress={handleWordMode}
-              activeOpacity={0.75}
+              activeOpacity={0.85}
             >
-              <Animated.Text style={[styles.modeSegIcon, { transform: [{ scale: modeIconScale0 }] }]}>🎯</Animated.Text>
               <Text style={[styles.modeSegLabel, currentMode === 'word' && styles.modeSegLabelActive]}>
-                Word by Word
+                WORD BY WORD
               </Text>
             </TouchableOpacity>
 
@@ -1319,11 +1300,10 @@ useEffect(() => {
             <TouchableOpacity
               style={styles.modeSegment}
               onPress={handleFullMode}
-              activeOpacity={0.75}
+              activeOpacity={0.85}
             >
-              <Animated.Text style={[styles.modeSegIcon, { transform: [{ scale: modeIconScale1 }] }]}>📖</Animated.Text>
               <Text style={[styles.modeSegLabel, currentMode === 'full' && styles.modeSegLabelActive]}>
-                Complete Dua
+                COMPLETE DUA
               </Text>
             </TouchableOpacity>
           </View>
@@ -1356,6 +1336,13 @@ useEffect(() => {
             )}
           </View>
 
+          {steps && (
+            <View style={styles.stepsContainer}>
+              <Text style={styles.stepsTitle}>Steps:</Text>
+              <Text style={styles.stepsText}>{steps}</Text>
+            </View>
+          )}
+
           <View style={styles.bottomPadding} />
         </ScrollView>
       </SwipeNavigation>
@@ -1366,29 +1353,19 @@ useEffect(() => {
             onPress={navigateToPrevDua}
             style={currentDuaIndex === 0 ? styles.disabledButton : {}}
           >
-            <LinearGradient
-              colors={currentDuaIndex === 0 ? ['#CCCCCC', '#DDDDDD'] : ['#7E57C2', '#9C77D9']}
-              style={styles.gradientBorder}
-            >
-              <Image
-                source={BtnPrevious}
-                style={[
-                  styles.footerNavButton,
-                  currentDuaIndex === 0 && styles.disabledButtonImage
-                ]}
-              />
-            </LinearGradient>
+            <Image
+              source={BtnPrevious}
+              style={[
+                styles.footerNavButton,
+                currentDuaIndex === 0 && styles.disabledButtonImage
+              ]}
+            />
           </BouncingButton>
 
           <View style={styles.repeatButtonContainer}>
             <Animated.View style={{ transform: [{ scale: repeatScale }] }}>
               <BouncingButton onPress={handleRepeat}>
-                <LinearGradient
-                  colors={['#FFD166', '#FFB347']}
-                  style={styles.gradientBorder}
-                >
-                  <Image source={BtnRepeat} style={styles.controlButton} />
-                </LinearGradient>
+                <Image source={BtnRepeat} style={styles.controlButton} />
               </BouncingButton>
             </Animated.View>
 
@@ -1426,19 +1403,10 @@ useEffect(() => {
               ]
             }}>
               <BouncingButton onPress={handlePlayPause}>
-                <LinearGradient
-                  colors={
-                    isPlayingTitleAudio ? ['#FFA726', '#FF7043'] :
-                    isAnythingPlaying   ? ['#4ECDC4', '#26C6DA'] :
-                    ['#7E57C2', '#9C77D9']
-                  }
-                  style={styles.gradientBorder}
-                >
-                  <Image
-                    source={isAnythingPlaying ? BtnPause : BtnPlay}
-                    style={styles.playButton}
-                  />
-                </LinearGradient>
+                <Image
+                  source={isAnythingPlaying ? BtnPause : BtnPlay}
+                  style={styles.playButton}
+                />
               </BouncingButton>
             </Animated.View>
           </View>
@@ -1447,18 +1415,13 @@ useEffect(() => {
             onPress={navigateToNextDua}
             style={currentDuaIndex === allDuas.length - 1 ? styles.disabledButton : {}}
           >
-            <LinearGradient
-              colors={currentDuaIndex === allDuas.length - 1 ? ['#CCCCCC', '#DDDDDD'] : ['#7E57C2', '#9C77D9']}
-              style={styles.gradientBorder}
-            >
-              <Image
-                source={BtnNext}
-                style={[
-                  styles.footerNavButton,
-                  currentDuaIndex === allDuas.length - 1 && styles.disabledButtonImage
-                ]}
-              />
-            </LinearGradient>
+            <Image
+              source={BtnNext}
+              style={[
+                styles.footerNavButton,
+                currentDuaIndex === allDuas.length - 1 && styles.disabledButtonImage
+              ]}
+            />
           </BouncingButton>
         </View>
       </View>
@@ -1541,17 +1504,15 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     resizeMode: 'contain',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 12,
   },
   headerTitleContainer: {
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: THEME.text.dark,
-    fontFamily: 'title',
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#212222',
+    fontFamily: 'mochiypopp',
   },
   headerSubtitle: {
     fontSize: 12,
@@ -1691,45 +1652,44 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 10,
     marginBottom: 2,
-    height: 42,
-    backgroundColor: '#4527A0',
-    borderRadius: 12,
-    padding: 3,
+    height: 50,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 25,
+    padding: 4,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   modeThumb: {
     position: 'absolute',
-    top: 3,
-    bottom: 3,
-    left: 3,
-    borderRadius: 9,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: 21,
+    backgroundColor: '#FF4D7E',
+    shadowColor: '#FF4D7E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.40,
+    shadowRadius: 8,
     elevation: 5,
   },
   modeSegment: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
     zIndex: 1,
   },
-  modeSegIcon: {
-    fontSize: 15,
-    lineHeight: 18,
-  },
   modeSegLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.60)',
-    letterSpacing: 0.1,
-    fontFamily: 'reference',
+    fontSize: 13,
+    color: '#888888',
+    letterSpacing: 0.6,
+    fontFamily: 'doodlesticker',
   },
   modeSegLabelActive: {
-    color: '#3D1D8A',
+    color: '#FFFFFF',
   },
   categoryDotsRow: {
     flexDirection: 'row',
@@ -1938,22 +1898,16 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     resizeMode: 'contain',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 14,
   },
   controlButton: {
     width: 50,
     height: 50,
     resizeMode: 'contain',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 14,
   },
   playButton: {
-    width: 50,
-    height: 50,
+    width: 58,
+    height: 58,
     resizeMode: 'contain',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 14,
   },
   disabledButton: {
     opacity: 0.5,

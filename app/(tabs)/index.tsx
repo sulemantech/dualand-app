@@ -306,7 +306,7 @@ const CategoryCard = React.memo(({ category, index, onPress, cardWidth, imageHei
   imageHeight: number;
 }) => {
   const cardAnim = useRef(new Animated.Value(0)).current;
-  const pressAnim = useRef(new Animated.Value(0)).current;
+  const [isPressed, setIsPressed] = useState(false);
 
   useEffect(() => {
     const animation = Animated.sequence([
@@ -325,29 +325,6 @@ const CategoryCard = React.memo(({ category, index, onPress, cardWidth, imageHei
       animation.stop();
     };
   }, [cardAnim, index]);
-
-  const handlePressIn = () => {
-    Animated.spring(pressAnim, {
-      toValue: 1,
-      tension: 100,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(pressAnim, {
-      toValue: 0,
-      tension: 100,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const cardScale = pressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0.96],
-  });
 
   const categoryImageSource = getImageSource(category.image_path, category.id, category.name);
 
@@ -368,11 +345,15 @@ const CategoryCard = React.memo(({ category, index, onPress, cardWidth, imageHei
               outputRange: [0.9, 1],
             })
           },
-          { scale: cardScale },
         ],
       }}
     >
-      <BouncingButton onPress={() => onPress(category)} style={[styles.card, { width: cardWidth }]}>
+      <BouncingButton
+        onPress={() => onPress(category)}
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => setIsPressed(false)}
+        style={[styles.card, { width: cardWidth }]}
+      >
         <Animated.View style={styles.cardInner}>
           <View style={[styles.cardImageContainer, { height: imageHeight }]}>
             <View style={styles.cardNumber}>
@@ -381,23 +362,23 @@ const CategoryCard = React.memo(({ category, index, onPress, cardWidth, imageHei
               </Text>
             </View>
 
-            {/* Clean image without overlays */}
             <Image
               source={categoryImageSource}
               style={styles.cardImage}
               resizeMode="cover"
             />
 
-            {/* Floating Elements */}
             <View style={styles.floatingStars}>
               <Text style={styles.star}>✨</Text>
               <Text style={[styles.star, styles.star2]}>⭐</Text>
             </View>
           </View>
 
-          {/* Card banner with better text contrast */}
           <View style={[styles.cardBanner, { backgroundColor: '#ede77bff' }]}>
-            <Text style={styles.cardTitle} numberOfLines={2}>
+            <Text
+              style={[styles.cardTitle, { color: isPressed ? '#FC6487' : '#1B8AAA' }]}
+              numberOfLines={2}
+            >
               {category.name}
             </Text>
             <View style={styles.cardSparkle}>
@@ -977,7 +958,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: THEME.text.primary,
+    color: '#1B8AAA',
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: 4,

@@ -4,20 +4,25 @@ import { Animated, TouchableOpacity } from 'react-native';
 interface BouncingButtonProps {
   children: React.ReactNode;
   onPress?: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
   style?: any;
   disabled?: boolean;
 }
 
-export const BouncingButton: React.FC<BouncingButtonProps> = ({ 
-  children, 
-  onPress, 
-  style = {}, 
-  disabled = false 
+export const BouncingButton: React.FC<BouncingButtonProps> = ({
+  children,
+  onPress,
+  onPressIn: onPressInProp,
+  onPressOut: onPressOutProp,
+  style = {},
+  disabled = false
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
     if (disabled) return;
+    onPressInProp?.();
     Animated.spring(scaleAnim, {
       toValue: 0.95,
       tension: 100,
@@ -28,6 +33,7 @@ export const BouncingButton: React.FC<BouncingButtonProps> = ({
 
   const handlePressOut = () => {
     if (disabled) return;
+    onPressOutProp?.();
     Animated.spring(scaleAnim, {
       toValue: 1,
       tension: 100,
