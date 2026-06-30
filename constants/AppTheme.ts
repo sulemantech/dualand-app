@@ -48,6 +48,7 @@ export const localImages = {
   dua_30: require('../assets/images/dua_30.png'),
   dua_31: require('../assets/images/dua_31.png'),
   dua_32: require('../assets/images/dua_32.png'),
+  dua_33: require('../assets/images/dua_33.png'),
   dua_34: require('../assets/images/dua_34.png'),
   dua_35: require('../assets/images/dua_35.png'),
   dua_36: require('../assets/images/dua_36.png'),

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 const THEME = {
@@ -42,9 +42,16 @@ export const WordByWordDisplay: React.FC<WordByWordDisplayProps> = ({
     ? wordAudioPairs.map(pair => pair.word_text)
     : (arabicText || "بِسْمِ اللّٰہِ").split(' ').filter(word => word.trim().length > 0);
 
-  const [animations] = useState(() =>
-    words.map(() => new Animated.Value(0))
-  );
+  // Resize the animations array whenever the word count changes.
+  // useState initializer only runs once at mount, so if wordAudioPairs arrives
+  // after mount (which it always does — it's loaded asynchronously) the array
+  // would stay at its initial length and leave every word past that index
+  // without an Animated.Value, breaking highlighting for all but the first few words.
+  const animationsRef = useRef<Animated.Value[]>([]);
+  if (animationsRef.current.length !== words.length) {
+    animationsRef.current = words.map(() => new Animated.Value(0));
+  }
+  const animations = animationsRef.current;
 
   // Track the previous word index to reset its animation
   const [prevWordIndex, setPrevWordIndex] = useState(-1);
