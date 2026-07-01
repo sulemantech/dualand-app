@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: 'PoppinsBold',
     color: '#1A1A2E',
     textAlign: 'center',
     marginTop: 18,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
 
   btnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'PoppinsBold',
   },
   btnTextDefault: {
     color: '#FFFFFF',

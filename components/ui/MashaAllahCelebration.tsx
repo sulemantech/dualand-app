@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   celebrationText: {
     fontSize: 36,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.light,
     marginBottom: 8,
     textAlign: 'center',
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     color: THEME.text.light,
     textAlign: 'center',
     marginBottom: 16,
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     marginTop: 8,
-    fontStyle: 'italic',
+    fontFamily: 'PoppinsSemiBoldItalic',
   },
   stars: {
     flexDirection: 'row',
@@ -222,6 +222,6 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: THEME.text.light,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
   },
 });

@@ -1434,7 +1434,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: THEME.text.primary,
     marginTop: 16,
-    fontFamily: 'title',
+    fontFamily: 'PoppinsSemiBold',
   },
   noDuasContainer: {
     flex: 1,
@@ -1451,7 +1451,7 @@ const styles = StyleSheet.create({
     color: THEME.text.primary,
     marginBottom: 12,
     textAlign: 'center',
-    fontFamily: 'title',
+    fontFamily: 'PoppinsSemiBold',
   },
   noDuasSubtext: {
     fontSize: 16,
@@ -1459,7 +1459,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     lineHeight: 22,
-    fontFamily: 'translationtext',
+    fontFamily: 'PoppinsRegular',
   },
   backButton: {
     paddingHorizontal: 24,
@@ -1471,7 +1471,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: THEME.text.light,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
   },
   header: {
     shadowColor: '#000',
@@ -1508,7 +1508,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: THEME.text.primary,
     marginTop: 2,
-    fontFamily: 'translationtext',
+    fontFamily: 'PoppinsLight',
   },
   content: {
     flex: 1,
@@ -1550,7 +1550,7 @@ const styles = StyleSheet.create({
     color: THEME.text.light,
     fontSize: 14,
     textAlign: 'center',
-    fontFamily: 'reference',
+    fontFamily: 'PoppinsMedium',
   },
   illustrationContainer: {
     width: '100%',
@@ -1593,7 +1593,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     letterSpacing: 0.2,
-    fontFamily: 'reference',
+    fontFamily: 'PoppinsMedium',
   },
   favoriteButton: {
     width: 40,
@@ -1628,13 +1628,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: THEME.success,
     marginBottom: 8,
-    fontFamily: 'reference',
+    fontFamily: 'PoppinsSemiBold',
   },
   stepsText: {
     fontSize: 14,
     color: THEME.text.primary,
     lineHeight: 20,
-    fontFamily: 'translationtext',
+    fontFamily: 'PoppinsRegular',
   },
   // ── Mode segmented control ──────────────────────────────────────
   modeTrack: {
@@ -1747,7 +1747,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 1,
   },
   currentWord: {
-    fontWeight: 'bold',
+    fontFamily: 'MyArabicFontBold',
   },
   translationInline: {
     marginTop: 16,
@@ -1759,7 +1759,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: THEME.text.primary,
     lineHeight: 20,
-    fontFamily: 'translationtext',
+    fontFamily: 'PoppinsRegular',
   },
   referenceInline: {
     marginTop: 12,
@@ -1770,8 +1770,7 @@ const styles = StyleSheet.create({
   referenceText: {
     fontSize: 13,
     color: THEME.text.secondary,
-    fontStyle: 'italic',
-    fontFamily: 'reference',
+    fontFamily: 'PoppinsSemiBoldItalic',
   },
   readingGuide: {
     marginTop: 16,
@@ -1783,7 +1782,7 @@ const styles = StyleSheet.create({
   readingGuideText: {
     fontSize: 14,
     color: THEME.text.primary,
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
   },
   repeatBadge: {
     position: 'absolute',
@@ -1813,7 +1812,7 @@ const styles = StyleSheet.create({
   },
   repeatBadgeText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.light,
   },
   repeatBadgeSmall: {
@@ -1839,7 +1838,7 @@ const styles = StyleSheet.create({
   },
   repeatBadgeSmallText: {
     fontSize: 9,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.light,
   },
   repeatButtonContainer: {
@@ -1863,7 +1862,7 @@ const styles = StyleSheet.create({
   },
   playStatusText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
     color: THEME.text.secondary,
     letterSpacing: 0.2,
   },
@@ -1936,7 +1935,7 @@ const styles = StyleSheet.create({
   },
   celebrationText: {
     fontSize: 36,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.light,
     marginBottom: 8,
     textAlign: 'center',
@@ -1949,7 +1948,7 @@ const styles = StyleSheet.create({
     color: THEME.text.light,
     textAlign: 'center',
     marginBottom: 16,
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -1988,6 +1987,6 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: THEME.text.light,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
   },
 });

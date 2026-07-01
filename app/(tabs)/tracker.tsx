@@ -327,13 +327,13 @@ const styles = StyleSheet.create({
   },
   statNum: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
   },
   statLbl: {
     fontSize: 11,
     color: THEME.text.muted,
     marginTop: 2,
-    fontWeight: '500',
+    fontFamily: 'PoppinsLight',
   },
   statSep: {
     width: 1,
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   },
   chipLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     color: THEME.text.secondary,
   },
   chipLabelActive: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   },
   chipBadgeText: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsSemiBold',
     color: THEME.primary,
   },
   chipBadgeTextActive: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'PoppinsSemiBold',
     color: THEME.text.primary,
     marginBottom: 5,
   },
@@ -477,6 +477,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: THEME.text.muted,
     flexShrink: 1,
+    fontFamily: 'PoppinsLight',
   },
   statusPill: {
     flexDirection: 'row',
@@ -493,7 +494,7 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
   },
   cardActions: {
     flexDirection: 'row',
@@ -507,7 +508,7 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 22,
     color: THEME.text.muted,
-    fontWeight: '300',
+    fontFamily: 'PoppinsLight',
     lineHeight: 24,
   },
 
@@ -523,7 +524,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.primary,
     marginBottom: 8,
     textAlign: 'center',
@@ -533,5 +534,6 @@ const styles = StyleSheet.create({
     color: THEME.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
+    fontFamily: 'PoppinsRegular',
   },
 });

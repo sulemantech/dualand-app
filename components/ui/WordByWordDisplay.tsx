@@ -222,8 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#343A46',
     lineHeight: 20,
-    fontFamily: 'translationtext',
-    fontWeight: '400',
+    fontFamily: 'PoppinsRegular',
     textAlign: 'center',
   },
   referenceInline: {
@@ -235,8 +234,7 @@ const styles = StyleSheet.create({
   referenceText: {
     fontSize: 13,
     color: '#58595D',
-    fontFamily: 'reference',
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
     textAlign: 'center',
   },
 });

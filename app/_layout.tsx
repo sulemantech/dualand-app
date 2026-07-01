@@ -64,13 +64,20 @@ export default function RootLayout() {
   }, []);
 
   const [fontsLoaded, fontError] = useFonts({
-    MyArabicFont:    require('../assets/fonts/vazirmatn_regular.ttf'),
-    MyArabicFontBold: require('../assets/fonts/vazirmatn_bold.ttf'),
-    translationtext: require('../assets/fonts/poppins_regular.ttf'),
-    reference:       require('../assets/fonts/poppins_semibold.ttf'),
-    title:           require('../assets/fonts/mochypop_regular.ttf'),
-    doodlesticker:   require('../assets/fonts/doodlesticker.ttf'),
-    mochiypopp:      require('../assets/fonts/mochiy-pop-p-one-regular.ttf'),
+    MyArabicFont:         require('../assets/fonts/vazirmatn_regular.ttf'),
+    MyArabicFontBold:     require('../assets/fonts/vazirmatn_bold.ttf'),
+    PoppinsLight:         require('../assets/fonts/Poppins-Light.ttf'),
+    PoppinsRegular:       require('../assets/fonts/poppins_regular.ttf'),
+    PoppinsMedium:        require('../assets/fonts/Poppins-Medium.ttf'),
+    PoppinsSemiBold:      require('../assets/fonts/poppins_semibold.ttf'),
+    PoppinsBold:          require('../assets/fonts/Poppins-Bold.ttf'),
+    PoppinsSemiBoldItalic: require('../assets/fonts/Poppins-SemiBoldItalic.ttf'),
+    // legacy aliases kept so existing components don't break
+    translationtext:      require('../assets/fonts/poppins_regular.ttf'),
+    reference:            require('../assets/fonts/poppins_semibold.ttf'),
+    title:                require('../assets/fonts/mochypop_regular.ttf'),
+    doodlesticker:        require('../assets/fonts/doodlesticker.ttf'),
+    mochiypopp:           require('../assets/fonts/mochiy-pop-p-one-regular.ttf'),
   });
 
   useEffect(() => {

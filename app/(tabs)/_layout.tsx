@@ -69,7 +69,7 @@ const TabIcon = ({
 
       <Text style={[
         styles.label,
-        { color: focused ? colors.from : '#B0BEC5', fontWeight: focused ? '700' : '500' },
+        { color: focused ? colors.from : '#B0BEC5', fontFamily: focused ? 'PoppinsSemiBold' : 'PoppinsRegular' },
       ]}>
         {label}
       </Text>
@@ -108,7 +108,7 @@ const HomeTabIcon = ({ focused }: { focused: boolean }) => {
 
       <Text style={[
         styles.label,
-        { color: focused ? PURPLE : '#B0BEC5', fontWeight: focused ? '700' : '500' },
+        { color: focused ? PURPLE : '#B0BEC5', fontFamily: focused ? 'PoppinsSemiBold' : 'PoppinsRegular' },
       ]}>
         Home
       </Text>

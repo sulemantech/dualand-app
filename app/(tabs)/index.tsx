@@ -35,7 +35,7 @@ const CARD_MARGIN = 12;
 const THEME = {
    primary: '#8B6BC9',    // Softer Purple
   secondary: '#FFF7D0',    // Bright Lemon Yellow
-  tertiary: '#E8F4FF',     // Softer Sky Blue
+  tertiary: '#C0E5E5',     // Teal background
   neutral: '#FFFFFF',      // White
   accent: '#FFD166',       // Sunny Yellow
   success: '#4ECDC4',      // Mint Green
@@ -374,9 +374,9 @@ const CategoryCard = React.memo(({ category, index, onPress, cardWidth, imageHei
             </View>
           </View>
 
-          <View style={[styles.cardBanner, { backgroundColor: '#ede77bff' }]}>
+          <View style={[styles.cardBanner, { backgroundColor: '#FCF8B0' }]}>
             <Text
-              style={[styles.cardTitle, { color: isPressed ? '#FC6487' : '#1B8AAA' }]}
+              style={[styles.cardTitle, { color: isPressed ? '#FC6487' : '#212222' }]}
               numberOfLines={2}
             >
               {category.name}
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
     color: THEME.text.primary,
   },
   errorContainer: {
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 24,
-    fontWeight: '500',
+    fontFamily: 'PoppinsMedium',
   },
   retryButton: {
     backgroundColor: THEME.primary,
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: THEME.text.light,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
   },
   searchToggleInner: {
     width: 44,
@@ -788,7 +788,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     color: THEME.text.primary,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     paddingVertical: 2,
   },
   clearButton: {
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: 14,
     color: THEME.primary,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
   },
   content: {
     flex: 1,
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.primary,
     textAlign: 'center',
     marginBottom: 4,
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: THEME.text.primary,
     textAlign: 'center',
-    fontWeight: '500',
+    fontFamily: 'PoppinsLight',
   },
   noResultsContainer: {
     alignItems: 'center',
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.primary,
     marginBottom: 8,
     textAlign: 'center',
@@ -853,7 +853,7 @@ const styles = StyleSheet.create({
     color: THEME.text.primary,
     textAlign: 'center',
     lineHeight: 22,
-    fontWeight: '500',
+    fontFamily: 'PoppinsRegular',
   },
   gridContainer: {
     flexDirection: 'row',
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
   cardNumberText: {
     color: 'white',
     fontSize: 12,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     transform: [{ rotate: '5deg' }],
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'PoppinsSemiBold',
     color: '#1B8AAA',
     textAlign: 'center',
     lineHeight: 16,
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     textAlign: 'center',
   },
   cardSparkle: {

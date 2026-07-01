@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'PoppinsSemiBold',
     color: T.text.primary,
     letterSpacing: 0.1,
   },
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     color: T.text.primary,
     marginBottom: 1,
   },
@@ -585,6 +585,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: T.text.secondary,
     lineHeight: 17,
+    fontFamily: 'PoppinsLight',
   },
   rowRight: {
     marginLeft: 12,
@@ -603,13 +604,13 @@ const styles = StyleSheet.create({
   },
   langPillText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     color: PURPLE,
   },
   chevron: {
     fontSize: 16,
     color: PURPLE,
-    fontWeight: '700',
+    fontFamily: 'PoppinsBold',
   },
 
   // Font size picker
@@ -649,7 +650,7 @@ const styles = StyleSheet.create({
   },
   fontBadgeText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'PoppinsSemiBold',
     color: PURPLE,
   },
   fontPreview: {
@@ -672,7 +673,7 @@ const styles = StyleSheet.create({
   fontSliderLabel: {
     fontSize: 13,
     color: T.text.muted,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
   },
 
   // Coming soon badge
@@ -684,7 +685,7 @@ const styles = StyleSheet.create({
   },
   soonText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: 'PoppinsBold',
     color: '#D97706',
     letterSpacing: 0.5,
   },
@@ -700,7 +701,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'PoppinsRegular',
     color: T.text.primary,
   },
   infoBadge: {
@@ -711,7 +712,7 @@ const styles = StyleSheet.create({
   },
   infoBadgeText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     color: PURPLE,
   },
 
@@ -734,7 +735,7 @@ const styles = StyleSheet.create({
   },
   resetText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'PoppinsSemiBold',
     color: '#EF4444',
   },
 
@@ -747,12 +748,13 @@ const styles = StyleSheet.create({
   footerHeart: {
     fontSize: 14,
     color: T.text.secondary,
-    fontWeight: '500',
+    fontFamily: 'PoppinsLight',
     textAlign: 'center',
   },
   footerVersion: {
     fontSize: 12,
     color: T.text.muted,
     textAlign: 'center',
+    fontFamily: 'PoppinsLight',
   },
 });

@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'PoppinsBold',
     color: THEME.text.light,
   },
 });

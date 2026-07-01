@@ -7,6 +7,9 @@ interface AppHeaderProps {
   title: string;
   subtitle?: string;
   rightElement?: React.ReactNode;
+  gradientColors?: readonly [string, string, ...string[]];
+  titleColor?: string;
+  subtitleColor?: string;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -14,6 +17,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   subtitle,
   rightElement,
+  gradientColors = ['#FCF8B0', '#FCF8B0'],
+  titleColor = '#212222',
+  subtitleColor = 'rgba(33,34,34,0.55)',
 }) => {
   // Reactive — updates on iPad rotation and split-screen resize
   const { width } = useWindowDimensions();
@@ -25,7 +31,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#7E57C2', '#4527A0']}
+        colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
@@ -55,14 +61,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {/* Center: title + subtitle */}
           <View style={styles.textBlock}>
             <Text
-              style={[styles.title, { fontSize: isTablet ? 26 : 22 }]}
+              style={[styles.title, { fontSize: isTablet ? 26 : 22, color: titleColor }]}
               numberOfLines={1}
             >
               {title}
             </Text>
             {subtitle ? (
               <Text
-                style={[styles.subtitle, { fontSize: isTablet ? 14 : 12 }]}
+                style={[styles.subtitle, { fontSize: isTablet ? 14 : 12, color: subtitleColor }]}
                 numberOfLines={1}
               >
                 {subtitle}
@@ -82,11 +88,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    shadowColor: '#4527A0',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
   },
   gradient: {
     // paddingTop/Bottom/Horizontal are set inline (responsive)
@@ -112,14 +118,12 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'mochiypopp',
     fontWeight: '400',
-    color: '#FFFFFF',
     letterSpacing: 0.2,
     textAlign: 'center',
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.82)',
     marginTop: 2,
-    fontWeight: '500',
+    fontFamily: 'PoppinsLight',
     textAlign: 'center',
   },
   rightSlot: {

@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: 'PoppinsBold',
     letterSpacing: 3,
     color: 'rgba(255,255,255,0.55)',
     marginBottom: 14,
@@ -369,14 +369,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.90)',
     textAlign: 'center',
     lineHeight: 22,
-    fontStyle: 'italic',
-    fontWeight: '500',
+    fontFamily: 'PoppinsLight',
   },
   heroSource: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.55)',
     marginTop: 10,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     letterSpacing: 0.3,
   },
 
@@ -402,14 +401,14 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: 'PoppinsBold',
     color: PURPLE,
     letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 11,
     color: T.text.muted,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     marginTop: 3,
     letterSpacing: 0.2,
   },
@@ -445,7 +444,7 @@ const styles = StyleSheet.create({
   sectionIcon: { fontSize: 15 },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'PoppinsSemiBold',
     color: T.text.primary,
   },
 
@@ -479,7 +478,7 @@ const styles = StyleSheet.create({
   featureEmoji: { fontSize: 20 },
   featureTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'PoppinsSemiBold',
     color: T.text.primary,
     marginBottom: 4,
   },
@@ -487,6 +486,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: T.text.secondary,
     lineHeight: 17,
+    fontFamily: 'PoppinsRegular',
   },
 
   // ── Sadaqah Jariyah CTA ──
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   },
   shareCtaHeading: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: 'PoppinsBold',
     color: T.text.white,
     textAlign: 'center',
     marginBottom: 10,
@@ -539,6 +539,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginBottom: 24,
     paddingHorizontal: 8,
+    fontFamily: 'PoppinsRegular',
   },
   shareCtaButton: {
     borderWidth: 2,
@@ -549,7 +550,7 @@ const styles = StyleSheet.create({
   },
   shareCtaButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'PoppinsSemiBold',
     color: T.text.white,
     letterSpacing: 0.3,
   },
@@ -577,7 +578,7 @@ const styles = StyleSheet.create({
   contactIcon: { fontSize: 18 },
   contactText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'PoppinsMedium',
     color: PURPLE,
   },
 
@@ -590,10 +591,11 @@ const styles = StyleSheet.create({
   footerHeart: {
     fontSize: 14,
     color: T.text.secondary,
-    fontWeight: '500',
+    fontFamily: 'PoppinsLight',
   },
   footerVersion: {
     fontSize: 12,
     color: T.text.muted,
+    fontFamily: 'PoppinsLight',
   },
 });
